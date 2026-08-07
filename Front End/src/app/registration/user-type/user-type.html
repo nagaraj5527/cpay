@@ -1,0 +1,246 @@
+<!-- ================= APCCB HEADER ================= -->
+
+<div class="app-header">
+
+    <div class="header-left">
+
+        <img
+            src="/logo.jpg"
+            alt="C-PAY Logo">
+
+        <div>
+
+            <h1><span style="color: var(--primary-teal);">C-</span><span style="color: #000000;">PAY</span></h1>
+
+            <!-- <p>
+                Carbon Credit Registration & Verification System
+            </p> -->
+
+        </div>
+
+    </div>
+
+    <div class="portal-badge">
+
+        C-PAY Portal
+
+    </div>
+
+</div>
+
+<!-- ================= USER TYPE PAGE ================= -->
+
+<div class="wizard-card">
+
+    <!-- ================= CARD HEADER ================= -->
+
+    <div class="wizard-header">
+
+        <div>
+
+            <h2>
+                USER TYPE SELECTION
+            </h2>
+
+        
+
+        </div>
+
+        <div class="progress-badge">
+
+            Step 1 of 8
+
+        </div>
+
+    </div>
+
+    <!-- ================= STEPPER ================= -->
+
+    <div class="stepper-container">
+
+        <div class="step active">
+            <div class="circle">1</div>
+            <span>User Type</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">2</div>
+            <span>Personal Details</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">3</div>
+            <span>Address Details</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">4</div>
+            <span>Land Details</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">5</div>
+            <span>Plantation Details</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">6</div>
+            <span>Calculator</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">7</div>
+            <span>Consent</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">8</div>
+            <span>Preview</span>
+        </div>
+
+    </div>
+
+    <!-- ================= BODY ================= -->
+
+    <div class="wizard-body">
+
+        <div class="section-title">
+
+            <h3>
+                Choose Your Registration Type
+            </h3>
+
+            <!-- <span>
+                This helps APCCB customize your carbon credit registration process
+            </span> -->
+
+        </div>
+
+        <div class="user-grid">
+
+            <div
+                class="user-card"
+                [class.active]="selectedUserType === 'Seller'"
+                (click)="selectUserType('Seller')">
+
+                <div class="card-icon">👤</div>
+
+                <h4>Seller</h4>
+
+                <p>Private Land Owner</p>
+
+            </div>
+
+            <div
+                class="user-card"
+                [class.active]="selectedUserType === 'Farmer'"
+                (click)="selectUserType('Farmer')">
+
+                <div class="card-icon">👨‍🌾</div>
+
+                <h4>Farmer</h4>
+
+                <p>Agricultural Land Holder</p>
+
+            </div>
+
+            <div
+                class="user-card"
+                [class.active]="selectedUserType === 'NGO'"
+                (click)="selectUserType('NGO')">
+
+                <div class="card-icon">🏢</div>
+
+                <h4>NGO</h4>
+
+                <p>Non-Profit Organization</p>
+
+            </div>
+
+            <div
+                class="user-card"
+                [class.active]="selectedUserType === 'FPO'"
+                (click)="selectUserType('FPO')">
+
+                <div class="card-icon">👥</div>
+
+                <h4>FPO</h4>
+
+                <p>Farmer Producer Organization</p>
+
+            </div>
+
+
+            <div
+                class="user-card"
+                [class.active]="selectedUserType === 'Community'"
+                (click)="selectUserType('Community')">
+
+                <div class="card-icon">👥</div>
+
+                <h4>Community</h4>
+
+                <p>Community-Based Organization</p>
+
+            </div>
+
+             <div
+                class="user-card"
+                [class.active]="selectedUserType === 'Government'"
+                (click)="selectUserType('Government')">
+
+                <div class="card-icon">👥</div>
+
+                <h4>Government and Public Sector</h4>
+
+                <p>Government Entity or Public Institution</p>
+
+            </div>
+
+
+
+        </div>
+
+        <!-- ================= FOOTER ================= -->
+
+        <div class="footer-buttons">
+
+            <button
+                class="back-btn"
+                (click)="back()">
+
+                ← Back
+
+            </button>
+
+            <button
+                class="next-btn"
+                (click)="next()">
+
+                Continue →
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+

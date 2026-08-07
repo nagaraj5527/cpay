@@ -1,0 +1,340 @@
+<!-- ================= C-PAY HEADER ================= -->
+
+<header class="app-header">
+
+    <div class="header-left">
+
+        <img
+            src="/logo.jpg"
+            alt="C-PAY Logo">
+
+        <div>
+
+            <h1><span style="color: var(--primary-teal);">C-</span><span style="color: #000000;">PAY</span></h1>
+
+            <p>Carbon Credit Registration & Verification System</p>
+
+        </div>
+
+    </div>
+
+    <div class="portal-badge">
+
+        C-PAY Portal
+
+    </div>
+
+</header>
+
+<!-- ================= MAIN CARD ================= -->
+
+<div class="wizard-card">
+
+    <!-- ================= HEADER ================= -->
+
+    <div class="wizard-header">
+
+    <div>
+
+        <h2>
+            PLANTATION & AQUACULTURE DETAILS
+        </h2>
+
+    </div>
+
+    <div class="progress-badge">
+
+        Step 7 of 8
+
+    </div>
+
+</div>
+
+    <!-- ================= STEPPER ================= -->
+
+    <div class="stepper-container">
+
+        <div class="step completed" (click)="goToStep(1)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>User Type</span>
+        </div>
+
+        <div class="line active-line"></div>
+
+        <div class="step completed" (click)="goToStep(2)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>Personal Details</span>
+        </div>
+
+        <div class="line active-line"></div>
+
+        <div class="step completed" (click)="goToStep(3)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>Address Details</span>
+        </div>
+
+        <div class="line active-line"></div>
+
+        <div class="step completed" (click)="goToStep(4)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>Land Details</span>
+        </div>
+
+
+        <div class="line active-line"></div>
+
+        <div class="step completed" (click)="goToStep(5)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>Plantation Details</span>
+        </div>
+
+        <div class="line active-line"></div>
+
+        <div class="step completed" (click)="goToStep(6)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>Calculator</span>
+        </div>
+
+        <div class="line active-line"></div>
+
+        <div class="step active">
+            <div class="circle">7</div>
+            <span>Consent</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">8</div>
+            <span>Preview</span>
+        </div>
+
+
+    </div>
+
+    <!-- ================= BODY ================= -->
+
+    <div class="wizard-body">
+
+        <div class="section-title">
+
+            <h3>
+                Applicant Declaration
+            </h3>
+
+            <span>
+                Please read the following declaration carefully before proceeding
+            </span>
+
+        </div>
+
+        <div class="consent-box text-start">
+
+            <p>
+                I hereby declare that all information provided in this application
+                is true and correct to the best of my knowledge.
+            </p>
+
+            <p>
+                I understand that C-PAY (APCCB)
+                may verify the information submitted and may reject the application
+                if false information is found.
+            </p>
+
+            <p>
+                I authorize APCCB to process my application, generate carbon
+                credits, and maintain records related to my plantation activities.
+            </p>
+
+        </div>
+
+        <div class="checkbox-group text-start">
+
+            <input
+                type="checkbox"
+                id="terms"
+                name="terms"
+                [(ngModel)]="acceptTerms">
+
+            <label for="terms">
+                I accept the Terms & Conditions
+            </label>
+
+        </div>
+
+        <div class="checkbox-group text-start">
+
+            <input
+                type="checkbox"
+                id="privacy"
+                name="privacy"
+                [(ngModel)]="agreePrivacy">
+
+            <label for="privacy">
+                I agree to the Privacy Policy
+            </label>
+
+        </div>
+
+        <div class="checkbox-group text-start">
+
+            <input
+                type="checkbox"
+                id="consent"
+                name="consent"
+                [(ngModel)]="provideConsent">
+
+            <label for="consent">
+                I provide consent for carbon credit verification and processing
+            </label>
+
+        </div>
+
+        <div class="form-grid">
+
+            <!-- Row 1, Col 1: Digital Signature -->
+            <div class="form-group text-start">
+
+                <label>
+                    Digital Signature (Applicant Name) *
+                </label>
+
+                <input
+                    type="text"
+                    name="signature"
+                    [(ngModel)]="signature"
+                    placeholder="Enter full name"
+                    style="height: 52px;">
+
+            </div>
+
+            <!-- Row 1, Col 2: Date -->
+            <div class="form-group text-start">
+
+                <label>
+                    Date *
+                </label>
+
+                <input
+                    type="date"
+                    name="date"
+                    [(ngModel)]="date"
+                    style="height: 52px;">
+
+            </div>
+
+            <!-- Row 2, Col 1: Mobile Number -->
+            <div class="form-group text-start">
+
+                <label>
+                    Mobile Number *
+                </label>
+
+                <div class="input-with-btn">
+                    <input type="text" list="countryCodes" [(ngModel)]="countryCode" name="countryCode" [disabled]="true" placeholder="+91" maxlength="7"
+                           style="height: 52px; width: 80px; border: 2px solid #dbe4ef; border-radius: 14px; padding: 0 10px; font-size: 14px; background: #e9ecef; outline: none; text-align: center;">
+                    <datalist id="countryCodes">
+                        @for (c of countriesList; track c.name) {
+                            <option [value]="c.code">{{ c.flag }} {{ c.name }}</option>
+                        }
+                    </datalist>
+                    <input
+                        type="tel"
+                        name="mobileNumber"
+                        [(ngModel)]="mobileNumber"
+                        maxlength="10"
+                        placeholder="Enter 10-digit mobile number"
+                        [disabled]="true"
+                        style="height: 52px; width: 100%; background: #e9ecef;">
+                    <button 
+                        type="button" 
+                        class="get-otp-btn" 
+                        (click)="getOtpClick()"
+                        [disabled]="otpVerified || mobileNumber.length !== 10 || isSendingOtp"
+                        style="height: 52px;">
+                        <span *ngIf="!isSendingOtp">{{ otpSent ? 'Resend' : 'Get OTP' }}</span>
+                        <span *ngIf="isSendingOtp">Sending...</span>
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Row 2, Col 2: OTP Input Field (Appears next to phone number, pre-allocated column space) -->
+            <div class="form-group text-start" [style.visibility]="otpSent ? 'visible' : 'hidden'">
+
+                <label>
+                    Enter OTP * 
+                    <span *ngIf="otpVerified" class="text-success small ms-2" style="font-weight: bold;">
+                        ✓ Verified
+                    </span>
+                </label>
+
+                <div class="input-with-btn">
+                    <input 
+                        type="text" 
+                        name="otpCode" 
+                        [(ngModel)]="otpCode" 
+                        maxlength="6" 
+                        placeholder="Enter 6-digit OTP" 
+                        [disabled]="otpVerified"
+                        style="height: 52px; width: 100%;">
+                    <button 
+                        *ngIf="!otpVerified"
+                        type="button" 
+                        class="verify-otp-btn" 
+                        (click)="verifyOtpInlineCode()"
+                        [disabled]="otpCode.length !== 6 || isVerifyingOtp"
+                        style="height: 52px;">
+                        <span *ngIf="!isVerifyingOtp">Verify</span>
+                        <span *ngIf="isVerifyingOtp">Verifying...</span>
+                    </button>
+                </div>
+
+                <div *ngIf="timerSeconds > 0 && !otpVerified" class="small text-muted mt-2">
+                    Resend code in <strong>{{ timerSeconds }}s</strong>
+                </div>
+
+                <div *ngIf="otpErrorMessage" class="text-danger small mt-2" style="font-weight: 500;">
+                    {{ otpErrorMessage }}
+                </div>
+
+                <div *ngIf="otpSuccessMessage" class="alert alert-success mt-2 py-2 px-3 small" role="alert" style="background-color: #e8f5e9; border-color: #c8e6c9; color: #2e7d32; border-radius: 10px; font-weight: 500;">
+                    ✓ {{ otpSuccessMessage }}
+                </div>
+
+                <div *ngIf="otpInfoMessage && !otpVerified" class="alert alert-info mt-2 py-2 px-3 small" role="alert" style="background-color: #e0f2f1; border-color: #b2dfdb; color: #00796b; border-radius: 10px; font-weight: 500; line-height: 1.4;">
+                    <strong>[C-PAY Dev Mode]</strong> OTP code generated: <strong style="font-size: 14px; letter-spacing: 0.5px; color: #004d40;">{{ generatedOtp }}</strong>
+                    <br>
+                    <span class="small text-muted">(A real SMS was also attempted via Textbelt API to your phone number)</span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="footer-buttons">
+
+            <button
+                class="back-btn"
+                (click)="back()">
+
+                ← Back
+
+            </button>
+
+            <button
+                class="next-btn"
+                (click)="next()">
+
+                Continue →
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+

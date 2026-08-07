@@ -1,0 +1,595 @@
+<!-- ================= C-PAY HEADER ================= -->
+
+<header class="app-header">
+
+    <div class="header-left">
+
+        <img
+            src="/logo.jpg"
+            alt="C-PAY Logo">
+
+        <div>
+
+            <h1><span style="color: var(--primary-teal);">C-</span><span style="color: #000000;">PAY</span></h1>
+
+            <p>
+                Carbon Credit Registration & Verification System
+            </p>
+
+        </div>
+
+    </div>
+
+    <div class="portal-badge">
+        C-PAY Portal
+    </div>
+
+</header>
+
+<!-- ================= PERSONAL DETAILS CARD ================= -->
+
+<div class="wizard-card">
+
+    <!-- HEADER -->
+
+    <div class="wizard-header">
+
+        <div>
+
+            <h2>PERSONAL DETAILS</h2>
+
+        </div>
+
+        <div class="progress-badge">
+            Step 2 of 8
+        </div>
+
+    </div>
+
+    <!-- STEPPER INSIDE CARD -->
+
+    <div class="stepper-container">
+
+        <div class="step completed" (click)="goToStep(1)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>User Type</span>
+        </div>
+
+        <div class="line active-line"></div>
+
+        <div class="step active">
+            <div class="circle">2</div>
+            <span>Personal Details</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">3</div>
+            <span>Address Details</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">4</div>
+            <span>Land Details</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">5</div>
+            <span>Plantation Details</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">6</div>
+            <span>Calculator</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">7</div>
+            <span>Consent</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">8</div>
+            <span>Preview</span>
+        </div>
+
+
+    </div>
+
+    <!-- BODY -->
+
+    <div class="wizard-body">
+
+        <div class="section-title">
+            <h3>
+                {{ (selectedUserType === 'NGO' || selectedUserType === 'Community' || selectedUserType === 'Government') ? 'Organization Details' : 'Personal Information' }}
+            </h3>
+            <span>
+                {{ (selectedUserType === 'NGO' || selectedUserType === 'Community' || selectedUserType === 'Government') ? 'Enter your business and registration information' : 'Enter your personal details for C-PAY registration' }}
+            </span>
+        </div>
+
+        <div class="form-grid">
+
+            @if (selectedUserType !== 'NGO' && selectedUserType !== 'Community' && selectedUserType !== 'Government') {
+                <!-- INDIVIDUAL FORM FIELDS -->
+                <!-- 1. Full Name -->
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input
+                        type="text"
+                        placeholder="Enter Full Name"
+                        pattern="[A-Za-z ]+"
+                        style="text-transform:capitalize"
+                        [(ngModel)]="fullName"
+                        name="fullName"
+                        required>
+                </div>
+
+                <!-- 2. Gender -->
+                <div class="form-group">
+                    <label>Gender *</label>
+                    <app-custom-select
+                        [options]="genderOptions"
+                        [(ngModel)]="gender"
+                        name="gender"
+                        placeholder="Select Gender">
+                    </app-custom-select>
+                </div>
+
+                <!-- 3. Mobile Number -->
+                <div class="form-group">
+                    <label>Mobile Number *</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" list="countryCodes" [(ngModel)]="countryCode" name="countryCode" placeholder="+91" maxlength="7" style="width: 80px; height: 48px; border: 2px solid #e2e8f0; border-radius: 12px; padding: 0 10px; font-size: 13px; background: #ffffff; outline: none; transition: border-color 0.2s; text-align: center;" class="country-code-select">
+                        <datalist id="countryCodes">
+                            @for (c of countriesList; track c.name) {
+                                <option [value]="c.code">{{ c.flag }} {{ c.name }}</option>
+                            }
+                        </datalist>
+                        <input
+                            type="tel"
+                            placeholder="Enter Mobile Number"
+                            maxlength="10"
+                            pattern="[0-9]{10}"
+                            inputmode="numeric"
+                            [(ngModel)]="mobileNumber"
+                            name="mobileNumber"
+                            style="flex: 1;"
+                            required>
+                    </div>
+                </div>
+
+                <!-- 4. Email Address (Optional) -->
+                <div class="form-group">
+                    <label>Email Address (Optional)</label>
+                    <input
+                        type="email"
+                        placeholder="Enter Email Address"
+                        [(ngModel)]="emailAddress"
+                        name="emailAddress">
+                </div>
+
+                <!-- 5. Aadhaar Number -->
+                <div class="form-group">
+                    <label>Aadhaar Number *</label>
+                    <input
+                        type="text"
+                        placeholder="Enter Aadhaar Number"
+                        maxlength="12"
+                        pattern="[0-9]{12}"
+                        inputmode="numeric"
+                        oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                        [(ngModel)]="aadhaarNumber"
+                        name="aadhaarNumber"
+                        required>
+                </div>
+
+                <!-- 6. Upload Aadhaar Document -->
+                <div class="form-group">
+                    <label>Upload Aadhaar Document *</label>
+                    <div
+                        class="file-dropzone"
+                        [class.has-file]="aadhaarPhotoName"
+                        [class.is-dragging]="isAadhaarDragging"
+                        (dragover)="onAadhaarDragOver($event)"
+                        (dragleave)="onAadhaarDragLeave($event)"
+                        (drop)="onAadhaarDrop($event)"
+                        (click)="aadhaarInput.click()">
+                        <input
+                            #aadhaarInput
+                            type="file"
+                            (change)="onAadhaarPhotoSelected($event)"
+                            accept=".pdf,.png,.jpg,.jpeg"
+                            style="display: none;" />
+
+                        @if (!aadhaarPhotoName) {
+                            <div class="dropzone-placeholder">
+                                <div class="dropzone-icon-box"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+                                <div class="dropzone-text">
+                                    <span class="dropzone-title">Click or drag & drop to upload Aadhaar</span>
+                                    <span class="dropzone-subtitle">Supported: PDF, PNG, JPG (Max 5MB)</span>
+                                </div>
+                            </div>
+                        } @else {
+                            <div class="uploaded-doc-badge">
+                                <div class="doc-icon"><i class="bi bi-file-earmark-pdf-fill"></i></div>
+                                <div class="doc-details">
+                                    <span class="doc-name">{{ aadhaarPhotoName }}</span>
+                                    <span class="doc-meta"><i class="bi bi-check-circle-fill text-success me-1"></i>Uploaded</span>
+                                </div>
+                                <button type="button" class="btn-remove-doc" (click)="removeAadhaarPhoto(); $event.stopPropagation()" title="Remove File">
+                                    <i class="bi bi-trash3-fill"></i>
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- 7. PAN Number -->
+                <div class="form-group">
+                    <label>PAN Number *</label>
+                    <input
+                        type="text"
+                        placeholder="ABCDE1234F"
+                        maxlength="10"
+                        pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}"
+                        style="text-transform:uppercase"
+                        oninput="this.value=this.value.toUpperCase()"
+                        [(ngModel)]="panNumber"
+                        name="panNumber"
+                        required>
+                </div>
+
+                <!-- 8. Upload PAN Document -->
+                <div class="form-group">
+                    <label>Upload PAN Document *</label>
+                    <div
+                        class="file-dropzone"
+                        [class.has-file]="panPhotoName"
+                        [class.is-dragging]="isPanDragging"
+                        (dragover)="onPanDragOver($event)"
+                        (dragleave)="onPanDragLeave($event)"
+                        (drop)="onPanDrop($event)"
+                        (click)="panInput.click()">
+                        <input
+                            #panInput
+                            type="file"
+                            (change)="onPanPhotoSelected($event)"
+                            accept=".pdf,.png,.jpg,.jpeg"
+                            style="display: none;" />
+
+                        @if (!panPhotoName) {
+                            <div class="dropzone-placeholder">
+                                <div class="dropzone-icon-box"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+                                <div class="dropzone-text">
+                                    <span class="dropzone-title">Click or drag & drop to upload PAN</span>
+                                    <span class="dropzone-subtitle">Supported: PDF, PNG, JPG (Max 5MB)</span>
+                                </div>
+                            </div>
+                        } @else {
+                            <div class="uploaded-doc-badge">
+                                <div class="doc-icon"><i class="bi bi-file-earmark-image-fill"></i></div>
+                                <div class="doc-details">
+                                    <span class="doc-name">{{ panPhotoName }}</span>
+                                    <span class="doc-meta"><i class="bi bi-check-circle-fill text-success me-1"></i>Uploaded</span>
+                                </div>
+                                <button type="button" class="btn-remove-doc" (click)="removePanPhoto(); $event.stopPropagation()" title="Remove File">
+                                    <i class="bi bi-trash3-fill"></i>
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            } @else if (selectedUserType === 'NGO' || selectedUserType === 'Community') {
+                <!-- NGO AND COMMUNITY FORM FIELDS -->
+                <!-- 1. NGO/Community Name -->
+                <div class="form-group">
+                    <label>
+                        @if (selectedUserType === 'NGO') { NGO Name * }
+                        @else if (selectedUserType === 'Community') { Community Name * }
+                    </label>
+                    <input
+                        type="text"
+                        [placeholder]="selectedUserType === 'NGO' ? 'Enter NGO Name' : 'Enter Community Name'"
+                        pattern="[A-Za-z ]+"
+                        style="text-transform:capitalize"
+                        [(ngModel)]="fullName"
+                        name="fullName"
+                        required>
+                </div>
+
+                <!-- 2. Registration ID / License Number -->
+                <div class="form-group">
+                    <label>Registration ID / License Number *</label>
+                    <input
+                        type="text"
+                        placeholder="Enter Registration ID / License Number"
+                        [(ngModel)]="registrationId"
+                        name="registrationId"
+                        required>
+                </div>
+
+                <!-- 3. Mobile Number -->
+                <div class="form-group">
+                    <label>Mobile Number *</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" list="countryCodes" [(ngModel)]="countryCode" name="countryCode" placeholder="+91" maxlength="7" style="width: 80px; height: 48px; border: 2px solid #e2e8f0; border-radius: 12px; padding: 0 10px; font-size: 13px; background: #ffffff; outline: none; transition: border-color 0.2s; text-align: center;" class="country-code-select">
+                        <datalist id="countryCodes">
+                            @for (c of countriesList; track c.name) {
+                                <option [value]="c.code">{{ c.flag }} {{ c.name }}</option>
+                            }
+                        </datalist>
+                        <input
+                            type="tel"
+                            placeholder="Enter Mobile Number"
+                            maxlength="10"
+                            pattern="[0-9]{10}"
+                            inputmode="numeric"
+                            [(ngModel)]="mobileNumber"
+                            name="mobileNumber"
+                            style="flex: 1;"
+                            required>
+                    </div>
+                </div>
+
+                <!-- 4. GST Number -->
+                <div class="form-group">
+                    <label>GST Number *</label>
+                    <input
+                        type="text"
+                        placeholder="Enter GST Number"
+                        maxlength="15"
+                        style="text-transform:uppercase"
+                        oninput="this.value=this.value.toUpperCase()"
+                        [(ngModel)]="gstNumber"
+                        name="gstNumber"
+                        required>
+                </div>
+
+                <!-- 5. PAN Number -->
+                <div class="form-group">
+                    <label>PAN Number *</label>
+                    <input
+                        type="text"
+                        placeholder="ABCDE1234F"
+                        maxlength="10"
+                        pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}"
+                        style="text-transform:uppercase"
+                        oninput="this.value=this.value.toUpperCase()"
+                        [(ngModel)]="panNumber"
+                        name="panNumber"
+                        required>
+                </div>
+
+                <!-- 6. Upload PAN Document -->
+                <div class="form-group">
+                    <label>Upload PAN Document *</label>
+                    <div
+                        class="file-dropzone"
+                        [class.has-file]="panPhotoName"
+                        [class.is-dragging]="isPanDragging"
+                        (dragover)="onPanDragOver($event)"
+                        (dragleave)="onPanDragLeave($event)"
+                        (drop)="onPanDrop($event)"
+                        (click)="panInputNgo.click()">
+                        <input
+                            #panInputNgo
+                            type="file"
+                            (change)="onPanPhotoSelected($event)"
+                            accept=".pdf,.png,.jpg,.jpeg"
+                            style="display: none;" />
+
+                        @if (!panPhotoName) {
+                            <div class="dropzone-placeholder">
+                                <div class="dropzone-icon-box"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+                                <div class="dropzone-text">
+                                    <span class="dropzone-title">Click or drag & drop to upload PAN</span>
+                                    <span class="dropzone-subtitle">Supported: PDF, PNG, JPG (Max 5MB)</span>
+                                </div>
+                            </div>
+                        } @else {
+                            <div class="uploaded-doc-badge">
+                                <div class="doc-icon"><i class="bi bi-file-earmark-image-fill"></i></div>
+                                <div class="doc-details">
+                                    <span class="doc-name">{{ panPhotoName }}</span>
+                                    <span class="doc-meta"><i class="bi bi-check-circle-fill text-success me-1"></i>Uploaded</span>
+                                </div>
+                                <button type="button" class="btn-remove-doc" (click)="removePanPhoto(); $event.stopPropagation()" title="Remove File">
+                                    <i class="bi bi-trash3-fill"></i>
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- 7. Email Address -->
+                <div class="form-group">
+                    <label>Email Address *</label>
+                    <input
+                        type="email"
+                        placeholder="Enter Email Address"
+                        [(ngModel)]="emailAddress"
+                        name="emailAddress"
+                        required>
+                </div>
+            } @else {
+                <!-- GOVERNMENT FORM FIELDS -->
+                <!-- 1. Government Department Name -->
+                <div class="form-group">
+                    <label>Government Department Name *</label>
+                    <input
+                        type="text"
+                        placeholder="Enter Government Department Name"
+                        pattern="[A-Za-z ]+"
+                        style="text-transform:capitalize"
+                        [(ngModel)]="fullName"
+                        name="fullName"
+                        required>
+                </div>
+
+                <!-- 2. Division Name -->
+                <div class="form-group">
+                    <label>Division Name *</label>
+                    <input
+                        type="text"
+                        placeholder="Enter Division Name"
+                        [(ngModel)]="divisionName"
+                        name="divisionName"
+                        required>
+                </div>
+
+                <!-- 3. Manager Name -->
+                <div class="form-group">
+                    <label>Manager Name *</label>
+                    <input
+                        type="text"
+                        placeholder="Enter Manager Name"
+                        [(ngModel)]="managerName"
+                        name="managerName"
+                        required>
+                </div>
+
+                <!-- 4. Manager ID -->
+                <div class="form-group">
+                    <label>Manager ID *</label>
+                    <input
+                        type="text"
+                        placeholder="Enter Manager ID"
+                        [(ngModel)]="managerId"
+                        name="managerId"
+                        required>
+                </div>
+
+                <!-- 5. Mobile Number -->
+                <div class="form-group">
+                    <label>Mobile Number *</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" list="countryCodes" [(ngModel)]="countryCode" name="countryCode" placeholder="+91" maxlength="7" style="width: 80px; height: 48px; border: 2px solid #e2e8f0; border-radius: 12px; padding: 0 10px; font-size: 13px; background: #ffffff; outline: none; transition: border-color 0.2s; text-align: center;" class="country-code-select">
+                        <datalist id="countryCodes">
+                            @for (c of countriesList; track c.name) {
+                                <option [value]="c.code">{{ c.flag }} {{ c.name }}</option>
+                            }
+                        </datalist>
+                        <input
+                            type="tel"
+                            placeholder="Enter Mobile Number"
+                            maxlength="10"
+                            pattern="[0-9]{10}"
+                            inputmode="numeric"
+                            [(ngModel)]="mobileNumber"
+                            name="mobileNumber"
+                            style="flex: 1;"
+                            required>
+                    </div>
+                </div>
+
+                <!-- 6. Email Address -->
+                <div class="form-group">
+                    <label>Email Address *</label>
+                    <input
+                        type="email"
+                        placeholder="Enter Email Address"
+                        [(ngModel)]="emailAddress"
+                        name="emailAddress"
+                        required>
+                </div>
+
+                <!-- 7. PAN Number -->
+                <div class="form-group">
+                    <label>PAN Number *</label>
+                    <input
+                        type="text"
+                        placeholder="ABCDE1234F"
+                        maxlength="10"
+                        pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}"
+                        style="text-transform:uppercase"
+                        oninput="this.value=this.value.toUpperCase()"
+                        [(ngModel)]="panNumber"
+                        name="panNumber"
+                        required>
+                </div>
+
+                <!-- 8. Upload PAN Document -->
+                <div class="form-group">
+                    <label>Upload PAN Document *</label>
+                    <div
+                        class="file-dropzone"
+                        [class.has-file]="panPhotoName"
+                        [class.is-dragging]="isPanDragging"
+                        (dragover)="onPanDragOver($event)"
+                        (dragleave)="onPanDragLeave($event)"
+                        (drop)="onPanDrop($event)"
+                        (click)="panInputGov.click()">
+                        <input
+                            #panInputGov
+                            type="file"
+                            (change)="onPanPhotoSelected($event)"
+                            accept=".pdf,.png,.jpg,.jpeg"
+                            style="display: none;" />
+
+                        @if (!panPhotoName) {
+                            <div class="dropzone-placeholder">
+                                <div class="dropzone-icon-box"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+                                <div class="dropzone-text">
+                                    <span class="dropzone-title">Click or drag & drop to upload PAN</span>
+                                    <span class="dropzone-subtitle">Supported: PDF, PNG, JPG (Max 5MB)</span>
+                                </div>
+                            </div>
+                        } @else {
+                            <div class="uploaded-doc-badge">
+                                <div class="doc-icon"><i class="bi bi-file-earmark-image-fill"></i></div>
+                                <div class="doc-details">
+                                    <span class="doc-name">{{ panPhotoName }}</span>
+                                    <span class="doc-meta"><i class="bi bi-check-circle-fill text-success me-1"></i>Uploaded</span>
+                                </div>
+                                <button type="button" class="btn-remove-doc" (click)="removePanPhoto(); $event.stopPropagation()" title="Remove File">
+                                    <i class="bi bi-trash3-fill"></i>
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+        </div>
+
+        <!-- FOOTER BUTTONS -->
+
+        <div class="footer-buttons">
+
+            <button
+                class="back-btn"
+                (click)="back()">
+
+                ← Back
+
+            </button>
+
+            <button
+                class="next-btn"
+                (click)="next()">
+
+                Continue →
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+

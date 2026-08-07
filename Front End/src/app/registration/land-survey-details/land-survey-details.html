@@ -1,0 +1,505 @@
+<!-- ================= C-PAY HEADER ================= -->
+
+<header class="app-header">
+
+    <div class="header-left">
+
+        <img
+            src="/logo.jpg"
+            alt="C-PAY Logo">
+
+        <div>
+
+            <h1><span style="color: var(--primary-teal);">C-</span><span style="color: #000000;">PAY</span></h1>
+
+            <p>
+                Carbon Credit Registration & Verification System
+            </p>
+
+        </div>
+
+    </div>
+
+    <div class="portal-badge">
+
+        C-PAY Portal
+
+    </div>
+
+</header>
+
+<!-- ================= SINGLE WIZARD CARD ================= -->
+
+<div class="wizard-card">
+
+    <!-- ================= HEADER ================= -->
+
+    <div class="wizard-header">
+
+        <div>
+
+            <h2 class="section-title center-title">
+                LAND & SURVEY DETAILS
+            </h2>
+
+
+        </div>
+
+        <div class="progress-badge">
+
+            Step 4 of 8
+
+        </div>
+
+    </div>
+
+    <!-- ================= STEPPER ================= -->
+
+    <div class="stepper-container">
+
+        <div class="step completed" (click)="goToStep(1)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>User Type</span>
+        </div>
+
+        <div class="line active-line"></div>
+
+        <div class="step completed" (click)="goToStep(2)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>Personal Details</span>
+        </div>
+
+        <div class="line active-line"></div>
+
+        <div class="step completed" (click)="goToStep(3)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>Address Details</span>
+        </div>
+
+        <div class="line active-line"></div>
+
+        <div class="step active">
+            <div class="circle">4</div>
+            <span>Land Details</span>
+        </div>
+
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">5</div>
+            <span>Plantation Details</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">6</div>
+            <span>Calculator</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">7</div>
+            <span>Consent</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">8</div>
+            <span>Preview</span>
+        </div>
+
+
+    </div>
+
+    <!-- ================= BODY ================= -->
+
+    <div class="wizard-body">
+
+        <div class="section-title center-title">
+
+            <h3>
+                Land Registration Information
+            </h3>
+
+            <span>
+                Enter survey details and land dimensions for carbon credit registration
+            </span>
+
+        </div>
+
+        <!-- ================= FORM ================= -->
+
+        <div class="form-grid">
+
+            <div class="form-group">
+
+                <label>
+                    Survey Number *
+                </label>
+
+                <input
+                    type="text"
+                    [(ngModel)]="surveyNo"
+                    name="surveyNo"
+                    id="surveyNo"
+                    placeholder="Enter survey number">
+
+            </div>
+
+            <div class="form-group">
+
+                <label>
+                    Sub Division Number *
+                </label>
+
+                <input
+                    type="text"
+                    [(ngModel)]="subDivisionNo"
+                    name="subDivisionNo"
+                    id="subDivisionNo"
+                    placeholder="Enter sub division number">
+
+            </div>
+
+            <div class="form-group">
+
+                <label>
+                    Total Area *
+                </label>
+
+                <input
+                    type="text"
+                    [(ngModel)]="area"
+                    name="area"
+                    id="area"
+                    placeholder="Enter total area">
+
+            </div>
+
+            <div class="form-group">
+                <label>Dimension / Unit *</label>
+                <app-custom-select [options]="['Acre', 'Hectare', 'Sq.ft', 'Guntha', 'Sq.Yards']" [(ngModel)]="unit" name="unit" placeholder="Select Unit"></app-custom-select>
+            </div>
+
+            <!-- Upload Land Pattadar Passbook / Document -->
+            <div class="form-group" style="grid-column: span 2;">
+                <label style="font-weight: 700; color: #334155; margin-bottom: 8px; display: block;">Upload Land Pattadar Passbook / Adangal Document *</label>
+                <div
+                    class="file-dropzone"
+                    [class.has-file]="pattadarDocName"
+                    [class.is-dragging]="isPattadarDragging"
+                    (dragover)="onPattadarDragOver($event)"
+                    (dragleave)="onPattadarDragLeave($event)"
+                    (drop)="onPattadarDrop($event)"
+                    (click)="pattadarFileInput.click()">
+                    <input
+                        #pattadarFileInput
+                        type="file"
+                        (change)="onPattadarDocSelected($event)"
+                        accept=".pdf,.png,.jpg,.jpeg"
+                        style="display: none;" />
+
+                    @if (!pattadarDocName) {
+                        <div class="dropzone-placeholder">
+                            <div class="dropzone-icon-box"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+                            <div class="dropzone-text">
+                                <span class="dropzone-title">Click or drag & drop to upload Pattadar Document</span>
+                                <span class="dropzone-subtitle">Supported: PDF, PNG, JPG (Max 5MB)</span>
+                            </div>
+                        </div>
+                    } @else {
+                        <div class="uploaded-doc-badge">
+                            <div class="doc-icon"><i class="bi bi-file-earmark-pdf-fill"></i></div>
+                            <div class="doc-details">
+                                <span class="doc-name">{{ pattadarDocName }}</span>
+                                <span class="doc-meta"><i class="bi bi-check-circle-fill text-success me-1"></i>Uploaded</span>
+                            </div>
+                            <button type="button" class="btn-remove-doc" (click)="removePattadarDoc(); $event.stopPropagation()" title="Remove File">
+                                <i class="bi bi-trash3-fill"></i>
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+
+        </div>
+
+      <!-- ================= LAND PHOTO ================= -->
+
+            <div class="land-upload-container">
+
+                <div class="upload-header">
+
+                    <div class="upload-icon">
+                        🌿
+                    </div>
+
+                    <h4>
+                        Upload Land Photograph *
+                    </h4>
+
+                    <p>
+                        Capture or upload a clear photograph of your land for C-PAY verification
+                    </p>
+
+                </div>
+
+                <!-- Global Unconditional Gallery File Input -->
+                <input
+                    id="globalGalleryInput"
+                    #cameraInput
+                    type="file"
+                    accept="image/*"
+                    style="display: none;"
+                    (click)="$any($event.target).value = ''"
+                    (change)="onFileSelected($event)">
+
+                <!-- 1. Selection Options (shown when camera is NOT open and no photo has been captured) -->
+                @if (!isCameraActive && !imagePreview) {
+                    <div class="upload-options">
+
+                        <!-- Camera Card -->
+
+                        <div class="upload-option camera-option">
+
+                            <div class="option-icon">
+                                📷
+                            </div>
+
+                            <div class="option-content">
+
+                                <h5>
+                                    Take Photo
+                                </h5>
+
+                                <span>
+                                    Open camera to capture
+                                </span>
+
+                            </div>
+
+                            <button
+                                type="button"
+                                class="capture-btn"
+                                (click)="capturePhoto()">
+
+                                Open Camera
+
+                            </button>
+
+                        </div>
+
+                        <div class="or-divider">
+
+                            OR
+
+                        </div>
+
+                        <!-- Gallery Card -->
+
+                        <div class="upload-option gallery-option">
+
+                            <div class="option-icon">
+                                ☁️
+                            </div>
+
+                            <div class="option-content">
+
+                                <h5>
+                                    Choose from Gallery
+                                </h5>
+
+                                <span>
+                                    Upload from device
+                                </span>
+
+                            </div>
+
+                            <button type="button" class="gallery-btn" (click)="triggerGalleryUpload()">
+                                Choose File
+                            </button>
+
+                        </div>
+
+                    </div>
+                }
+
+                <!-- Location Row -->
+
+                <div class="location-row">
+
+                    <div class="location-left">
+
+                        <h5>
+                            📍 Location Status
+                        </h5>
+
+                        <span>
+                            Location (GPS) captured along with land photograph
+                        </span>
+
+                    </div>
+
+                    <div class="location-status">
+
+                        @if (latitude && longitude) {
+
+                        <span class="status-success">
+
+                            Captured
+
+                        </span>
+
+                        }
+
+                        @else {
+
+                        <span class="status-pending">
+
+                            Not Captured
+
+                        </span>
+
+                        }
+
+                    </div>
+
+                </div>
+
+                <!-- GPS Details -->
+
+                @if (latitude && longitude) {
+
+                <div class="gps-card">
+
+                    <div>
+
+                        <strong>Latitude:</strong>
+
+                        {{ latitude }}
+
+                    </div>
+
+                    <div>
+
+                        <strong>Longitude:</strong>
+
+                        {{ longitude }}
+
+                    </div>
+
+                </div>
+
+                }
+
+                <!-- 2. LIVE CAMERA (shown ONLY when user clicks Open Camera) -->
+                @if (isCameraActive) {
+                    <div class="camera-live-section" style="margin-top: 16px; text-align: center; display: flex; flex-direction: column; align-items: center;">
+                        <div class="camera-box-container" style="width: 100%; max-width: 480px; border-radius: 16px; overflow: hidden; border: 2px solid var(--primary-teal); box-shadow: 0 8px 24px rgba(0, 164, 153, 0.15); background: #000000;">
+                            <video
+                                id="cameraVideo"
+                                autoplay
+                                playsinline
+                                muted
+                                style="width: 100%; height: 280px; object-fit: cover; display: block; border: none;">
+                            </video>
+                        </div>
+
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 16px; width: 100%;">
+                            <button
+                                type="button"
+                                class="capture-btn"
+                                style="height: 44px; padding: 0 24px; font-size: 14px; font-weight: 700; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 12px rgba(0, 164, 153, 0.2);"
+                                (click)="takeSnapshot()">
+                                📸 Capture Photo
+                            </button>
+
+                            <button
+                                type="button"
+                                class="btn-cancel"
+                                style="height: 44px; padding: 0 24px; font-size: 14px; font-weight: 700; border-radius: 10px; border: 1.5px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center;"
+                                (click)="stopCamera()">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                }
+
+                <canvas id="snapshotCanvas" hidden></canvas>
+
+                <!-- 3. CAPTURED PHOTO DISPLAY (Replaces camera view inside THIS container) -->
+                @if (imagePreview && !isCameraActive) {
+                    <div class="preview-card" style="margin-top: 16px; text-align: center; display: flex; flex-direction: column; align-items: center; width: 100%;">
+                        <h5 style="margin-bottom: 12px; font-size: 15px; font-weight: 800; color: #0f172a; letter-spacing: -0.2px;">
+                            Captured Land Photograph (GPS Watermarked)
+                        </h5>
+
+                        <div class="preview-box-container" style="position: relative; width: 100%; max-width: 480px; border-radius: 16px; overflow: hidden; border: 2px solid #7bc043; box-shadow: 0 8px 24px rgba(123, 192, 67, 0.15); background: #000000;">
+                            <img
+                                [src]="imagePreview"
+                                alt="Captured Land Photo"
+                                style="width: 100%; height: 300px; object-fit: cover; display: block; border: none;">
+
+                            <!-- GPS Watermark Banner Overlay -->
+                            <div class="gps-watermark-overlay" style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(15, 23, 42, 0.88); padding: 10px 14px; text-align: left; border-left: 4px solid #00a499; display: flex; flex-direction: column; gap: 3px; z-index: 2;">
+                                <div style="color: #ffffff; font-size: 13.5px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                                    <span>📍</span>
+                                    <span>Latitude: {{ (latitude || 17.492677) | number:'1.6-6' }} | Longitude: {{ (longitude || 78.402428) | number:'1.6-6' }}</span>
+                                </div>
+                                <div style="color: #cbd5e1; font-size: 11.5px; font-weight: 500; display: flex; align-items: center; gap: 6px;">
+                                    <span>📅</span>
+                                    <span>{{ capturedTimestamp || '7/29/2026, 7:01:29 PM' }} • C-PAY Land Verification</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Options for Retaking with Camera OR Choosing from Gallery -->
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 14px; flex-wrap: wrap;">
+                            <button type="button" (click)="retakePhoto()" style="height: 42px; padding: 0 18px; font-size: 13px; color: var(--primary-teal); font-weight: 700; background: white; border: 1.5px solid var(--primary-teal); border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+                                📷 Retake with Camera
+                            </button>
+
+                            <button type="button" (click)="triggerGalleryUpload()" style="height: 42px; padding: 0 18px; font-size: 13px; color: #475569; font-weight: 700; background: white; border: 1.5px solid #cbd5e1; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+                                📁 Choose Different File
+                            </button>
+                        </div>
+                    </div>
+                }
+
+                <div class="security-note">
+
+                    🔒 Location will be used only for verification and is 100% secure.
+
+                </div>
+
+        </div>
+
+        <!-- ================= BUTTONS ================= -->
+
+        <div class="footer-buttons">
+
+            <button
+                class="back-btn"
+                (click)="back()">
+
+                ← Back
+
+            </button>
+
+            <button
+                class="next-btn"
+                (click)="next()">
+
+                Continue →
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>

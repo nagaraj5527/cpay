@@ -1,0 +1,679 @@
+/* ================= PAGE ================= */
+
+html,
+body{
+
+    margin:0;
+
+    padding:0;
+
+    width:100%;
+
+    height:100vh;
+
+    overflow:hidden;
+
+    font-family:'Segoe UI',sans-serif;
+
+    background:linear-gradient(135deg, var(--bg-green-soft) 0%, #ffffff 100%);
+}
+
+/* ================= HEADER ================= */
+
+.app-header{
+
+    width:100%;
+
+    height:85px;
+
+    background:#ffffff;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    padding:0 35px;
+
+    border-bottom:1px solid #e5e7eb;
+
+    box-shadow:0 4px 15px rgba(0,0,0,.05);
+
+    position:fixed;
+
+    top:0;
+
+    left:0;
+
+    z-index:9999;
+
+    box-sizing:border-box;
+}
+
+.header-left{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+}
+
+.header-left img{
+
+    width:55px;
+
+    height:55px;
+
+    object-fit:contain;
+}
+
+.header-left h1{
+
+    margin:0;
+
+    font-size:24px;
+
+    font-weight:700;
+
+    color:var(--dark-teal);
+}
+
+.header-left p{
+
+    margin:3px 0 0;
+
+    font-size:13px;
+
+    color:#64748b;
+}
+
+.portal-badge{
+
+    padding:10px 22px;
+
+    border-radius:25px;
+
+    background:var(--bg-green-soft);
+
+    color:var(--primary-teal);
+
+    font-size:14px;
+
+    font-weight:700;
+}
+
+/* ================= STEPPER ================= */
+
+.stepper-container{
+
+    width:95%;
+    max-width:1280px;
+
+    margin:10px auto;
+
+    padding:16px;
+
+    background:#ffffff;
+
+    border-radius:18px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:flex-start;
+
+    gap:10px;
+
+    box-shadow:0 6px 20px rgba(0,0,0,.05);
+
+    overflow-x:auto;
+}
+
+.step{
+
+    width:85px;
+
+    text-align:center;
+
+    flex-shrink:0;
+}
+
+.circle{
+
+    width:36px;
+
+    height:36px;
+
+    border-radius:50%;
+
+    border:2px solid #dbe4ef;
+
+    background:#ffffff;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    margin:auto;
+
+    font-size:12px;
+
+    font-weight:600;
+
+    color:#64748b;
+}
+
+.completed .circle{
+
+    background:var(--primary-teal);
+
+    color:white;
+
+    border:none;
+}
+
+.active .circle{
+
+    background:linear-gradient(135deg, var(--primary-teal) 0%, var(--dark-teal) 100%);
+
+    color:white;
+
+    border:none;
+}
+
+.step span{
+
+    display:block;
+
+    margin-top:6px;
+
+    font-size:10px;
+
+    line-height:14px;
+
+    color:#475569;
+}
+
+.line{
+
+    width:24px;
+
+    height:2px;
+
+    background:#dbe4ef;
+
+    margin-top:17px;
+}
+
+.active-line{
+
+    background:var(--primary-teal);
+}
+
+/* ================= CARD ================= */
+
+.wizard-card{
+
+    width:88%;
+
+    max-width:1100px;
+
+    margin:95px auto 15px auto;
+
+    background:#ffffff;
+
+    border-radius:16px;
+
+    overflow:hidden;
+
+    box-shadow:0 4px 15px rgba(0,0,0,.05);
+}
+
+/* ================= CARD HEADER ================= */
+
+.wizard-header{
+
+    position:relative;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    padding:22px 30px;
+
+    border-bottom:1px solid #e5e7eb;
+
+    background:linear-gradient(135deg, #ffffff 0%, var(--bg-green-soft) 100%);
+}
+
+.wizard-header h2{
+
+    margin:0;
+
+    text-align:center;
+
+    font-size:28px;
+
+    font-weight:700;
+
+    color:#0f172a;
+}
+
+.progress-badge{
+
+    position:absolute;
+
+    right:30px;
+
+    top:50%;
+
+    transform:translateY(-50%);
+
+    background:#e8fff0;
+
+    color:var(--primary-teal);
+
+    padding:10px 18px;
+
+    border-radius:20px;
+
+    font-size:13px;
+
+    font-weight:600;
+}
+
+/* ================= FORM BODY ================= */
+
+.form-container{
+
+    padding:16px 20px;
+}
+
+.wizard-body{
+
+    padding:16px 24px 20px;
+}
+
+.section-title{
+
+    margin-bottom:16px;
+}
+
+.section-title h3{
+
+    margin:0;
+
+    font-size:18px;
+
+    font-weight:700;
+
+    color:#0f172a;
+}
+
+.section-title span{
+
+    display:block;
+
+    margin-top:4px;
+
+    color:#64748b;
+
+    font-size:12px;
+}
+
+.center-title{
+
+    text-align:center;
+
+    margin-bottom:20px;
+
+    margin-top:5px;
+}
+
+.center-title h3{
+
+    margin:0;
+
+    font-size:32px;
+
+    font-weight:700;
+
+    color:#0f172a;
+}
+
+.center-title span{
+
+    display:block;
+
+    margin-top:8px;
+
+    font-size:14px;
+
+    color:#64748b;
+}
+/* ================= FORM GRID ================= */
+
+.form-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(2,1fr);
+
+    gap:10px;
+}
+
+.form-group{
+
+    display:flex;
+
+    flex-direction:column;
+
+    margin-bottom:12px;
+}
+
+.form-group label{
+
+    margin-bottom:6px;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    color:#334155;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea{
+
+    width:100%;
+
+    border:2px solid #e2e8f0;
+
+    border-radius:10px;
+
+    padding:10px 12px;
+
+    font-size:13px;
+
+    background:#fff;
+}
+
+.form-group input,
+.form-group select{
+
+    height:40px;
+
+    font-size:12px;
+}
+.form-group textarea{
+
+    min-height:80px;
+
+    resize:vertical;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus{
+
+    outline:none;
+
+    border-color:var(--primary-teal);
+
+    box-shadow:0 0 0 3px rgba(0, 164, 153, .12);
+}
+
+/* ================= ICON GRID ================= */
+
+.icon-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(3,1fr);
+
+    gap:10px;
+
+    margin-top:10px;
+
+    margin-bottom:14px;
+}
+
+/* ================= ICON CARD ================= */
+
+.icon-card{
+
+    background:#ffffff;
+
+    border:2px solid #dbe4ef;
+
+    border-radius:12px;
+
+    min-height:85px;
+
+    padding:8px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
+
+    cursor:pointer;
+
+    transition:.3s ease;
+}
+
+.icon-card:hover{
+
+    border-color:var(--primary-teal);
+
+    background:#f0fdff;
+
+    transform:translateY(-2px);
+}
+
+.icon-card.active{
+
+    border-color:var(--primary-teal);
+
+    background:#f0fdff;
+}
+
+.card-icon{
+
+    font-size:20px;
+
+    margin-bottom:3px;
+}
+
+.icon-card h4{
+
+    margin:0;
+
+    font-size:13px;
+
+    font-weight:700;
+}
+
+.icon-card p{
+
+    margin-top:2px;
+
+    font-size:10px;
+
+    line-height:12px;
+
+    text-align:center;
+}
+
+/* ================= QUANTITY SECTION ================= */
+
+.quantity-section{
+
+    margin-top:15px;
+
+    padding-top:15px;
+
+    border-top:1px solid #e5e7eb;
+}
+
+.full-width{
+
+    margin-top:12px;
+}
+
+.full-width textarea{
+
+    width:100%;
+
+    min-height:80px;
+}
+
+/* ================= BUTTONS ================= */
+
+.footer-buttons{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-top:18px;
+}
+
+.back-btn{
+
+    width:120px;
+
+    height:42px;
+
+    border:2px solid #d1d5db;
+
+    background:#ffffff;
+
+    border-radius:10px;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    cursor:pointer;
+}
+
+.next-btn{
+
+    width:160px;
+
+    height:42px;
+
+    border:none;
+
+    border-radius:10px;
+
+    color:#ffffff;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    background:linear-gradient(90deg, var(--primary-teal) 0%, var(--dark-teal) 100%);
+}
+
+/* ================= SPECIES SUB CARDS ================= */
+
+.sub-card {
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+}
+.sub-card:hover {
+    border-color: var(--primary-teal) !important;
+    background-color: var(--bg-green-soft) !important;
+    color: var(--dark-teal) !important;
+}
+.sub-card.active-sub {
+    border-color: var(--primary-teal) !important;
+    background-color: var(--primary-teal) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(0, 164, 153, 0.2);
+}
+
+/* ================= MULTI-POND TABS ================= */
+
+.pond-tab-pill {
+    background-color: #ffffff;
+    border-color: #cbd5e1 !important;
+    color: #334155;
+    transition: all 0.2s ease-in-out;
+}
+
+.pond-tab-pill:hover {
+    border-color: #047857 !important;
+    background-color: #ecfdf5;
+    color: #047857;
+}
+
+.pond-tab-pill.active-pond-tab {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+    border-color: #047857 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(4, 120, 87, 0.25);
+}
+
+.delete-pond-icon:hover {
+    color: #ef4444 !important;
+    transform: scale(1.2);
+}
+
+.disabled-btn {
+    opacity: 0.55 !important;
+    cursor: not-allowed !important;
+    filter: grayscale(40%);
+    box-shadow: none !important;
+}
+
+/* ================= MOBILE ================= */
+
+@media(max-width:1024px){
+
+    .form-grid,
+    .icon-grid{
+
+        grid-template-columns:repeat(2,1fr);
+    }
+}
+
+@media(max-width:768px){
+
+    .form-grid,
+    .icon-grid{
+
+        grid-template-columns:1fr;
+    }
+
+    .footer-buttons{
+
+        flex-direction:column;
+
+        gap:10px;
+    }
+
+    .back-btn,
+    .next-btn{
+
+        width:100%;
+    }
+}

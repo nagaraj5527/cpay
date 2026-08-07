@@ -1,0 +1,390 @@
+/* ================= PAGE ================= */
+
+html,
+body{
+    margin:0;
+    padding:0;
+    width:100%;
+    min-height:100vh;
+    overflow-y:auto;
+    font-family:'Segoe UI',sans-serif;
+    background:linear-gradient(135deg, var(--bg-green-soft) 0%, #ffffff 100%);
+}
+
+/* ================= HEADER ================= */
+
+.app-header{
+    width:100%;
+    height:85px;
+    background:#ffffff;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 35px;
+    border-bottom:1px solid #e5e7eb;
+    box-shadow:0 4px 15px rgba(0,0,0,.05);
+    position:fixed;
+    top:0;
+    left:0;
+    z-index:9999;
+    box-sizing:border-box;
+}
+
+.header-left{
+    display:flex;
+    align-items:center;
+    gap:15px;
+}
+
+.header-left img{
+    width:55px;
+    height:55px;
+    object-fit:contain;
+}
+
+.header-left h1{
+    margin:0;
+    font-size:24px;
+    font-weight:700;
+    color:var(--dark-teal);
+}
+
+.header-left p{
+    margin:3px 0 0;
+    font-size:13px;
+    color:#64748b;
+}
+
+.portal-badge{
+    padding:10px 22px;
+    border-radius:25px;
+    background:var(--bg-green-soft);
+    color:var(--primary-teal);
+    font-size:14px;
+    font-weight:700;
+}
+
+/* ================= CARD ================= */
+
+.wizard-card{
+    width:85%;
+    max-width:1220px;
+    margin:95px auto 0;
+    background:#ffffff;
+    border-radius:24px;
+    overflow:visible;
+    box-shadow:0 10px 35px rgba(0,0,0,.06);
+}
+
+/* ================= HEADER ================= */
+
+.wizard-header{
+
+    position:relative;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    padding:22px 30px;
+
+    border-bottom:1px solid #e5e7eb;
+
+    background:linear-gradient(135deg, #ffffff 0%, var(--bg-green-soft) 100%);
+}
+
+.wizard-header h2{
+
+    margin:0;
+
+    text-align:center;
+
+    font-size:28px;
+
+    font-weight:700;
+
+    color:#0f172a;
+}
+
+.progress-badge{
+
+    position:absolute;
+
+    right:30px;
+
+    top:50%;
+
+    transform:translateY(-50%);
+
+    background:#e8fff0;
+
+    color:var(--primary-teal);
+
+    padding:10px 18px;
+
+    border-radius:20px;
+
+    font-size:13px;
+
+    font-weight:600;
+}
+
+/* ================= STEPPER ================= */
+
+.stepper-container{
+
+    width:95%;
+    max-width:1280px;
+
+    margin:10px auto;
+
+    padding:16px;
+
+    background:#ffffff;
+
+    border-radius:18px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:flex-start;
+
+    gap:10px;
+
+    box-shadow:0 6px 20px rgba(0,0,0,.05);
+
+    overflow-x:auto;
+}
+
+.step{
+
+    width:85px;
+
+    text-align:center;
+
+    flex-shrink:0;
+}
+
+.circle{
+
+    width:36px;
+
+    height:36px;
+
+    border-radius:50%;
+
+    border:2px solid #dbe4ef;
+
+    background:#ffffff;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    margin:auto;
+
+    font-size:12px;
+
+    font-weight:600;
+
+    color:#64748b;
+}
+
+.completed .circle{
+
+    background:var(--primary-teal);
+
+    color:white;
+
+    border:none;
+}
+
+.active .circle{
+
+    background:linear-gradient(135deg, var(--primary-teal) 0%, var(--dark-teal) 100%);
+
+    color:white;
+
+    border:none;
+}
+
+.step span{
+
+    display:block;
+
+    margin-top:6px;
+
+    font-size:10px;
+
+    line-height:14px;
+
+    color:#475569;
+}
+
+.line{
+
+    width:24px;
+
+    height:2px;
+
+    background:#dbe4ef;
+
+    margin-top:17px;
+}
+
+.active-line{
+
+    background:var(--primary-teal);
+}
+
+/* ================= BODY ================= */
+
+.wizard-body{
+    padding:28px 34px;
+}
+
+.section-title{
+    text-align:center;
+    margin-bottom:25px;
+}
+
+.section-title h3{
+    margin:0;
+    font-size:28px;
+    font-weight:800;
+    color:#0f172a;
+}
+
+.section-title span{
+    display:block;
+    margin-top:8px;
+    color:#64748b;
+    font-size:15px;
+}
+
+/* ================= FORM ================= */
+
+.form-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:20px;
+}
+
+.form-group{
+    display:flex;
+    flex-direction:column;
+}
+
+.form-group label{
+    margin-bottom:8px;
+    font-size:14px;
+    font-weight:600;
+    color:#334155;
+}
+
+.form-group input,
+.form-group select{
+    width:100%;
+    height:52px;
+    border:2px solid #e2e8f0;
+    border-radius:14px;
+    padding:0 15px;
+    font-size:14px;
+    background:#ffffff;
+    box-sizing:border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus{
+    outline:none;
+    border-color:var(--primary-teal);
+    box-shadow:0 0 0 4px rgba(0, 164, 153, .12);
+}
+
+
+
+/* ================= BUTTONS ================= */
+
+.footer-buttons{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:28px;
+}
+
+.back-btn{
+    width:120px;
+    height:42px;
+    border:2px solid #d1d5db;
+    background:#ffffff;
+    border-radius:12px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+}
+
+.next-btn{
+    width:170px;
+    height:44px;
+    border:none;
+    border-radius:12px;
+    color:white;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    background:linear-gradient(90deg, var(--primary-teal) 0%, var(--dark-teal) 100%);
+    box-shadow:0 8px 20px rgba(0, 164, 153, .25);
+}
+
+/* ================= MOBILE ================= */
+
+@media(max-width:1024px){
+
+    html,
+    body{
+        overflow:auto;
+    }
+
+    .form-grid{
+        grid-template-columns:1fr;
+    }
+
+    .form-group:last-child{
+        grid-column:auto;
+    }
+}
+
+@media(max-width:768px){
+
+    .wizard-card{
+        width:95%;
+    }
+
+    .wizard-header{
+        padding-top:55px;
+    }
+
+    .progress-badge{
+        right:15px;
+        top:10px;
+    }
+
+    .footer-buttons{
+        flex-direction:column;
+        gap:12px;
+    }
+
+    .back-btn,
+    .next-btn{
+        width:100%;
+    }
+
+    .section-title h3{
+        font-size:24px;
+    }
+}

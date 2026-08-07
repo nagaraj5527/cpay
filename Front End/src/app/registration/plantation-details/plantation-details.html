@@ -1,0 +1,700 @@
+<!-- ================= C-PAY HEADER ================= -->
+
+<header class="app-header">
+
+    <div class="header-left">
+
+        <img
+            src="/logo.jpg"
+            alt="C-PAY Logo">
+
+        <div>
+
+            <h1><span style="color: var(--primary-teal);">C-</span><span style="color: #000000;">PAY</span></h1>
+
+            <p>Carbon Credit Registration & Verification System</p>
+
+        </div>
+
+    </div>
+
+    <div class="portal-badge">
+
+        C-PAY Portal
+
+    </div>
+
+</header>
+
+<!-- ================= MAIN CARD ================= -->
+
+<div class="wizard-card">
+
+    <!-- ================= HEADER ================= -->
+
+    <div class="wizard-header">
+
+    <div>
+
+        <h2>
+            PLANTATION & AQUACULTURE DETAILS
+        </h2>
+
+    </div>
+
+    <div class="progress-badge">
+
+        Step 5 of 8
+
+    </div>
+
+</div>
+
+    <!-- ================= STEPPER ================= -->
+
+    <div class="stepper-container">
+
+        <div class="step completed" (click)="goToStep(1)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>User Type</span>
+        </div>
+
+        <div class="line active-line"></div>
+
+        <div class="step completed" (click)="goToStep(2)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>Personal Details</span>
+        </div>
+
+        <div class="line active-line"></div>
+
+        <div class="step completed" (click)="goToStep(3)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>Address Details</span>
+        </div>
+
+        <div class="line active-line"></div>
+
+        <div class="step completed" (click)="goToStep(4)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>Land Details</span>
+        </div>
+
+        <div class="line active-line"></div>
+
+        <div class="step active">
+            <div class="circle">5</div>
+            <span>Plantation</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">6</div>
+            <span>Calculator</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">7</div>
+            <span>Consent</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">8</div>
+            <span>Preview</span>
+        </div>
+
+    </div>
+
+    <!-- ================= BODY ================= -->
+
+    <div class="wizard-body">
+
+        <!-- ================= SECTION TITLE ================= -->
+
+        <div class="section-title center-title">
+
+            <h3>
+                Plantation & Aquaculture Information
+            </h3>
+
+            <span>
+                Select land type, categories, species, and multi-pond details to register
+            </span>
+
+        </div>
+
+        <!-- ================= LAND TYPE ================= -->
+
+        <div class="form-group">
+
+            <label>
+                Land Type / Location *
+            </label>
+
+        </div>
+
+        <div class="icon-grid">
+
+            <div
+                class="icon-card"
+                [class.active]="selectedLandType === 'Open Land'"
+                (click)="selectLandType('Open Land')">
+
+                <div class="card-icon">🌱</div>
+
+                <h4>Open Land</h4>
+
+                <p>Vacant plantation area</p>
+
+            </div>
+
+            <div
+                class="icon-card"
+                [class.active]="selectedLandType === 'Fish Pond'"
+                (click)="selectLandType('Fish Pond')">
+
+                <div class="card-icon">🐟</div>
+
+                <h4>Fish Pond</h4>
+
+                <p>Aquaculture area</p>
+
+            </div>
+
+            <div
+                class="icon-card"
+                [class.active]="selectedLandType === 'Govt Land'"
+                (click)="selectLandType('Govt Land')">
+
+                <div class="card-icon">🏛️</div>
+
+                <h4>Govt Land</h4>
+
+                <p>Government allocated land</p>
+
+            </div>
+
+            <div
+                class="icon-card"
+                [class.active]="selectedLandType === 'House'"
+                (click)="selectLandType('House')">
+
+                <div class="card-icon">🏠</div>
+
+                <h4>House</h4>
+
+                <p>Residential plantation</p>
+
+            </div>
+
+        </div>
+
+        <!-- ================= CATEGORY (ONLY SHOWN IF LAND TYPE SELECTED) ================= -->
+
+        <div *ngIf="selectedLandType" class="mt-4">
+
+            <div class="form-group">
+
+                <label>
+                    {{ selectedLandType === 'Fish Pond' ? 'Aquaculture Type / Category *' : 'Plantation Type / Category *' }}
+                </label>
+
+            </div>
+
+            <!-- Display standard categories if NOT Fish Pond -->
+            <div class="icon-grid" *ngIf="selectedLandType !== 'Fish Pond'">
+
+                <div
+                    class="icon-card"
+                    [class.active]="selectedPlantationType === 'Tree'"
+                    (click)="selectPlantationType('Tree')">
+
+                    <div class="card-icon">🌳</div>
+
+                    <h4>Tree</h4>
+
+                    <p>Seller tree plantation</p>
+
+                </div>
+
+                <div
+                    class="icon-card"
+                    [class.active]="selectedPlantationType === 'Crop'"
+                    (click)="selectPlantationType('Crop')">
+
+                    <div class="card-icon">🌾</div>
+
+                    <h4>Crop</h4>
+
+                    <p>Agricultural crops</p>
+
+                </div>
+
+                <div
+                    class="icon-card"
+                    [class.active]="selectedPlantationType === 'Garden'"
+                    (click)="selectPlantationType('Garden')">
+
+                    <div class="card-icon">🌿</div>
+
+                    <h4>Garden</h4>
+
+                    <p>Garden plantation</p>
+
+                </div>
+
+                <div
+                    class="icon-card"
+                    [class.active]="selectedPlantationType === 'Mangrove'"
+                    (click)="selectPlantationType('Mangrove')">
+
+                    <div class="card-icon">🌱</div>
+
+                    <h4>Mangrove</h4>
+
+                    <p>Coastal plantation</p>
+
+                </div>
+
+                <div
+                    class="icon-card"
+                    [class.active]="selectedPlantationType === 'Other'"
+                    (click)="selectPlantationType('Other')">
+
+                    <div class="card-icon">➕</div>
+
+                    <h4>Other</h4>
+
+                    <p>Custom plantation type</p>
+
+                </div>
+
+            </div>
+
+            <!-- Display aquaculture categories if Fish Pond -->
+            <div class="icon-grid" *ngIf="selectedLandType === 'Fish Pond'">
+
+                <div
+                    class="icon-card"
+                    [class.active]="selectedPlantationType === 'Fish'"
+                    (click)="selectPlantationType('Fish')">
+
+                    <div class="card-icon">🐟</div>
+
+                    <h4>Fish</h4>
+
+                    <p>Fish farming / aquaculture</p>
+
+                </div>
+
+                <div
+                    class="icon-card"
+                    [class.active]="selectedPlantationType === 'Prawns'"
+                    (click)="selectPlantationType('Prawns')">
+
+                    <div class="card-icon">🦐</div>
+
+                    <h4>Prawns</h4>
+
+                    <p>Prawn / shrimp farming</p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ================= MULTI-POND AQUACULTURE MANAGEMENT SECTION ================= -->
+        <div *ngIf="selectedLandType === 'Fish Pond' && (selectedPlantationType === 'Fish' || selectedPlantationType === 'Prawns')" class="mt-4">
+
+            <!-- Pond Navigation Tabs Bar -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 p-3 border rounded-3" style="background-color: #f8fafc; border-color: #cbd5e1 !important;">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="fw-bold text-dark me-2" style="font-size: 15px;"><i class="bi bi-layers-half text-teal me-1"></i> Ponds Registered:</span>
+
+                    <div *ngFor="let pond of ponds; let idx = index" 
+                         class="pond-tab-pill d-flex align-items-center gap-2 px-3 py-2 border rounded-pill"
+                         [class.active-pond-tab]="idx === activePondIndex"
+                         (click)="switchPond(idx)"
+                         style="cursor: pointer; font-weight: 600; font-size: 13.5px; transition: all 0.2s ease;">
+                        <span>{{ pond.name }} ({{ pond.selectedSpecies || 'No Species' }})</span>
+                        <span *ngIf="ponds.length > 1" 
+                              class="text-danger ms-1 delete-pond-icon" 
+                              title="Delete Pond"
+                              (click)="$event.stopPropagation(); removePond(idx)"
+                              style="font-size: 16px; font-weight: bold; cursor: pointer;">×</span>
+                    </div>
+                </div>
+
+                <!-- + Add Pond Button -->
+                <button 
+                    class="btn add-pond-btn px-4 py-2 rounded-pill fw-bold text-white d-flex align-items-center gap-2"
+                    [disabled]="!isActivePondValid()"
+                    [class.disabled-btn]="!isActivePondValid()"
+                    (click)="addPond()"
+                    style="background: linear-gradient(135deg, #047857 0%, #059669 100%); border: none; font-size: 14px; box-shadow: 0 4px 12px rgba(4, 120, 87, 0.25); cursor: pointer;">
+                    <span>+ Add Pond</span>
+                </button>
+            </div>
+
+            <!-- Real-time Active Pond Validation Error Feedback Banner -->
+            <div *ngIf="validationErrors.length > 0" class="alert alert-warning border-start border-4 border-warning p-3 mb-4 rounded-3 text-start" style="background-color: #fffbe6; color: #856404;">
+                <div class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill me-2"></i> {{ getActivePond().name }} Validation Requirements:</div>
+                <ul class="mb-0 ps-3" style="font-size: 13.5px;">
+                    <li *ngFor="let err of validationErrors">{{ err }}</li>
+                </ul>
+                <div class="mt-2 text-muted" style="font-size: 12px; font-style: italic;">
+                    * Complete all required fields above to enable adding subsequent ponds (Pond 2, Pond 3, etc.).
+                </div>
+            </div>
+
+            <!-- Active Pond Details Container -->
+            <div class="imc-container p-4 border rounded-3 mb-4 text-start" style="background-color: #ffffff; border: 2px solid #00a499 !important; border-radius: 16px; box-shadow: 0 10px 25px rgba(0, 164, 153, 0.08);">
+
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                    <span class="badge px-4 py-2 text-white" style="background-color: #047857; border-radius: 20px; font-weight: 700; font-size: 15px; letter-spacing: 0.5px;">
+                        🌊 {{ getActivePond().name }} Details ({{ getActivePond().aquacultureType }})
+                    </span>
+                    <span class="text-muted fw-semibold" style="font-size: 13px;">
+                        Active Pond {{ activePondIndex + 1 }} of {{ ponds.length }}
+                    </span>
+                </div>
+
+                <!-- Species Selection for Active Pond -->
+                <div class="mb-4">
+                    <div class="form-group mb-2 text-start">
+                        <label class="fw-bold text-dark">Select Species for {{ getActivePond().name }} *</label>
+                    </div>
+
+                    <!-- Fish Species Options -->
+                    <div *ngIf="selectedPlantationType === 'Fish'" class="d-flex flex-wrap gap-2 justify-content-start">
+                        <div class="sub-card px-4 py-2 border rounded-pill text-center" 
+                             [class.active-sub]="getActivePond().selectedSpecies === 'IMC'"
+                             (click)="selectSpeciesForActivePond('IMC')"
+                             style="cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s ease;">
+                            🐟 IMC (Indian Major Carp)
+                        </div>
+                        <div class="sub-card px-4 py-2 border rounded-pill text-center" 
+                             [class.active-sub]="getActivePond().selectedSpecies === 'Pangasius'"
+                             (click)="selectSpeciesForActivePond('Pangasius')"
+                             style="cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s ease;">
+                            🐟 Pangasius
+                        </div>
+                        <div class="sub-card px-4 py-2 border rounded-pill text-center" 
+                             [class.active-sub]="getActivePond().selectedSpecies === 'Roopchand' || getActivePond().selectedSpecies === 'Red Pacu'"
+                             (click)="selectSpeciesForActivePond('Roopchand')"
+                             style="cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s ease;">
+                            🐟 Roopchand (Red Pacu)
+                        </div>
+                        <div class="sub-card px-4 py-2 border rounded-pill text-center" 
+                             [class.active-sub]="getActivePond().selectedSpecies === 'Tilapia'"
+                             (click)="selectSpeciesForActivePond('Tilapia')"
+                             style="cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s ease;">
+                            🐟 Tilapia (Nile / GIFT)
+                        </div>
+                    </div>
+
+                    <!-- Prawn Species Options -->
+                    <div *ngIf="selectedPlantationType === 'Prawns'" class="d-flex flex-wrap gap-2 justify-content-start">
+                        <div class="sub-card px-4 py-2 border rounded-pill text-center" 
+                             [class.active-sub]="getActivePond().selectedSpecies === 'P. vannamei' || getActivePond().selectedSpecies === 'Vannamei (Whiteleg)'"
+                             (click)="selectSpeciesForActivePond('P. vannamei')"
+                             style="cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s ease;">
+                            🦐 P. vannamei (Whiteleg)
+                        </div>
+                        <div class="sub-card px-4 py-2 border rounded-pill text-center" 
+                             [class.active-sub]="getActivePond().selectedSpecies === 'P. monodon' || getActivePond().selectedSpecies === 'Tiger Prawn'"
+                             (click)="selectSpeciesForActivePond('P. monodon')"
+                             style="cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s ease;">
+                            🦐 P. monodon (Giant Tiger Prawn)
+                        </div>
+                        <div class="sub-card px-4 py-2 border rounded-pill text-center" 
+                             [class.active-sub]="getActivePond().selectedSpecies === 'Scampi (Freshwater)'"
+                             (click)="selectSpeciesForActivePond('Scampi (Freshwater)')"
+                             style="cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s ease;">
+                            🦐 Scampi (Freshwater)
+                        </div>
+                        <div class="sub-card px-4 py-2 border rounded-pill text-center" 
+                             [class.active-sub]="getActivePond().selectedSpecies === 'Banana Prawn'"
+                             (click)="selectSpeciesForActivePond('Banana Prawn')"
+                             style="cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s ease;">
+                            🦐 Banana Prawn
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Module 1.1: Stocking & Species Growth Parameters -->
+                <h6 class="fw-bold mb-3 border-bottom pb-2 text-teal" style="color: #047857;"><i class="bi bi-water me-2"></i>1. Stocking & Species Growth Parameters</h6>
+                <div class="form-grid mb-4">
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Stocking Density (pcs/ha) *</label>
+                        <input type="number" name="stockingDensity" [(ngModel)]="getActivePond().stockingDensity" (ngModelChange)="validateActivePond()" placeholder="e.g. 6250">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Stocking Weight (g) *</label>
+                        <input type="number" name="stockingWeightG" [(ngModel)]="getActivePond().stockingWeightG" (ngModelChange)="validateActivePond()" placeholder="e.g. 150">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Partial Harvest Weight (g)</label>
+                        <input type="number" name="partialHarvestWeightG" [(ngModel)]="getActivePond().partialHarvestWeightG" placeholder="e.g. 1000">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Final Harvest Weight (g) *</label>
+                        <input type="number" name="finalHarvestWeightG" [(ngModel)]="getActivePond().finalHarvestWeightG" (ngModelChange)="validateActivePond()" placeholder="e.g. 1500">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Culture Duration (Days) *</label>
+                        <input type="number" name="cultureDurationDays" [(ngModel)]="getActivePond().cultureDurationDays" (ngModelChange)="validateActivePond()" placeholder="e.g. 240">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Survival Fraction (0 - 1) *</label>
+                        <input type="number" step="0.01" name="survivalFraction" [(ngModel)]="getActivePond().survivalFraction" (ngModelChange)="validateActivePond()" placeholder="e.g. 0.80">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Baseline FCR (average_fcr) *</label>
+                        <input type="number" step="0.1" name="averageFcr" [(ngModel)]="getActivePond().averageFcr" (ngModelChange)="validateActivePond()" placeholder="e.g. 3.0">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Improved FCR Target</label>
+                        <input type="number" step="0.1" name="improvedFcrTarget" [(ngModel)]="getActivePond().improvedFcrTarget" placeholder="e.g. 2.5">
+                    </div>
+                </div>
+
+                <!-- Module 2.1: Farm & Crop Inputs -->
+                <h6 class="fw-bold mb-3 border-bottom pb-2 text-teal" style="color: #047857;"><i class="bi bi-geo-alt me-2"></i>2. Farm & Crop Inputs</h6>
+                <div class="form-grid mb-4">
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Pond Area (Hectares) *</label>
+                        <input type="number" step="0.1" name="pondAreaHa" [(ngModel)]="getActivePond().pondAreaHa" (ngModelChange)="validateActivePond()" placeholder="e.g. 1.0">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Water Depth (meters)</label>
+                        <input type="number" step="0.1" name="waterDepthM" [(ngModel)]="getActivePond().waterDepthM" placeholder="e.g. 1.5">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Crops per Year (crops/yr) *</label>
+                        <input type="number" step="0.1" name="cropsPerYear" [(ngModel)]="getActivePond().cropsPerYear" (ngModelChange)="validateActivePond()" placeholder="e.g. 1.5">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">GWP Framework</label>
+                        <app-custom-select [options]="gwpOptions" [(ngModel)]="getActivePond().gwpFramework" name="gwpFramework" placeholder="Select Framework"></app-custom-select>
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Farm-Reported FCR Override</label>
+                        <input type="number" step="0.1" name="farmReportedFcr" [(ngModel)]="getActivePond().farmReportedFcr" placeholder="e.g. 3.0">
+                    </div>
+                </div>
+
+                <!-- Module 3.1 & 4.1: Growth Model & Harvest Event Inputs -->
+                <h6 class="fw-bold mb-3 border-bottom pb-2 text-teal" style="color: #047857;"><i class="bi bi-graph-up me-2"></i>3. Growth Curve & Harvest Event Options</h6>
+                <div class="form-grid mb-4">
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Growth Curve Model</label>
+                        <app-custom-select [options]="growthCurveOptions" [(ngModel)]="getActivePond().growthCurveType" name="growthCurveType" placeholder="Select Curve"></app-custom-select>
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Mortality Feed Factor (0 - 1)</label>
+                        <input type="number" step="0.05" name="mortalityFeedFactor" [(ngModel)]="getActivePond().mortalityFeedFactor" placeholder="e.g. 0.5">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Harvest Event Day (Days)</label>
+                        <input type="number" name="eventDay" [(ngModel)]="getActivePond().eventDay" placeholder="e.g. 200">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Event Harvest Share (fraction 0-1)</label>
+                        <input type="number" step="0.05" name="eventPctHarvested" [(ngModel)]="getActivePond().eventPctHarvested" placeholder="e.g. 0.20">
+                    </div>
+                </div>
+
+                <!-- Module 6.1: Pond & Soil Emission Inputs -->
+                <h6 class="fw-bold mb-3 border-bottom pb-2 text-teal" style="color: #047857;"><i class="bi bi-flower1 me-2"></i>4. Pond Soil, Fertilizer & Emission Inputs</h6>
+                <div class="form-grid mb-4">
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Baseline Anaerobic Fraction (0-1)</label>
+                        <input type="number" step="0.01" name="anaerobicFraction" [(ngModel)]="getActivePond().anaerobicFraction" placeholder="e.g. 0.20">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Anaerobic Adjustment Factor</label>
+                        <input type="number" step="0.05" name="anaerobicAdjustmentFactor" [(ngModel)]="getActivePond().anaerobicAdjustmentFactor" placeholder="e.g. 1.0">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Sediment Burial Fraction</label>
+                        <input type="number" step="0.01" name="sedimentBurialFraction" [(ngModel)]="getActivePond().sedimentBurialFraction" placeholder="e.g. 0.20">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">CH4 Oxidation Fraction</label>
+                        <input type="number" step="0.01" name="ch4OxidationFraction" [(ngModel)]="getActivePond().ch4OxidationFraction" placeholder="e.g. 0.25">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Lime Applied per Crop (kg)</label>
+                        <input type="number" name="limeAppliedKg" [(ngModel)]="getActivePond().limeAppliedKg" placeholder="e.g. 200">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Synthetic Fertilizer N (kg)</label>
+                        <input type="number" name="fertilizerNKg" [(ngModel)]="getActivePond().fertilizerNKg" placeholder="e.g. 0">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Pond Idle Bottom Exposure (Days)</label>
+                        <input type="number" name="idleDays" [(ngModel)]="getActivePond().idleDays" placeholder="e.g. 20">
+                    </div>
+                </div>
+
+                <!-- Module 7.1: Energy Engine Inputs -->
+                <h6 class="fw-bold mb-3 border-bottom pb-2 text-teal" style="color: #047857;"><i class="bi bi-lightning-charge me-2"></i>5. Energy, Fuel & Aeration Inputs</h6>
+                <div class="form-grid mb-4">
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Paddlewheel Aerator HP</label>
+                        <input type="number" name="paddlewheelHp" [(ngModel)]="getActivePond().paddlewheelHp" placeholder="e.g. 2">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Paddlewheel Aerator Units</label>
+                        <input type="number" name="paddlewheelUnits" [(ngModel)]="getActivePond().paddlewheelUnits" placeholder="e.g. 4">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Paddlewheel Operating Hours/Day</label>
+                        <input type="number" name="paddlewheelHours" [(ngModel)]="getActivePond().paddlewheelHours" placeholder="e.g. 8">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Diesel Fuel Baseline (L/crop)</label>
+                        <input type="number" name="dieselL" [(ngModel)]="getActivePond().dieselL" placeholder="e.g. 500">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Grid Electricity (kWh/crop)</label>
+                        <input type="number" name="gridKwh" [(ngModel)]="getActivePond().gridKwh" placeholder="e.g. 500">
+                    </div>
+                </div>
+
+                <!-- Module 8.1: Economics Inputs -->
+                <h6 class="fw-bold mb-3 border-bottom pb-2 text-teal" style="color: #047857;"><i class="bi bi-cash-stack me-2"></i>6. Farm Economics & Market Price Inputs</h6>
+                <div class="form-grid mb-4">
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Feed Price (₹ / kg) *</label>
+                        <input type="number" name="feedPrice" [(ngModel)]="getActivePond().feedPrice" (ngModelChange)="validateActivePond()" placeholder="e.g. 45">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Electricity Tariff (₹ / kWh)</label>
+                        <input type="number" step="0.1" name="electricityTariff" [(ngModel)]="getActivePond().electricityTariff" placeholder="e.g. 7.0">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Diesel Price (₹ / L)</label>
+                        <input type="number" name="dieselPrice" [(ngModel)]="getActivePond().dieselPrice" placeholder="e.g. 92">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Seed / Fingerling Price (₹ / pcs)</label>
+                        <input type="number" step="0.1" name="seedPrice" [(ngModel)]="getActivePond().seedPrice" placeholder="e.g. 3.5">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Labour Cost per Crop (₹)</label>
+                        <input type="number" name="labourCost" [(ngModel)]="getActivePond().labourCost" placeholder="e.g. 60000">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Probiotics & Chemical Cost (₹)</label>
+                        <input type="number" name="probioticsCost" [(ngModel)]="getActivePond().probioticsCost" placeholder="e.g. 25000">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Other Operational Costs (₹)</label>
+                        <input type="number" name="otherCosts" [(ngModel)]="getActivePond().otherCosts" placeholder="e.g. 20000">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Harvest Market Sale Price (₹ / kg) *</label>
+                        <input type="number" name="salePrice" [(ngModel)]="getActivePond().salePrice" (ngModelChange)="validateActivePond()" placeholder="e.g. 130">
+                    </div>
+                </div>
+
+                <!-- Module 10.1: Biomass Carbon Inputs -->
+                <h6 class="fw-bold mb-3 border-bottom pb-2 text-teal" style="color: #047857;"><i class="bi bi-pie-chart me-2"></i>7. Biomass Carbon & Dressing Yield Parameters</h6>
+                <div class="form-grid">
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Harvested Biomass Carbon Content (fraction 0-1)</label>
+                        <input type="number" step="0.01" name="biomassCarbonPct" [(ngModel)]="getActivePond().biomassCarbonPct" placeholder="e.g. 0.08">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Edible Dressing Yield Fraction (fraction 0-1)</label>
+                        <input type="number" step="0.01" name="edibleYieldFraction" [(ngModel)]="getActivePond().edibleYieldFraction" placeholder="e.g. 0.65">
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Standard Fields (shown for Standard Land Types e.g. Tree, Crop, Mangrove, Garden) -->
+        <div class="form-grid mt-4" *ngIf="selectedPlantationType && selectedLandType !== 'Fish Pond'">
+
+            <!-- Number of Stocked Units / Trees -->
+            <div class="form-group">
+                <label>
+                    Number of Trees / Plants *
+                </label>
+
+                <input
+                    type="number"
+                    name="quantity"
+                    [(ngModel)]="quantity"
+                    placeholder="Enter quantity">
+            </div>
+
+            <!-- Age / Culture Period -->
+            <div class="form-group">
+                <label>
+                    Age (Years) *
+                </label>
+
+                <input
+                    type="number"
+                    name="age"
+                    [(ngModel)]="age"
+                    placeholder="Enter age in years">
+            </div>
+
+            <!-- Area -->
+            <div class="form-group">
+                <label>
+                    Area Under Plantation *
+                </label>
+
+                <input
+                    type="number"
+                    name="area"
+                    [(ngModel)]="area"
+                    placeholder="Enter area size">
+            </div>
+
+            <!-- Unit -->
+            <div class="form-group">
+                <label>Unit *</label>
+                <app-custom-select [options]="['Acre', 'Hectare', 'Sq.ft', 'Guntha', 'Sq.Yards']" [(ngModel)]="unit" name="unit" placeholder="Select Unit"></app-custom-select>
+            </div>
+
+        </div>
+
+        <!-- ================= BUTTONS ================= -->
+
+        <div class="footer-buttons">
+
+            <button
+                class="back-btn"
+                (click)="back()">
+
+                ← Back
+
+            </button>
+
+            <button
+                class="next-btn"
+                (click)="next()">
+
+                Continue →
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>

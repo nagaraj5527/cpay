@@ -1,0 +1,435 @@
+<!-- ================= APCCB HEADER ================= -->
+<header class="app-header">
+    <div class="header-left">
+        <img src="/logo.jpg" alt="C-PAY Logo">
+        <div>
+            <h1><span style="color: var(--primary-teal);">C-</span><span style="color: #000000;">PAY</span></h1>
+            <!-- <p>Carbon Credit Registration & Trading System</p> -->
+        </div>
+    </div>
+    <div class="portal-badge">
+        C-PAY Portal
+    </div>
+</header>
+
+<!-- ================= MAIN CARD ================= -->
+<div class="wizard-card">
+
+    <!-- ================= HEADER ================= -->
+    <div class="wizard-header">
+        <div>
+            <h2>BUYER REGISTRATION</h2>
+        </div>
+    </div>
+
+    <!-- ================= STEPPER ================= -->
+    <div class="stepper-container">
+        <div class="step" [class.active]="currentStep === 1" [class.completed]="currentStep > 1" (click)="goToStep(1)" style="cursor: pointer;">
+            <div class="circle">1</div>
+            <span>Buyer Type</span>
+        </div>
+        <div class="line" [class.active-line]="currentStep > 1"></div>
+        
+        <div class="step" [class.active]="currentStep === 2" [class.completed]="currentStep > 2" (click)="goToStep(2)" style="cursor: pointer;">
+            <div class="circle">2</div>
+            <span>Details</span>
+        </div>
+        <div class="line" [class.active-line]="currentStep > 2"></div>
+
+        <div class="step" [class.active]="currentStep === 3" [class.completed]="currentStep > 3" (click)="goToStep(3)" style="cursor: pointer;">
+            <div class="circle">3</div>
+            <span>Bank</span>
+        </div>
+        <div class="line" [class.active-line]="currentStep > 3"></div>
+
+        <div class="step" [class.active]="currentStep === 4" [class.completed]="currentStep > 4" (click)="goToStep(4)" style="cursor: pointer;">
+            <div class="circle">4</div>
+            <span>Documents</span>
+        </div>
+        <div class="line" [class.active-line]="currentStep > 4"></div>
+
+        <div class="step" [class.active]="currentStep === 5" [class.completed]="currentStep > 5" (click)="goToStep(5)" style="cursor: pointer;">
+            <div class="circle">5</div>
+            <span>Submit</span>
+        </div>
+    </div>
+    
+    <!-- ================= BODY ================= -->
+    <div class="wizard-body">
+
+        <!-- ================= STEP 1: BUYER TYPE ================= -->
+        <div *ngIf="currentStep === 1">
+            <div class="section-title center-title">
+                <h3>Buyer Information</h3>
+                <span>Select your buyer registration type</span>
+            </div>
+
+            <div class="modern-section">
+                <div class="section-left">
+                    <div class="section-icon">👤</div>
+                    <div>
+                        <h3>Buyer Type</h3>
+                        <p>Select your buyer registration type</p>
+                    </div>
+                </div>
+                <div class="section-right">
+                    <div class="modern-card-grid">
+                        <div class="modern-card" [class.active]="selectedBuyerType === 'Company Buyer'" (click)="selectBuyerType('Company Buyer')">
+                            <div class="radio-circle"></div>
+                            <div class="modern-icon">🏢</div>
+                            <h4>Corporate Entities</h4>
+                            <p>Business organization</p>
+                        </div>
+
+                        <div class="modern-card" [class.active]="selectedBuyerType === 'Government Agency'" (click)="selectBuyerType('Government Agency')">
+                            <div class="radio-circle"></div>
+                            <div class="modern-icon">🏛️</div>
+                            <h4>Government and Public</h4>
+                            <p>Government department</p>
+                        </div>  
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= STEP 2: BUYER DETAILS ================= -->
+        <div *ngIf="currentStep === 2">
+            <div class="section-title center-title">
+                <h3>{{ selectedBuyerType === 'Seller Buyer' ? 'Personal Details' : 'Buyer Details' }}</h3>
+                <span>{{ selectedBuyerType === 'Seller Buyer' ? 'Enter your personal and registration information' : 'Enter your business and registration information' }}</span>
+            </div>
+
+            <div class="modern-section">
+                <div class="section-left">
+                    <div class="section-icon">📋</div>
+                    <div>
+                        <h3>{{ selectedBuyerType === 'Seller Buyer' ? 'Personal Details' : 'Buyer Details' }}</h3>
+                        <p>{{ selectedBuyerType === 'Seller Buyer' ? 'Enter your personal registration details.' : 'Enter buyer registration details and business information.' }}</p>
+                    </div>
+                </div>
+                <div class="section-right">
+                    <div class="modern-form-grid">
+                        <div class="modern-form-group">
+                            <label>{{ selectedBuyerType === 'Seller Buyer' ? 'Full Name' : 'Buyer Name' }} <span>*</span></label>
+                            <div class="input-box">
+                                <span class="input-icon">👤</span>
+                                <input type="text" [(ngModel)]="buyerName" name="buyerName" [placeholder]="selectedBuyerType === 'Seller Buyer' ? 'Enter your full name' : 'Enter buyer name'">
+                            </div>
+                        </div>
+
+                        <div class="modern-form-group" *ngIf="selectedBuyerType !== 'Seller Buyer'">
+                            <label>Company Name</label>
+                            <div class="input-box">
+                                <span class="input-icon">🏢</span>
+                                <input type="text" [(ngModel)]="companyName" name="companyName" placeholder="Enter company name">
+                            </div>
+                        </div>
+
+                        <div class="modern-form-group">
+                            <label>{{ selectedBuyerType === 'Seller Buyer' ? 'PAN Card Number' : 'PAN Number' }} <span>*</span></label>
+                            <div class="input-box">
+                                <span class="input-icon">🪪</span>
+                                <input type="text" [(ngModel)]="panNumber" name="panNumber" placeholder="ABCDE1234F">
+                            </div>
+                        </div>
+
+                        <div class="modern-form-group" *ngIf="selectedBuyerType === 'Seller Buyer'">
+                            <label>Aadhaar Card Number <span>*</span></label>
+                            <div class="input-box">
+                                <span class="input-icon">🪪</span>
+                                <input type="text" [(ngModel)]="aadhaarNumber" name="aadhaarNumber" placeholder="Enter 12-digit Aadhaar Number">
+                            </div>
+                        </div>
+
+                        <div class="modern-form-group" *ngIf="selectedBuyerType !== 'Seller Buyer'">
+                            <label>GST Number</label>
+                            <div class="input-box">
+                                <span class="input-icon">🧾</span>
+                                <input type="text" [(ngModel)]="gstNumber" name="gstNumber" placeholder="Enter GST Number">
+                            </div>
+                        </div>
+
+                        <div class="modern-form-group">
+                            <label>Email Address <span>*</span></label>
+                            <div class="input-box">
+                                <span class="input-icon">📧</span>
+                                <input type="email" [(ngModel)]="email" name="email" placeholder="Enter email address">
+                            </div>
+                        </div>
+
+                        <div class="modern-form-group">
+                            <label>Mobile Number <span>*</span></label>
+                            <div class="input-box">
+                                <input type="text" list="countryCodes" [(ngModel)]="countryCode" name="countryCode" placeholder="+91" maxlength="7" style="max-width: 75px; border: none; border-right: 2px solid #dbe7f3; border-radius: 0; background: transparent; padding-right: 5px; outline: none; height: 100%; font-weight: 500; font-size: 14px; text-align: center;">
+                                <datalist id="countryCodes">
+                                    @for (c of countriesList; track c.name) {
+                                        <option [value]="c.code">{{ c.flag }} {{ c.name }}</option>
+                                    }
+                                </datalist>
+                                <span class="input-icon" style="margin-left: 10px;">📱</span>
+                                <input type="tel" [(ngModel)]="mobile" name="mobile" placeholder="Enter mobile number">
+                            </div>
+                        </div>
+
+                        <div class="modern-form-group" *ngIf="selectedBuyerType !== 'Seller Buyer'">
+                            <label>Company Registration ID</label>
+                            <div class="input-box">
+                                <span class="input-icon">📄</span>
+                                <input type="text" [(ngModel)]="regId" name="regId" placeholder="Enter company registration ID">
+                            </div>
+                        </div>
+
+                        <div class="modern-form-group" *ngIf="selectedBuyerType !== 'Seller Buyer'">
+                            <label>Experience</label>
+                            <div class="input-box">
+                                <span class="input-icon">⭐</span>
+                                <app-custom-select 
+                                  [options]="experienceOptions" 
+                                  [(ngModel)]="experience" 
+                                  name="experience"
+                                  placeholder="Select Experience"
+                                  style="width: 100%;">
+                                </app-custom-select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= STEP 3: BANK DETAILS ================= -->
+        <div *ngIf="currentStep === 3">
+            <div class="section-title center-title">
+                <h3>Bank Details</h3>
+                <span>Enter bank account details for transaction payouts</span>
+            </div>
+
+            <div class="modern-section">
+                <div class="section-left">
+                    <div class="section-icon">🏦</div>
+                    <div>
+                        <h3>Bank Details</h3>
+                        <p>Enter your bank account information for carbon credit transactions.</p>
+                    </div>
+                </div>
+                <div class="section-right">
+                    <div class="modern-form-grid">
+                        <div class="modern-form-group">
+                            <label>Account Holder Name <span>*</span></label>
+                            <div class="input-box">
+                                <span class="input-icon">👤</span>
+                                <input type="text" [(ngModel)]="accountHolderName" name="accountHolderName" placeholder="Enter Account Holder Name">
+                            </div>
+                        </div>
+
+                        <div class="modern-form-group">
+                            <label>Bank Name <span>*</span></label>
+                            <div class="input-box">
+                                <span class="input-icon">🏦</span>
+                                <input type="text" [(ngModel)]="bankName" name="bankName" placeholder="Enter Bank Name">
+                            </div>
+                        </div>
+
+                        <div class="modern-form-group">
+                            <label>Account Number <span>*</span></label>
+                            <div class="input-box">
+                                <span class="input-icon">💳</span>
+                                <input type="text" [(ngModel)]="accountNumber" name="accountNumber" placeholder="Enter Account Number">
+                            </div>
+                        </div>
+
+                        <div class="modern-form-group">
+                            <label>Confirm Account Number <span>*</span></label>
+                            <div class="input-box">
+                                <span class="input-icon">✔️</span>
+                                <input type="text" [(ngModel)]="confirmAccountNumber" name="confirmAccountNumber" placeholder="Confirm Account Number">
+                            </div>
+                        </div>
+
+                        <div class="modern-form-group">
+                            <label>IFSC Code <span>*</span></label>
+                            <div class="input-box">
+                                <span class="input-icon">🏛️</span>
+                                <input type="text" [(ngModel)]="ifscCode" name="ifscCode" placeholder="SBIN0001234">
+                            </div>
+                        </div>
+
+                        <div class="modern-form-group">
+                            <label>Branch Name</label>
+                            <div class="input-box">
+                                <span class="input-icon">📍</span>
+                                <input type="text" [(ngModel)]="branchName" name="branchName" placeholder="Enter Branch Name">
+                            </div>
+                        </div>
+
+                        <div class="modern-form-group">
+                            <label>Account Type</label>
+                            <div class="input-box">
+                                <span class="input-icon">💼</span>
+                                <app-custom-select 
+                                  [options]="accountTypeOptions" 
+                                  [(ngModel)]="accountType" 
+                                  name="accountType"
+                                  placeholder="Select Account Type"
+                                  style="width: 100%;">
+                                </app-custom-select>
+                            </div>
+                        </div>
+
+                        <div class="modern-form-group">
+                            <label>UPI ID</label>
+                            <div class="input-box">
+                                <span class="input-icon">📱</span>
+                                <input type="text" [(ngModel)]="upiId" name="upiId" placeholder="example@upi">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= STEP 4: DOCUMENT UPLOAD ================= -->
+        <div *ngIf="currentStep === 4">
+            <div class="section-title center-title">
+                <h3>Document Upload</h3>
+                <span>Upload required documents for verification</span>
+            </div>
+
+            <div class="modern-section">
+                <div class="section-left">
+                    <div class="section-icon">📂</div>
+                    <div>
+                        <h3>Document Upload</h3>
+                        <p>Upload all required documents for buyer verification.</p>
+                    </div>
+                </div>
+                <div class="section-right">
+                    <div class="upload-grid">
+                        <div class="upload-card">
+                            <div class="upload-icon">🪪</div>
+                            <h4>PAN Card <span style="color: #ef4444; font-weight: bold;">*</span></h4>
+                            <p>PDF / JPG / PNG</p>
+                            <input type="file" (change)="onFileChange($event, 'pan')" accept=".pdf,.jpg,.jpeg,.png">
+                            <div *ngIf="panFile" class="text-success small mt-1">✓ {{ panFile }}</div>
+                        </div>
+
+                        <div class="upload-card">
+                            <div class="upload-icon">🆔</div>
+                            <h4>Aadhaar Card <span style="color: #ef4444; font-weight: bold;">*</span></h4>
+                            <p>PDF / JPG / PNG</p>
+                            <input type="file" (change)="onFileChange($event, 'aadhaar')" accept=".pdf,.jpg,.jpeg,.png">
+                            <div *ngIf="aadhaarFile" class="text-success small mt-1">✓ {{ aadhaarFile }}</div>
+                        </div>
+
+                        <div class="upload-card" *ngIf="selectedBuyerType !== 'Seller Buyer'">
+                            <div class="upload-icon">📄</div>
+                            <h4>GST Certificate <span style="color: #ef4444; font-weight: bold;">*</span></h4>
+                            <p>PDF / JPG / PNG</p>
+                            <input type="file" (change)="onFileChange($event, 'gst')" accept=".pdf,.jpg,.jpeg,.png">
+                            <div *ngIf="gstFile" class="text-success small mt-1">✓ {{ gstFile }}</div>
+                        </div>
+
+                        <div class="upload-card" *ngIf="selectedBuyerType !== 'Seller Buyer'">
+                            <div class="upload-icon">📜</div>
+                            <h4>Trade License <span style="color: #ef4444; font-weight: bold;">*</span></h4>
+                            <p>PDF / JPG / PNG</p>
+                            <input type="file" (change)="onFileChange($event, 'license')" accept=".pdf,.jpg,.jpeg,.png">
+                            <div *ngIf="licenseFile" class="text-success small mt-1">✓ {{ licenseFile }}</div>
+                        </div>
+
+                        <div class="upload-card">
+                            <div class="upload-icon">🏦</div>
+                            <h4>Bank Passbook <span style="color: #ef4444; font-weight: bold;">*</span></h4>
+                            <p>PDF / JPG / PNG</p>
+                            <input type="file" (change)="onFileChange($event, 'bank')" accept=".pdf,.jpg,.jpeg,.png">
+                            <div *ngIf="bankFile" class="text-success small mt-1">✓ {{ bankFile }}</div>
+                        </div>
+
+                        <div class="upload-card">
+                            <div class="upload-icon">✍️</div>
+                            <h4>Digital Signature <span style="color: #ef4444; font-weight: bold;">*</span></h4>
+                            <p>PDF / JPG / PNG</p>
+                            <input type="file" (change)="onFileChange($event, 'signature')" accept=".pdf,.jpg,.jpeg,.png">
+                            <div *ngIf="signatureFile" class="text-success small mt-1">✓ {{ signatureFile }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= STEP 5: DECLARATION & SUMMARY ================= -->
+        <div *ngIf="currentStep === 5">
+            <div class="section-title center-title">
+                <h3>Final Declaration</h3>
+                <span>Review summary and accept declarations to submit</span>
+            </div>
+
+            <div class="modern-section">
+                <div class="section-left">
+                    <div class="section-icon">🛡️</div>
+                    <div>
+                        <h3>Declaration</h3>
+                        <p>Please read the declaration carefully before submitting your buyer registration.</p>
+                    </div>
+                </div>
+                <div class="section-right">
+                    <div class="declaration-box">
+                        <label class="modern-checkbox">
+                            <input type="checkbox" [(ngModel)]="declaration1" name="declaration1">
+                            <span></span>
+                            <p>I hereby declare that the information provided is true and correct to the best of my knowledge.</p>
+                        </label>
+
+                        <label class="modern-checkbox">
+                            <input type="checkbox" [(ngModel)]="declaration2" name="declaration2">
+                            <span></span>
+                            <p>I agree to comply with all Carbon Market Credit Trading Rules and Regulations.</p>
+                        </label>
+
+                        <label class="modern-checkbox">
+                            <input type="checkbox" [(ngModel)]="declaration3" name="declaration3">
+                            <span></span>
+                            <p>I authorize Carbon Market to verify my submitted documents and information.</p>
+                        </label>
+
+                        <label class="modern-checkbox">
+                            <input type="checkbox" [(ngModel)]="declaration4" name="declaration4">
+                            <span></span>
+                            <p>I accept the Privacy Policy and Terms & Conditions of Carbon Market.</p>
+                        </label>
+                    </div>
+
+                    <!-- ================= SUMMARY ================= -->
+                    <div class="summary-card">
+                        <div class="summary-icon">✅</div>
+                        <div>
+                            <h4>Registration Summary</h4>
+                            <p style="margin: 4px 0;"><strong>Buyer Type:</strong> {{ selectedBuyerType }}</p>
+                            <p style="margin: 4px 0;"><strong>Buyer Name:</strong> {{ buyerName }}</p>
+                            <p style="margin: 4px 0;"><strong>PAN Number:</strong> {{ panNumber }}</p>
+                            <p style="margin: 4px 0;"><strong>Email Address:</strong> {{ email }}</p>
+                            <p style="margin: 4px 0;"><strong>Bank Name:</strong> {{ bankName }}</p>
+                            <p style="margin: 4px 0;"><strong>Account Number:</strong> {{ accountNumber }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= BUTTONS ================= -->
+        <div class="footer-buttons">
+            <button class="back-btn" (click)="back()">
+                ← Back
+            </button>
+            <button class="next-btn" (click)="next()" [disabled]="isNavigating">
+                <span *ngIf="!isNavigating">{{ currentStep === 5 ? 'Register' : 'Next →' }}</span>
+                <span *ngIf="isNavigating">Submitting...</span>
+            </button>
+        </div>
+
+    </div>
+</div>
+
+
+
+

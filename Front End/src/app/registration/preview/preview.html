@@ -1,0 +1,409 @@
+<!-- ================= C-PAY HEADER ================= -->
+
+<header class="app-header">
+
+    <div class="header-left">
+
+        <img
+            src="/logo.jpg"
+            alt="C-PAY Logo">
+
+        <div>
+
+            <h1><span style="color: var(--primary-teal);">C-</span><span style="color: #000000;">PAY</span></h1>
+
+            <p>Carbon Credit Registration & Verification System</p>
+
+        </div>
+
+    </div>
+
+    <div class="portal-badge">
+
+        C-PAY Portal
+
+    </div>
+
+</header>
+
+
+<!-- ================= PREVIEW CARD ================= -->
+
+<div class="wizard-card">
+
+    <!-- ================= HEADER ================= -->
+
+    <div class="wizard-header">
+
+        <div>
+
+            <h2>
+                PREVIEW & SUBMIT
+            </h2>
+
+        </div>
+
+        <div class="progress-badge">
+
+            Step 8 of 8
+
+        </div>
+
+    </div>
+
+    <!-- ================= STEPPER ================= -->
+
+    <div class="stepper-container">
+
+        <div class="step completed" (click)="goToStep(1)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>User Type</span>
+        </div>
+
+        <div class="line active-line"></div>
+
+        <div class="step completed" (click)="goToStep(2)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>Personal</span>
+        </div>
+
+        <div class="line active-line"></div>
+
+        <div class="step completed" (click)="goToStep(3)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>Address</span>
+        </div>
+
+        <div class="line active-line"></div>
+
+        <div class="step completed" (click)="goToStep(4)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>Land</span>
+        </div>
+
+       
+        <div class="line active-line"></div>
+
+        <div class="step completed" (click)="goToStep(5)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>Plantation</span>
+        </div>
+
+        <div class="line active-line"></div>
+
+        <div class="step completed" (click)="goToStep(6)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>Calculator</span>
+        </div>
+
+        <div class="line active-line"></div>
+
+        <div class="step completed" (click)="goToStep(7)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>Consent</span>
+        </div>
+
+        <div class="line active-line"></div>
+
+        <div class="step active">
+            <div class="circle">8</div>
+            <span>Preview</span>
+        </div>
+
+
+    </div>
+
+    <div class="form-container">
+
+        <!-- PERSONAL -->
+
+        <div class="review-card">
+
+            <div class="review-header">
+
+                <h4>👤 Personal Details</h4>
+
+                <button
+                    type="button"
+                    class="edit-btn"
+                    (click)="editPersonal()">
+
+                    Edit
+
+                 </button>
+
+            </div>
+
+            <div class="review-grid text-start">
+
+                @if (selectedUserType !== 'NGO' && selectedUserType !== 'Community' && selectedUserType !== 'Government') {
+                    <div><label> FULL NAME</label><strong>{{ fullName }}</strong></div>
+                    <div><label> GENDER</label><strong>{{ gender }}</strong></div>
+                    <div><label>MOBILE NUMBER</label><strong>{{ mobileNumber }}</strong></div>
+                    <div>
+                        <label>AADHAAR NUMBER</label>
+                        <strong>{{ aadhaarNumber }}</strong>
+                        @if (aadhaarPhotoName) {
+                            <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+                                @if (aadhaarPhoto) {
+                                    <img [src]="aadhaarPhoto" alt="Aadhaar Photo" style="height: 32px; max-width: 48px; border-radius: 4px; border: 1px solid #cbd5e1; object-fit: cover;" />
+                                }
+                                <span style="font-size: 11px; color: var(--primary-teal); font-weight: 600;">📷 {{ aadhaarPhotoName }}</span>
+                            </div>
+                        }
+                    </div>
+                    <div>
+                        <label>PAN NUMBER</label>
+                        <strong>{{ panNumber }}</strong>
+                        @if (panPhotoName) {
+                            <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+                                @if (panPhoto) {
+                                    <img [src]="panPhoto" alt="PAN Photo" style="height: 32px; max-width: 48px; border-radius: 4px; border: 1px solid #cbd5e1; object-fit: cover;" />
+                                }
+                                <span style="font-size: 11px; color: var(--primary-teal); font-weight: 600;">📷 {{ panPhotoName }}</span>
+                            </div>
+                        }
+                    </div>
+                } @else if (selectedUserType === 'NGO' || selectedUserType === 'Community') {
+                    <div>
+                        <label>
+                            @if (selectedUserType === 'NGO') { NGO NAME }
+                            @else if (selectedUserType === 'Community') { COMMUNITY NAME }
+                        </label>
+                        <strong>{{ fullName }}</strong>
+                    </div>
+                    <div><label>REGISTRATION ID / LICENSE NUMBER</label><strong>{{ registrationId }}</strong></div>
+                    <div><label>MOBILE NUMBER</label><strong>{{ mobileNumber }}</strong></div>
+                    <div><label>GST NUMBER</label><strong>{{ gstNumber }}</strong></div>
+                    <div>
+                        <label>PAN NUMBER</label>
+                        <strong>{{ panNumber }}</strong>
+                        @if (panPhotoName) {
+                            <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+                                @if (panPhoto) {
+                                    <img [src]="panPhoto" alt="PAN Photo" style="height: 32px; max-width: 48px; border-radius: 4px; border: 1px solid #cbd5e1; object-fit: cover;" />
+                                }
+                                <span style="font-size: 11px; color: var(--primary-teal); font-weight: 600;">📷 {{ panPhotoName }}</span>
+                            </div>
+                        }
+                    </div>
+                    <div><label>EMAIL ADDRESS</label><strong>{{ emailAddress }}</strong></div>
+                } @else {
+                    <div>
+                        <label>GOVERNMENT DEPARTMENT NAME</label>
+                        <strong>{{ fullName }}</strong>
+                    </div>
+                    <div><label>DIVISION NAME</label><strong>{{ divisionName }}</strong></div>
+                    <div><label>MOBILE NUMBER</label><strong>{{ mobileNumber }}</strong></div>
+                    <div><label>MANAGER NAME</label><strong>{{ managerName }}</strong></div>
+                    <div><label>MANAGER ID</label><strong>{{ managerId }}</strong></div>
+                    <div>
+                        <label>PAN NUMBER</label>
+                        <strong>{{ panNumber }}</strong>
+                        @if (panPhotoName) {
+                            <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+                                @if (panPhoto) {
+                                    <img [src]="panPhoto" alt="PAN Photo" style="height: 32px; max-width: 48px; border-radius: 4px; border: 1px solid #cbd5e1; object-fit: cover;" />
+                                }
+                                <span style="font-size: 11px; color: var(--primary-teal); font-weight: 600;">📷 {{ panPhotoName }}</span>
+                            </div>
+                        }
+                    </div>
+                    <div><label>EMAIL ADDRESS</label><strong>{{ emailAddress }}</strong></div>
+                }
+
+            </div>
+
+        </div>
+
+        <!-- ADDRESS -->
+
+        <div class="review-card">
+
+            <div class="review-header">
+
+                <h4>📍 Address Details</h4>
+
+                 <button
+                    type="button"
+                    class="edit-btn"
+                    (click)="editAddress()">
+
+                    Edit
+
+                </button>
+
+            </div>
+
+            <div class="review-grid text-start">
+
+                <div><label>STATE</label><strong>{{ state }}</strong></div>
+                <div><label>DISTRICT</label><strong>{{ district }}</strong></div>
+                <div><label>MANDAL</label><strong>{{ mandal }}</strong></div>
+                <div><label>VILLAGE</label><strong>{{ village }}</strong></div>
+                <div><label>PINCODE</label><strong>{{ pincode }}</strong></div>
+
+            </div>
+
+        </div>
+
+        <!-- LAND -->
+
+        <div class="review-card">
+
+            <div class="review-header">
+
+                <h4>🌾 Land & Survey Details</h4>
+
+                <button 
+                    type="button"
+                    class="edit-btn"
+                    (click)="editLand()">
+
+                    Edit
+                    
+                </button>
+
+            </div>
+
+            <div class="review-grid text-start">
+
+                <div><label>SURVEY NO</label><strong>{{ surveyNo }}</strong></div>
+                <div><label>SUB DIVISION</label><strong>{{ subDivisionNo }}</strong></div>
+                <div><label>AREA</label><strong>{{ landArea | number:'1.2-2' }} {{ landUnit }}</strong></div>
+                <div><label>UNIT</label><strong>{{ landUnit }}</strong></div>
+                <div>
+                    <label>PATTADAR PASSBOOK DOCUMENT</label>
+                    @if (pattadarDocName) {
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                            @if (pattadarDoc) {
+                                <img [src]="pattadarDoc" alt="Pattadar Document" style="height: 36px; width: 48px; border-radius: 4px; border: 1px solid #cbd5e1; object-fit: cover;" />
+                            }
+                            <span style="font-size: 11px; color: var(--primary-teal); font-weight: 700;">📄 {{ pattadarDocName }}</span>
+                        </div>
+                    } @else {
+                        <strong>Not Uploaded</strong>
+                    }
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- PLANTATION / AQUACULTURE -->
+
+        <div class="review-card">
+
+            <div class="review-header">
+
+                <h4>{{ landType === 'Fish Pond' ? '🐟 Aquaculture Details' : '🌳 Plantation Details' }}</h4>
+
+                <button 
+                    type="button"
+                    class="edit-btn"
+                    (click)="editPlantation()">
+                    Edit
+                </button>
+
+            </div>
+
+            <div class="review-grid text-start">
+
+                <div><label>LAND TYPE</label><strong>{{ landType }}</strong></div>
+                <div><label>CATEGORY</label><strong>{{ plantationType }} {{ subCategory ? '(' + subCategory + ')' : '' }}</strong></div>
+                <div><label>{{ landType === 'Fish Pond' ? 'TOTAL STOCKED' : 'TOTAL TREES' }}</label><strong>{{ quantity | number }}</strong></div>
+                <div><label>AREA</label><strong>{{ plantationArea | number:'1.2-2' }} {{ plantationUnit }}</strong></div>
+                <div><label>{{ landType === 'Fish Pond' ? 'CULTURE PERIOD' : 'AGE' }}</label><strong>{{ landType === 'Fish Pond' ? (subCategory === 'IMC' ? age + ' Months' : daysOfCulture + ' Days') : (age + ' Years') }}</strong></div>
+
+            </div>
+
+            <!-- Multi-Pond Registered Summary Breakdown -->
+            <div *ngIf="landType === 'Fish Pond' && ponds && ponds.length > 0" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+                <h5 style="font-size: 13.5px; font-weight: 700; color: #1e293b; margin: 0 0 12px 0;">🌊 Multi-Pond Registered Summary ({{ ponds.length }} Ponds)</h5>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; font-size: 12.5px;">
+                    <div *ngFor="let pond of ponds" style="background-color: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                        <strong style="color: #047857; display: block; margin-bottom: 4px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">{{ pond.name }} ({{ pond.selectedSpecies }})</strong>
+                        <div><span style="font-weight: 600;">Pond Area:</span> {{ pond.pondAreaHa || pond.area }} {{ pond.unit || 'Hectares' }}</div>
+                        <div><span style="font-weight: 600;">Stock Quantity:</span> {{ pond.stockingDensity || pond.quantity | number }} pcs</div>
+                        <div><span style="font-weight: 600;">Duration:</span> {{ pond.cultureDurationDays || pond.daysOfCulture }} Days</div>
+                        <div><span style="font-weight: 600;">Baseline FCR:</span> {{ pond.averageFcr || pond.farmReportedFcr }}</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- CARBON RESULT -->
+
+        <div class="result-summary text-center">
+
+            <h3>♻ Carbon Credit Estimation</h3>
+
+            <div class="result-grid">
+
+                <div class="result-box">
+
+                    <h4>CO₂ Absorbed</h4>
+
+                    <span>{{ estimatedCO2 | number:'1.2-2' }}</span>
+
+                    <p>Tonnes / Year</p>
+
+                </div>
+
+                <div class="result-box">
+
+                    <h4>Carbon Credits</h4>
+
+                    <span>{{ carbonCredits | number:'1.2-2' }}</span>
+
+                    <p>tCO₂e</p>
+
+                </div>
+
+                <div class="result-box">
+
+                    <h4>Market Value</h4>
+
+                    <span>₹ {{ marketValue | number:'1.2-2' }}</span>
+
+                    <p>Estimated Value</p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="footer-buttons">
+
+            <button
+                class="back-btn"
+                (click)="back()"
+                [disabled]="isSubmitting">
+
+                ← Back
+
+            </button>
+
+            <button
+                class="next-btn"
+                (click)="next()"
+                [disabled]="isSubmitting">
+
+                <span *ngIf="!isSubmitting">Final Submit →</span>
+                <span *ngIf="isSubmitting" class="d-flex align-items-center justify-content-center">
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Submitting...
+                </span>
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+

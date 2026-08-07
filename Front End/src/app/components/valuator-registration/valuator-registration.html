@@ -1,0 +1,293 @@
+<!-- ================= C-PAY HEADER ================= -->
+<header class="app-header">
+  <div class="header-left">
+    <img src="/logo.jpg" alt="C-PAY Logo" class="header-logo">
+    <div>
+      <h1><span class="text-teal">C-</span><span class="text-dark">PAY</span></h1>
+      <p>Carbon Credit Registration & Verification System</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="portal-badge">
+      Auditor Portal
+    </div>
+  </div>
+</header>
+
+<!-- ================= AUDITOR REGISTRATION CARD ================= -->
+<div class="wizard-card-wrapper">
+  <div class="wizard-card">
+
+    <!-- HEADER INSIDE CARD -->
+    <div class="wizard-header">
+      <div>
+        <h2>AUDITOR & VALUATOR REGISTRATION</h2>
+        <p class="wizard-subtitle">Official Verification & Onboarding Portal</p>
+      </div>
+      <div class="progress-badge">
+        <i class="bi bi-patch-check-fill me-1"></i> Auditor Verification
+      </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="wizard-body">
+      <form (ngSubmit)="onSubmit()" #regForm="ngForm" class="registration-form">
+        
+        <!-- Alerts -->
+        <div *ngIf="errorMessage" class="alert alert-danger py-3 px-4 mb-4 rounded-3 d-flex align-items-center shadow-sm" role="alert">
+          <i class="bi bi-exclamation-triangle-fill me-3 fs-4"></i>
+          <div>
+            <strong>Registration Alert:</strong>
+            <div class="small mt-1">{{ errorMessage }}</div>
+          </div>
+        </div>
+        <div *ngIf="successMessage" class="alert alert-success py-3 px-4 mb-4 rounded-3 d-flex align-items-center shadow-sm" role="alert">
+          <i class="bi bi-check-circle-fill me-3 fs-4"></i>
+          <div>
+            <strong>Registration Submitted!</strong>
+            <div class="small mt-1">{{ successMessage }}</div>
+          </div>
+        </div>
+
+        <!-- SECTION 1: PERSONAL DETAILS -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <div class="section-badge-icon"><i class="bi bi-person-badge"></i></div>
+            <div>
+              <h4>1. Personal Information</h4>
+              <p>Enter your legal name and contact details as per official records</p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <!-- 1. Full Name -->
+            <div class="form-group">
+              <label for="name">Full Name <span class="required-star">*</span></label>
+              <div class="input-container" [class.is-valid]="isNameValid">
+                <span class="input-icon"><i class="bi bi-person-fill"></i></span>
+                <input type="text" id="name" name="name" class="form-control-custom" 
+                       placeholder="Enter Full Name" [(ngModel)]="name" 
+                       pattern="[A-Za-z ]+" style="text-transform: capitalize" required>
+                <span *ngIf="isNameValid" class="valid-icon"><i class="bi bi-check-circle-fill text-success"></i></span>
+              </div>
+              <span class="field-hint">As printed on government ID card</span>
+            </div>
+
+            <!-- 2. Mobile Number -->
+            <div class="form-group">
+              <label for="mobileNumber">Mobile Number <span class="required-star">*</span></label>
+              <div class="mobile-input-group">
+                <div style="width: 100px;">
+                  <app-custom-select [options]="countryOptions" [(ngModel)]="countryCode" name="countryCode"></app-custom-select>
+                </div>
+                <div class="input-container flex-grow-1" [class.is-valid]="isMobileValid">
+                  <span class="input-icon"><i class="bi bi-telephone-fill"></i></span>
+                  <input type="tel" id="mobileNumber" name="mobileNumber" class="form-control-custom" 
+                         placeholder="10-digit mobile number" [(ngModel)]="mobileNumber" 
+                         maxlength="10" pattern="[0-9]{10}" inputmode="numeric" required>
+                  <span *ngIf="isMobileValid" class="valid-icon"><i class="bi bi-check-circle-fill text-success"></i></span>
+                </div>
+              </div>
+              <span class="field-hint">Used for registration OTP & status notifications</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 2: IDENTITY VERIFICATION & UPLOADS -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <div class="section-badge-icon"><i class="bi bi-card-checklist"></i></div>
+            <div>
+              <h4>2. Identity Verification & Document Uploads</h4>
+              <p>Provide Aadhaar & PAN details along with scanned document copies</p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <!-- 3. Aadhaar Card Number -->
+            <div class="form-group">
+              <label for="aadhaarNumber">Aadhaar Card Number <span class="required-star">*</span></label>
+              <div class="input-container" [class.is-valid]="isAadhaarValid">
+                <span class="input-icon"><i class="bi bi-card-heading"></i></span>
+                <input type="text" id="aadhaarNumber" name="aadhaarNumber" class="form-control-custom" 
+                       placeholder="Enter 12-digit Aadhaar Number" [(ngModel)]="aadhaarNumber" 
+                       (input)="formatAadhaar()" maxlength="12" pattern="[0-9]{12}" inputmode="numeric" required>
+                <span *ngIf="isAadhaarValid" class="valid-icon"><i class="bi bi-check-circle-fill text-success"></i></span>
+              </div>
+              <span class="field-hint" *ngIf="!isAadhaarValid">Enter 12 digits without spaces</span>
+              <span class="field-hint text-success" *ngIf="isAadhaarValid">✓ Valid 12-digit Aadhaar format</span>
+            </div>
+
+            <!-- 4. Upload Aadhaar Card -->
+            <div class="form-group">
+              <label>Upload Aadhaar Document <span class="required-star">*</span></label>
+              <div class="file-dropzone" [class.has-file]="aadhaarFile" [class.is-dragging]="isAadhaarDragging"
+                   (dragover)="onDragOver($event, 'aadhaar')" (dragleave)="onDragLeave($event, 'aadhaar')"
+                   (drop)="onDrop($event, 'aadhaar')" (click)="aadhaarFileInput.click()">
+                <input #aadhaarFileInput type="file" (change)="onFileSelected($event, 'aadhaar')" 
+                       accept=".pdf,.png,.jpg,.jpeg" style="display: none;">
+                
+                <div *ngIf="!aadhaarFile" class="dropzone-placeholder">
+                  <div class="dropzone-icon-box"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+                  <div class="dropzone-text">
+                    <span class="dropzone-title">Click or drag & drop to upload Aadhaar</span>
+                    <span class="dropzone-subtitle">Supported: PDF, PNG, JPG (Max 5MB)</span>
+                  </div>
+                </div>
+
+                <div *ngIf="aadhaarFile" class="uploaded-doc-badge">
+                  <div class="doc-icon"><i class="bi bi-file-earmark-pdf-fill"></i></div>
+                  <div class="doc-details">
+                    <span class="doc-name">{{ aadhaarFileName }}</span>
+                    <span class="doc-meta"><i class="bi bi-check-circle-fill text-success me-1"></i>{{ aadhaarFileSize }} • Uploaded</span>
+                  </div>
+                  <button type="button" class="btn-remove-doc" (click)="removeFile('aadhaar', $event)" title="Remove File">
+                    <i class="bi bi-trash3-fill"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. PAN Card Number -->
+            <div class="form-group">
+              <label for="panNumber">PAN Card Number <span class="required-star">*</span></label>
+              <div class="input-container" [class.is-valid]="isPanValid">
+                <span class="input-icon"><i class="bi bi-credit-card-2-front-fill"></i></span>
+                <input type="text" id="panNumber" name="panNumber" class="form-control-custom text-uppercase" 
+                       placeholder="ABCDE1234F" [(ngModel)]="panNumber" 
+                       (input)="formatPan()" maxlength="10" pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}" required>
+                <span *ngIf="isPanValid" class="valid-icon"><i class="bi bi-check-circle-fill text-success"></i></span>
+              </div>
+              <span class="field-hint" *ngIf="!isPanValid">Standard 10-character PAN format</span>
+              <span class="field-hint text-success" *ngIf="isPanValid">✓ Valid PAN number format</span>
+            </div>
+
+            <!-- 6. Upload PAN Card -->
+            <div class="form-group">
+              <label>Upload PAN Document <span class="required-star">*</span></label>
+              <div class="file-dropzone" [class.has-file]="panFile" [class.is-dragging]="isPanDragging"
+                   (dragover)="onDragOver($event, 'pan')" (dragleave)="onDragLeave($event, 'pan')"
+                   (drop)="onDrop($event, 'pan')" (click)="panFileInput.click()">
+                <input #panFileInput type="file" (change)="onFileSelected($event, 'pan')" 
+                       accept=".pdf,.png,.jpg,.jpeg" style="display: none;">
+                
+                <div *ngIf="!panFile" class="dropzone-placeholder">
+                  <div class="dropzone-icon-box"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+                  <div class="dropzone-text">
+                    <span class="dropzone-title">Click or drag & drop to upload PAN</span>
+                    <span class="dropzone-subtitle">Supported: PDF, PNG, JPG (Max 5MB)</span>
+                  </div>
+                </div>
+
+                <div *ngIf="panFile" class="uploaded-doc-badge">
+                  <div class="doc-icon"><i class="bi bi-file-earmark-image-fill"></i></div>
+                  <div class="doc-details">
+                    <span class="doc-name">{{ panFileName }}</span>
+                    <span class="doc-meta"><i class="bi bi-check-circle-fill text-success me-1"></i>{{ panFileSize }} • Uploaded</span>
+                  </div>
+                  <button type="button" class="btn-remove-doc" (click)="removeFile('pan', $event)" title="Remove File">
+                    <i class="bi bi-trash3-fill"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 3: AUDITOR LICENSE & OFFICE ADDRESS -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <div class="section-badge-icon"><i class="bi bi-award-fill"></i></div>
+            <div>
+              <h4>3. Professional License & Office Details</h4>
+              <p>Enter your certified auditor license number, upload certificate & office address</p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <!-- 7. License Number -->
+            <div class="form-group">
+              <label for="licence">Auditor License / Certificate Number <span class="required-star">*</span></label>
+              <div class="input-container" [class.is-valid]="isLicenceValid">
+                <span class="input-icon"><i class="bi bi-patch-check-fill"></i></span>
+                <input type="text" id="licence" name="licence" class="form-control-custom" 
+                       placeholder="Enter Licence Number" [(ngModel)]="licence" required>
+                <span *ngIf="isLicenceValid" class="valid-icon"><i class="bi bi-check-circle-fill text-success"></i></span>
+              </div>
+              <span class="field-hint">Official registration / certificate number</span>
+            </div>
+
+            <!-- 8. Upload License Certificate -->
+            <div class="form-group">
+              <label>Upload License Certificate <span class="required-star">*</span></label>
+              <div class="file-dropzone" [class.has-file]="licenceFile" [class.is-dragging]="isLicenceDragging"
+                   (dragover)="onDragOver($event, 'licence')" (dragleave)="onDragLeave($event, 'licence')"
+                   (drop)="onDrop($event, 'licence')" (click)="licenceFileInput.click()">
+                <input #licenceFileInput type="file" (change)="onFileSelected($event, 'licence')" 
+                       accept=".pdf,.png,.jpg,.jpeg" style="display: none;">
+                
+                <div *ngIf="!licenceFile" class="dropzone-placeholder">
+                  <div class="dropzone-icon-box"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+                  <div class="dropzone-text">
+                    <span class="dropzone-title">Click or drag & drop to upload License Certificate</span>
+                    <span class="dropzone-subtitle">Supported: PDF, PNG, JPG (Max 5MB)</span>
+                  </div>
+                </div>
+
+                <div *ngIf="licenceFile" class="uploaded-doc-badge">
+                  <div class="doc-icon"><i class="bi bi-file-earmark-richtext-fill"></i></div>
+                  <div class="doc-details">
+                    <span class="doc-name">{{ licenceFileName }}</span>
+                    <span class="doc-meta"><i class="bi bi-check-circle-fill text-success me-1"></i>{{ licenceFileSize }} • Uploaded</span>
+                  </div>
+                  <button type="button" class="btn-remove-doc" (click)="removeFile('licence', $event)" title="Remove File">
+                    <i class="bi bi-trash3-fill"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 9. Office Address -->
+            <div class="form-group full-width">
+              <label for="address">Office Address <span class="required-star">*</span></label>
+              <div class="input-container textarea-container" [class.is-valid]="isAddressValid">
+                <span class="input-icon textarea-icon"><i class="bi bi-geo-alt-fill"></i></span>
+                <textarea id="address" name="address" class="form-control-custom textarea-custom" rows="3" 
+                          placeholder="Enter complete official office address (Building, Street, City, State, Pincode)" 
+                          [(ngModel)]="address" required></textarea>
+                <span *ngIf="isAddressValid" class="valid-icon textarea-valid-icon"><i class="bi bi-check-circle-fill text-success"></i></span>
+              </div>
+              <span class="field-hint">Physical office location for audit verification</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TRUST FOOTER & SUBMIT BUTTONS -->
+        <div class="footer-action-bar">
+          <div class="trust-note">
+            <i class="bi bi-shield-lock me-2"></i>
+            <span>Encrypted under <strong>C-PAY Data Security Standard</strong></span>
+          </div>
+
+          <div class="footer-buttons">
+            <button type="button" class="back-btn" [routerLink]="['/registration']">
+              <i class="bi bi-arrow-left me-1"></i> Back
+            </button>
+
+            <button type="submit" class="next-btn" [disabled]="isSubmitting">
+              <span *ngIf="!isSubmitting">
+                Register as Auditor <i class="bi bi-arrow-right-short ms-1"></i>
+              </span>
+              <span *ngIf="isSubmitting">
+                <i class="spinner-border spinner-border-sm me-2"></i>Submitting Registration...
+              </span>
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+

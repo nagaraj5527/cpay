@@ -1,0 +1,351 @@
+<!-- APCCB HEADER -->
+
+<div class="app-header">
+
+    <div class="header-left">
+
+        <img
+            src="/logo.jpg"
+            alt="C-PAY Logo">
+
+        <div>
+
+            <h1><span style="color: var(--primary-teal);">C-</span><span style="color: #000000;">PAY</span></h1>
+<!-- 
+            <p>
+                Carbon Credit Registration & Verification System
+            </p> -->
+
+        </div>
+
+    </div>
+
+    <div class="portal-badge">
+
+        C-PAY Portal
+
+    </div>
+
+</div>
+
+<!-- WIZARD CARD -->
+
+<div class="wizard-card">
+
+    <div class="wizard-header">
+
+        <h2>
+            REGISTRATION WIZARD
+        </h2>
+
+    </div>
+
+    <!-- STEPPER -->
+
+    <div class="stepper">
+
+        <div class="step active">
+            <div class="circle">1</div>
+            <span>User Type</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">2</div>
+            <span>Personal Details</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">3</div>
+            <span>Address Details</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">4</div>
+            <span>Land Details</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">5</div>
+            <span>Aadhaar Verify</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">6</div>
+            <span>Plantation Details</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">7</div>
+            <span>Calculator</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">8</div>
+            <span>Consent</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">9</div>
+            <span>Preview</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">10</div>
+            <span>Submit</span>
+        </div>
+
+    </div>
+
+    <!-- CONTENT -->
+
+    <div class="wizard-content">
+
+        <!-- LEFT SECTION -->
+
+        <div class="left-section">
+
+            <div class="hero-card">
+
+                <div class="hero-badge">
+
+                    <img
+                        src="/logo.jpg"
+                        alt="C-PAY Logo">
+
+                    <div>
+
+                        <h4><span style="color: var(--primary-teal);">C-</span><span style="color: #000000;">PAY</span></h4>
+
+                        <span>
+                            Building a Greener World
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <img
+                    src="/registration-banner.png"
+                    alt="Registration Banner"
+                    class="banner-image">
+
+                <div class="feature-strip">
+
+                    <div class="feature-item">
+
+                        <div class="feature-icon">
+                            🌱
+                        </div>
+
+                        <h5>
+                            Plant Today
+                        </h5>
+
+                        <p>
+                            For a Greener Tomorrow
+                        </p>
+
+                    </div>
+
+                    <div class="feature-item">
+
+                        <div class="feature-icon">
+                            ☁️
+                        </div>
+
+                        <h5>
+                            Generate Credits
+                        </h5>
+
+                        <p>
+                            Reduce Carbon Footprint
+                        </p>
+
+                    </div>
+
+                    <div class="feature-item">
+
+                        <div class="feature-icon">
+                            🛡️
+                        </div>
+
+                        <h5>
+                            Secure Future
+                        </h5>
+
+                        <p>
+                            For Generations to Come
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- RIGHT SECTION -->
+
+        <div class="right-section">
+
+            <div class="leaf-icon">
+
+                🌱
+
+            </div>
+
+            <h1>
+
+                Welcome to C-PAY
+
+            </h1>
+
+            <h3>
+
+                Let's get you registered
+
+            </h3>
+
+            <div class="title-divider"></div>
+
+            <p>
+
+                This wizard will help you register your land,
+                plantation and generate carbon credits through
+                C-PAY.
+
+            </p>
+
+            <div class="role-selection">
+                <div 
+                    class="role-card" 
+                    [class.active]="selectedRole === 'seller'"
+                    (click)="selectRole('seller')">
+                    <div class="role-icon-wrapper">🌱</div>
+                    <div class="role-title-text">Register as Seller</div>
+                </div>
+                <div 
+                    class="role-card" 
+                    [class.active]="selectedRole === 'buyer'"
+                    (click)="selectRole('buyer')">
+                    <div class="role-icon-wrapper">💼</div>
+                    <div class="role-title-text">Register as Buyer</div>
+                </div>
+                <div 
+                    class="role-card" 
+                    [class.active]="selectedRole === 'valuator'"
+                    (click)="selectRole('valuator')">
+                    <div class="role-icon-wrapper" style="background-color: transparent !important;">
+                      <img src="/valuator_icon.png" alt="Valuator Icon" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;">
+                    </div>
+                    <div class="role-title-text">Register as Valuator</div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+
+                <a
+                    routerLink="/"
+                    class="back-to-landing-btn">
+
+                    ← Back to Landing Page
+
+                </a>
+
+                <button
+                    type="button"
+                    class="start-btn"
+                    [disabled]="!selectedRole"
+                    (click)="startRegistration()">
+
+                    Start Registration →
+
+                </button>
+
+            </div>
+
+            <div class="bottom-features">
+
+                <div class="bottom-item">
+
+                    <span>🛡️</span>
+
+                    <div>
+
+                        <strong>
+                            100% Secure
+                        </strong>
+
+                        <small>
+                            Your data is safe
+                        </small>
+
+                    </div>
+
+                </div>
+
+                <div class="bottom-item">
+
+                    <span>⚡</span>
+
+                    <div>
+
+                        <strong>
+                            Quick & Easy
+                        </strong>
+
+                        <small>
+                            Takes only a few minutes
+                        </small>
+
+                    </div>
+
+                </div>
+
+                <div class="bottom-item">
+
+                    <span>🌿</span>
+
+                    <div>
+
+                        <strong>
+                            Green Initiative
+                        </strong>
+
+                        <small>
+                            For a sustainable future
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+

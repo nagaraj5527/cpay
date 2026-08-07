@@ -1,0 +1,709 @@
+<div class="landing-container" id="home">
+  
+  <!-- Header / Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-custom">
+    <div class="container-fluid px-lg-5 px-3">
+      <a class="logo-wrapper" href="javascript:void(0)" (click)="scrollToSection('home')">
+        <img src="/logo.jpg" alt="C-PAY Logo" class="logo-img">
+        <div class="logo-text-container">
+          <h1 class="logo-title"><span class="text-teal">C-</span><span class="text-dark">PAY</span></h1>
+          <span class="logo-subtitle">Carbon Credit Bank</span>
+        </div>
+      </a>
+      
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      
+      <div class="collapse navbar-collapse" id="navbarContent">
+        <ul class="nav-links-custom mx-auto">
+          <li><a href="javascript:void(0)" (click)="scrollToSection('home')" class="nav-link-custom" [class.active]="activeSection === 'home'">Home</a></li>
+          <li><a href="javascript:void(0)" (click)="scrollToSection('about')" class="nav-link-custom" [class.active]="activeSection === 'about'">About Us</a></li>
+          <li><a href="javascript:void(0)" (click)="scrollToSection('services')" class="nav-link-custom" [class.active]="activeSection === 'services'">Services <i class="bi bi-chevron-down ms-1" style="font-size: 10px;"></i></a></li>
+          <li><a href="javascript:void(0)" (click)="scrollToSection('market')" class="nav-link-custom" [class.active]="activeSection === 'market'">Carbon Market</a></li>
+          <li><a href="javascript:void(0)" (click)="scrollToSection('resources')" class="nav-link-custom" [class.active]="activeSection === 'resources'">Resources <i class="bi bi-chevron-down ms-1" style="font-size: 10px;"></i></a></li>
+          <li><a href="javascript:void(0)" (click)="scrollToSection('contact')" class="nav-link-custom" [class.active]="activeSection === 'contact'">Contact</a></li>
+        </ul>
+        
+        <div class="header-actions">
+          <!-- Language Selection -->
+          <div class="lang-select-wrapper dropdown notranslate" translate="no">
+            <button class="btn-lang-toggle" type="button" (click)="toggleLangDropdown(); $event.stopPropagation()">
+              <div class="d-flex align-items-center gap-2">
+                <img [src]="getSelectedLangFlag()" alt="flag" class="lang-flag-img">
+                <span>{{ getSelectedLangLabel() }}</span>
+              </div>
+              <i class="bi bi-chevron-down ms-1" style="font-size: 10px;"></i>
+            </button>
+            <ul class="lang-dropdown-menu" [class.show]="langDropdownOpen" (click)="$event.stopPropagation()">
+              <li *ngFor="let lang of languagesList">
+                <button class="dropdown-item" type="button" (click)="selectLanguage(lang.code)">
+                  <img [src]="lang.flag" alt="{{lang.label}} flag" class="lang-flag-img me-2">
+                  <span>{{ lang.label }}</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+          <a [routerLink]="['/login']" class="btn-login-header">
+            <i class="bi bi-box-arrow-in-right me-1"></i> Login
+          </a>
+          <a [routerLink]="['/registration']" class="btn-register-header">
+            <i class="bi bi-person-plus-fill me-1"></i> Register Now
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="hero-section">
+    <div class="container">
+      <div class="row align-items-center">
+        <!-- Hero Text -->
+        <div class="col-lg-6">
+          <div class="hero-tag">
+            <span>Building a Greener Future</span>
+            <span>••••</span>
+            <i class="bi bi-leaf"></i>
+          </div>
+          <h1 class="hero-title">
+            Together, We Can<br>
+            Trade for a<br><span>Better Tomorrow</span>
+          </h1>
+          <p class="hero-description">
+            C-PAY empowers Sellers, farmers, organizations and businesses to generate, verify and trade carbon credits for a sustainable and greener planet.
+          </p>
+          <div class="hero-buttons">
+            <a [routerLink]="['/registration']" class="btn-hero-primary">
+              Get Started <i class="bi bi-arrow-right"></i>
+            </a>
+            <a [routerLink]="['/login']" class="btn-hero-outline">
+              <i class="bi bi-lock"></i> Login Now
+            </a>
+            <a href="javascript:void(0)" class="btn-hero-outline">
+              <i class="bi bi-play-circle"></i> Learn More
+            </a>
+          </div>
+        </div>
+        <!-- Spacer on the right to balance grid -->
+        <div class="col-lg-6 d-none d-lg-block" style="height: 520px;"></div>
+      </div>
+    </div>
+
+    <!-- Dynamic Globe in the middle empty space -->
+    <div class="dynamic-globe-container">
+      <canvas id="globeCanvas"></canvas>
+      <div class="globe-overlay-content">
+        <h2 class="co2-text">CO<sub>2</sub></h2>
+        <div class="co2-arrows">
+          <i class="bi bi-chevron-double-down arrow-down-1"></i>
+          <i class="bi bi-chevron-double-down arrow-down-2"></i>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Dotted Globe Info Stats Badge -->
+    <div class="globe-stats-badge">
+      <div class="badge-row">
+        <span class="pulse-dot-gold"></span>
+        <span class="badge-title">{{ activeMarketsCount }} Countries Carbon Trading</span>
+      </div>
+      <p class="badge-ticker">{{ activeTradingCountry }}</p>
+    </div>
+  </header>
+
+  <!-- Trust Banner Section -->
+  <section class="trust-banner-container">
+    <div class="container">
+      <div class="trust-banner">
+        
+        <div class="trust-card">
+          <div class="trust-icon-box">
+            <i class="bi bi-shield-check"></i>
+          </div>
+          <div>
+            <h4 class="trust-title">Secure & Transparent</h4>
+            <p class="trust-desc">Verified by Government</p>
+          </div>
+        </div>
+        
+        <div class="trust-card">
+          <div class="trust-icon-box">
+            <i class="bi bi-cpu"></i>
+          </div>
+          <div>
+            <h4 class="trust-title">AI Powered</h4>
+            <p class="trust-desc">Carbon Calculations</p>
+          </div>
+        </div>
+        
+        <div class="trust-card">
+          <div class="trust-icon-box">
+            <i class="bi bi-patch-check"></i>
+          </div>
+          <div>
+            <h4 class="trust-title">Trusted Platform</h4>
+            <p class="trust-desc">Reliable & Secure</p>
+          </div>
+        </div>
+        
+        <div class="trust-card">
+          <div class="trust-icon-box">
+            <i class="bi bi-people"></i>
+          </div>
+          <div>
+            <h4 class="trust-title">For Everyone</h4>
+            <p class="trust-desc">Sellers, Farmers & Orgs</p>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  </section>
+
+  <!-- About Us Section -->
+  <section class="section-padding border-bottom" id="about">
+    <div class="container">
+      <div class="row align-items-center g-5">
+        <div class="col-lg-6 text-start">
+          <div class="hero-tag mb-3">
+            <span>Our Mission</span>
+          </div>
+          <h2 class="section-title mb-4" style="display: block;">Empowering Communities through Carbon Sequestration</h2>
+          <p class="lead text-muted mb-4" style="font-size: 17px; line-height: 1.6;">
+            C-PAY is a state-backed platform dedicated to establishing a transparent, government-verified carbon credit ecosystem.
+          </p>
+          <p class="text-muted mb-4" style="line-height: 1.7; font-size: 14.5px;">
+            We bridge the gap between environmental conservation and economic opportunity. By enabling farmers, landowners, and organizations to register plantations, estimate carbon absorption using AI models, and trade verified carbon credits, we create a sustainable cycle that benefits both the planet and local economies.
+          </p>
+          <div class="d-flex align-items-center gap-4 mt-2">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-shield-fill-check text-success" style="font-size: 24px;"></i>
+              <span class="fw-bold text-dark">100% Verified</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-clock-history text-success" style="font-size: 24px;"></i>
+              <span class="fw-bold text-dark">Real-time Trading</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="p-4 bg-light rounded-4 text-start" style="border-left: 5px solid var(--primary-green);">
+            <h4 class="fw-bold text-dark mb-4" style="font-size: 18px;"><i class="bi bi-award-fill text-success me-2"></i>Key Pillars of C-PAY</h4>
+            <div class="mb-4">
+              <h5 class="fw-bold text-dark mb-2" style="font-size: 15px;">1. Government Integration</h5>
+              <p class="small text-muted mb-0">Fully integrated with government land records and Aadhaar identification databases for secure verification.</p>
+            </div>
+            <div class="mb-4">
+              <h5 class="fw-bold text-dark mb-2" style="font-size: 15px;">2. AI Sequestration Engine</h5>
+              <p class="small text-muted mb-0">Calculates precise CO₂ sequestration rates based on tree species, age, and geographical GIS indicators.</p>
+            </div>
+            <div>
+              <h5 class="fw-bold text-dark mb-2" style="font-size: 15px;">3. Direct Farmer Payouts</h5>
+              <p class="small text-muted mb-0">Enables direct credit sale payouts to farmers, supporting rural afforestation and livelihood growth.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services & Highlights Combined Section (Side by Side) -->
+  <section class="section-padding" id="services">
+    <div class="container">
+      <div class="row g-5">
+        
+        <!-- Services (Left side, col-lg-8) -->
+        <div class="col-lg-8">
+          <div class="section-header">
+            <h2 class="section-title">Our Services</h2>
+          </div>
+          
+          <div class="row g-3">
+            
+            <!-- Service 1: Register Plantation -->
+            <div class="col-md-3 col-sm-6">
+              <div class="service-card theme-green">
+                <div class="service-icon-box">
+                  <i class="bi bi-tree"></i>
+                </div>
+                <h3 class="service-title">Register Plantation</h3>
+                <ul class="service-list">
+                  <li><span class="bullet">❖</span> Register Land</li>
+                  <li><span class="bullet">❖</span> Survey Details</li>
+                  <li><span class="bullet">❖</span> Plantation Details</li>
+                </ul>
+                <button [routerLink]="['/registration']" class="service-arrow-btn">
+                  <i class="bi bi-arrow-right"></i>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Service 2: Carbon Calculator -->
+            <div class="col-md-3 col-sm-6">
+              <div class="service-card theme-blue">
+                <div class="service-icon-box">
+                  <i class="bi bi-calculator"></i>
+                </div>
+                <h3 class="service-title">Carbon Calculator</h3>
+                <ul class="service-list">
+                  <li><span class="bullet">❖</span> AI Carbon Estimation</li>
+                  <li><span class="bullet">❖</span> CO₂ Calculation</li>
+                  <li><span class="bullet">❖</span> Credit Generation</li>
+                </ul>
+                <button [routerLink]="['/login']" class="service-arrow-btn">
+                  <i class="bi bi-arrow-right"></i>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Service 3: Carbon Credit Trading -->
+            <div class="col-md-3 col-sm-6">
+              <div class="service-card theme-purple">
+                <div class="service-icon-box">
+                  <i class="bi bi-arrow-left-right"></i>
+                </div>
+                <h3 class="service-title">Carbon Credit Trading</h3>
+                <ul class="service-list">
+                  <li><span class="bullet">❖</span> Buy Credits</li>
+                  <li><span class="bullet">❖</span> Sell Credits</li>
+                  <li><span class="bullet">❖</span> Market Value</li>
+                </ul>
+                <button [routerLink]="['/login']" class="service-arrow-btn">
+                  <i class="bi bi-arrow-right"></i>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Service 4: Verification -->
+            <div class="col-md-3 col-sm-6">
+              <div class="service-card theme-teal">
+                <div class="service-icon-box">
+                  <i class="bi bi-shield-check"></i>
+                </div>
+                <h3 class="service-title">Verification</h3>
+                <ul class="service-list">
+                  <li><span class="bullet">❖</span> Aadhaar Verification</li>
+                  <li><span class="bullet">❖</span> Geo-tag Verification</li>
+                  <li><span class="bullet">❖</span> Admin Approval</li>
+                </ul>
+                <button [routerLink]="['/login']" class="service-arrow-btn">
+                  <i class="bi bi-arrow-right"></i>
+                </button>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+        
+        <!-- Key Highlights (Right side, col-lg-4) -->
+        <div class="col-lg-4">
+          <div class="section-header">
+            <h2 class="section-title">Key Highlights</h2>
+          </div>
+          
+          <div class="highlights-container">
+            
+            <!-- Highlight 1: Districts Covered -->
+            <div class="highlight-card">
+              <div class="highlight-icon-box">
+                <i class="bi bi-geo-alt"></i>
+              </div>
+              <div class="highlight-details">
+                <span class="highlight-num">25+</span>
+                <span class="highlight-label">Districts Covered</span>
+              </div>
+            </div>
+            
+            <!-- Highlight 2: Trees Registered -->
+            <div class="highlight-card">
+              <div class="highlight-icon-box">
+                <i class="bi bi-tree"></i>
+              </div>
+              <div class="highlight-details">
+                <span class="highlight-num">1.5M+</span>
+                <span class="highlight-label">Trees Registered</span>
+              </div>
+            </div>
+            
+            <!-- Highlight 3: Farmers & Users -->
+            <div class="highlight-card">
+              <div class="highlight-icon-box">
+                <i class="bi bi-people"></i>
+              </div>
+              <div class="highlight-details">
+                <span class="highlight-num">5,000+</span>
+                <span class="highlight-label">Farmers & Users</span>
+              </div>
+            </div>
+            
+            <!-- Highlight 4: Carbon Credits Generated -->
+            <div class="highlight-card">
+              <div class="highlight-icon-box">
+                <i class="bi bi-leaf"></i>
+              </div>
+              <div class="highlight-details">
+                <span class="highlight-num">150K+</span>
+                <span class="highlight-label">Credits Generated</span>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  </section>
+
+  <!-- Who Uses Credits Section -->
+  <section class="section-padding who-uses-credits-bg" style="border-top: 1px solid #eef5f2; border-bottom: 1px solid #eef5f2;">
+    <div class="container">
+      <div class="section-header text-center mb-5" style="margin-bottom: 48px;">
+        <h2 class="section-title">Who all are use credits</h2>
+        <p class="section-subtitle text-muted mt-2" style="font-size: 15px; max-width: 600px; margin: 12px auto 0; font-weight: 500;">A wide range of organizations buy Gold Standard certified carbon credits.</p>
+      </div>
+
+      <div class="row g-4 justify-content-center">
+        <!-- 1. Corporations -->
+        <div class="col-lg-4 col-md-6">
+          <div class="credits-user-card">
+            <div class="credits-user-number">01</div>
+            <div class="credits-user-icon-wrapper">
+              <i class="bi bi-building"></i>
+            </div>
+            <h3 class="credits-user-title">Corporations with Net-Zero Commitments</h3>
+            <p class="credits-user-desc">Companies that have committed to net-zero emissions buy carbon credits to offset residual emissions that they cannot yet eliminate. Many major global corporations specifically seek Gold Standard certification because it provides defensible, independently verified claims.</p>
+          </div>
+        </div>
+
+        <!-- 2. Airlines -->
+        <div class="col-lg-4 col-md-6">
+          <div class="credits-user-card">
+            <div class="credits-user-number">02</div>
+            <div class="credits-user-icon-wrapper">
+              <i class="bi bi-airplane"></i>
+            </div>
+            <h3 class="credits-user-title">Airlines Under CORSIA</h3>
+            <p class="credits-user-desc">Airlines now use Gold Standard-labelled credits to meet CORSIA obligations. This makes Gold Standard credits relevant to the compliance market as well as the voluntary market.</p>
+          </div>
+        </div>
+
+        <!-- 3. Governments -->
+        <div class="col-lg-4 col-md-6">
+          <div class="credits-user-card">
+            <div class="credits-user-number">03</div>
+            <div class="credits-user-icon-wrapper">
+              <i class="bi bi-bank"></i>
+            </div>
+            <h3 class="credits-user-title">Governments</h3>
+            <p class="credits-user-desc">Some governments purchase high-quality carbon credits as part of their national climate strategies or as contributions to bilateral Article 6 agreements.</p>
+          </div>
+        </div>
+
+        <!-- 4. Financial Institutions -->
+        <div class="col-lg-4 col-md-6">
+          <div class="credits-user-card">
+            <div class="credits-user-number">04</div>
+            <div class="credits-user-icon-wrapper">
+              <i class="bi bi-cash-coin"></i>
+            </div>
+            <h3 class="credits-user-title">Financial Institutions</h3>
+            <p class="credits-user-desc">Banks, asset managers, and ESG-focused funds purchase credits to offset their financed emissions or meet sustainability reporting requirements.</p>
+          </div>
+        </div>
+
+        <!-- 5. Sellers -->
+        <div class="col-lg-4 col-md-6">
+          <div class="credits-user-card">
+            <div class="credits-user-number">05</div>
+            <div class="credits-user-icon-wrapper">
+              <i class="bi bi-person-heart"></i>
+            </div>
+            <h3 class="credits-user-title">Sellers</h3>
+            <p class="credits-user-desc">Sellers who want to offset their personal carbon footprint from travel, lifestyle, or business activities can also buy Gold Standard credits through various platforms.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section class="section-padding how-it-works-bg">
+    <div class="container">
+      <div class="section-header text-center">
+        <h2 class="section-title">How It Works</h2>
+      </div>
+      
+      <div class="timeline-container">
+        <div class="timeline-line"></div>
+        
+        <!-- Step 1: Register -->
+        <div class="timeline-node">
+          <div class="node-number">1</div>
+          <div class="node-icon-box">
+            <i class="bi bi-person-plus"></i>
+          </div>
+          <h4 class="node-title">Register</h4>
+        </div>
+        
+        <!-- Step 2: Personal Details -->
+        <div class="timeline-node">
+          <div class="node-number">2</div>
+          <div class="node-icon-box">
+            <i class="bi bi-card-text"></i>
+          </div>
+          <h4 class="node-title">Personal Details</h4>
+        </div>
+        
+        <!-- Step 3: Land Survey -->
+        <div class="timeline-node">
+          <div class="node-number">3</div>
+          <div class="node-icon-box">
+            <i class="bi bi-map"></i>
+          </div>
+          <h4 class="node-title">Land Survey</h4>
+        </div>
+        
+        <!-- Step 4: Plantation Details -->
+        <div class="timeline-node">
+          <div class="node-number">4</div>
+          <div class="node-icon-box">
+            <i class="bi bi-flower1"></i>
+          </div>
+          <h4 class="node-title">Plantation Details</h4>
+        </div>
+        
+        <!-- Step 5: Carbon Calculator -->
+        <div class="timeline-node">
+          <div class="node-number">5</div>
+          <div class="node-icon-box">
+            <i class="bi bi-calculator"></i>
+          </div>
+          <h4 class="node-title">Carbon Calculator</h4>
+        </div>
+        
+        <!-- Step 6: Verification & Approval -->
+        <div class="timeline-node">
+          <div class="node-number">6</div>
+          <div class="node-icon-box">
+            <i class="bi bi-shield-check"></i>
+          </div>
+          <h4 class="node-title">Verification & Approval</h4>
+        </div>
+        
+        <!-- Step 7: Credit Generation -->
+        <div class="timeline-node">
+          <div class="node-number">7</div>
+          <div class="node-icon-box">
+            <i class="bi bi-file-earmark-bar-graph"></i>
+          </div>
+          <h4 class="node-title">Credit Generation</h4>
+        </div>
+        
+        <!-- Step 8: Trading -->
+        <div class="timeline-node">
+          <div class="node-number">8</div>
+          <div class="node-icon-box">
+            <i class="bi bi-handshake"></i>
+          </div>
+          <h4 class="node-title">Trading</h4>
+        </div>
+        
+      </div>
+    </div>
+  </section>
+
+  <!-- Carbon Market Section -->
+  <section class="section-padding" id="market" style="background-color: var(--bg-soft-green);">
+    <div class="container">
+      <div class="row align-items-center g-5">
+        <div class="col-lg-5 text-start">
+          <div class="hero-tag mb-3">
+            <span>Market Status</span>
+          </div>
+          <h2 class="section-title mb-4" style="display: block;">Live Carbon Credit Marketplace</h2>
+          <p class="text-muted mb-4" style="line-height: 1.7; font-size: 14.5px;">
+            The C-PAY Marketplace facilitates transparent trading between credit producers (farmers, landowners) and credit buyers (industries, corporates) seeking to offset their carbon footprint.
+          </p>
+          <div class="bg-white p-3 rounded-3 shadow-sm border mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <span class="small text-muted d-block" style="font-size: 12px;">Current Market Rate</span>
+                <span class="fs-4 fw-bold text-dark">$18.50 <span class="small fw-normal text-muted" style="font-size: 12px;">/ Tonne CO₂e</span></span>
+              </div>
+              <span class="badge bg-success py-2 px-3"><i class="bi bi-arrow-up-right me-1"></i> +2.4% Today</span>
+            </div>
+          </div>
+          <a [routerLink]="['/login']" class="btn-hero-primary">
+            Access Marketplace <i class="bi bi-arrow-right"></i>
+          </a>
+        </div>
+        <div class="col-lg-7">
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <div class="bg-white p-4 rounded-3 border text-center h-100">
+                <i class="bi bi-graph-up-arrow text-success mb-3 d-inline-block" style="font-size: 32px;"></i>
+                <h5 class="fw-bold text-dark" style="font-size: 16px;">High Liquidity</h5>
+                <p class="small text-muted mb-0">Instant matching between buyers and verified carbon credit sellers.</p>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="bg-white p-4 rounded-3 border text-center h-100">
+                <i class="bi bi-lock-fill text-success mb-3 d-inline-block" style="font-size: 32px;"></i>
+                <h5 class="fw-bold text-dark" style="font-size: 16px;">Smart Escrow</h5>
+                <p class="small text-muted mb-0">Funds are secured in verified escrows and released upon credit transfer approval.</p>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="bg-white p-4 rounded-3 border text-center h-100">
+                <i class="bi bi-file-earmark-check text-success mb-3 d-inline-block" style="font-size: 32px;"></i>
+                <h5 class="fw-bold text-dark" style="font-size: 16px;">Traceable Registry</h5>
+                <p class="small text-muted mb-0">Every transaction and carbon certificate is indexed to prevent double-counting.</p>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="bg-white p-4 rounded-3 border text-center h-100">
+                <i class="bi bi-wallet2 text-success mb-3 d-inline-block" style="font-size: 32px;"></i>
+                <h5 class="fw-bold text-dark" style="font-size: 16px;">Direct Settlements</h5>
+                <p class="small text-muted mb-0">Supports bank transfers and digital payment gateways for immediate credit payouts.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ready to Make an Impact Banner -->
+  <section class="py-5">
+    <div class="container">
+      <div class="cta-banner">
+        <div class="row align-items-center">
+          <div class="col-md-8 text-start">
+            <h2 class="cta-title">Ready to Make an Impact?</h2>
+            <p class="cta-subtitle">Join C-PAY today and be a part of Datagridz green revolution.</p>
+          </div>
+          <div class="col-md-4">
+            <div class="cta-actions">
+              <a [routerLink]="['/login']" class="btn-cta-light">
+                <i class="bi bi-lock"></i> Login Now
+              </a>
+              <a [routerLink]="['/registration']" class="btn-cta-green">
+                <i class="bi bi-person-plus"></i> Register Now
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer-custom" id="contact">
+    <div class="container">
+      <div class="row g-4">
+        
+        <!-- Col 1: Logo & Desc -->
+        <div class="col-lg-3 col-md-6">
+          <a class="logo-wrapper" href="#">
+            <img src="logo.jpg" alt="C-PAY Logo" class="logo-img">
+            <div class="logo-text-container">
+              <h1 class="logo-title" style="color: var(--primary-green);">C-<span style="color: #000000;">PAY</span></h1>
+              <span class="logo-subtitle text-white-50">Carbon Credit System</span>
+            </div>
+          </a>
+          <p class="footer-logo-desc">
+            Datagridz initiative to promote afforestation, calculate carbon sequestration and build a transparent carbon market ecosystem.
+          </p>
+          <div class="footer-social-links">
+            <a href="#" class="social-icon-btn"><i class="bi bi-facebook"></i></a>
+            <a href="#" class="social-icon-btn"><i class="bi bi-twitter-x"></i></a>
+            <a href="#" class="social-icon-btn"><i class="bi bi-linkedin"></i></a>
+            <a href="#" class="social-icon-btn"><i class="bi bi-instagram"></i></a>
+            <a href="#" class="social-icon-btn"><i class="bi bi-youtube"></i></a>
+          </div>
+        </div>
+        
+        <!-- Col 2: Quick Links -->
+        <div class="col-lg-2 col-md-6 ps-lg-4">
+          <h4 class="footer-column-title">Quick Links</h4>
+          <ul class="footer-links-list">
+            <li><a href="#">Home</a></li>
+            <li><a href="#about">About Us</a></li>
+            <li><a href="#services">Services</a></li>
+            <li><a [routerLink]="['/login']">Carbon Calculator</a></li>
+            <li><a href="#market">Carbon Market</a></li>
+          </ul>
+        </div>
+        
+        <!-- Col 3: Resources -->
+        <div class="col-lg-2 col-md-6">
+          <h4 class="footer-column-title">Resources</h4>
+          <ul class="footer-links-list">
+            <li><a href="javascript:void(0)">Guidelines</a></li>
+            <li><a href="javascript:void(0)">Documents</a></li>
+            <li><a href="javascript:void(0)">FAQs</a></li>
+            <li><a href="javascript:void(0)">News & Updates</a></li>
+            <li><a href="javascript:void(0)">Help Center</a></li>
+          </ul>
+        </div>
+        
+        <!-- Col 4: Support -->
+        <div class="col-lg-2 col-md-6">
+          <h4 class="footer-column-title">Support</h4>
+          <ul class="footer-links-list">
+            <li><a href="#contact">Contact Us</a></li>
+            <li><a href="javascript:void(0)">Privacy Policy</a></li>
+            <li><a href="javascript:void(0)">Terms & Conditions</a></li>
+            <li><a href="javascript:void(0)">Refund Policy</a></li>
+            <li><a href="javascript:void(0)">Sitemap</a></li>
+          </ul>
+        </div>
+        
+        <!-- Col 5: Contact Us -->
+        <div class="col-lg-3 col-md-6">
+          <h4 class="footer-column-title">Contact Us</h4>
+          <div class="footer-contact-item">
+            <i class="bi bi-telephone"></i>
+            <div>
+              <strong>+91 80 4132 8035</strong><br>
+              <span class="text-white-50">Toll Free Support</span>
+            </div>
+          </div>
+          <div class="footer-contact-item">
+            <i class="bi bi-envelope"></i>
+            <div>
+              <strong>contact@Datagridz.com</strong><br>
+              <span class="text-white-50">Support Email</span>
+            </div>
+          </div>
+          <div class="footer-contact-item">
+            <i class="bi bi-geo-alt"></i>
+            <div>
+              <strong>Datagridz IT PVT LTD</strong><br>
+              <span class="text-white-50">JP Nagar 7th Phase, Bangalore - 560078</span>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+      
+      <!-- Bottom Bar -->
+      <div class="footer-bottom-bar">
+        <div class="row">
+          <div class="col-md-6 text-center text-md-start">
+            <p class="footer-copyright">© 2026 Datagridz. All Rights Reserved.</p>
+          </div>
+          <div class="col-md-6 text-center text-md-end">
+            <p class="footer-made-with">Powered By Datagridz.</p>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </footer>
+
+</div>
+
+
+

@@ -1,0 +1,395 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --primary-teal: #7bc043;
+  --primary-teal-hover: #6cae36;
+  --dark-teal: #136c39;
+  --light-green: #c5e8b0;
+  --bg-green-soft: #f7fbf4;
+  --dark-text: #0b3a1d;
+  --muted-text: #5b7c67;
+  --card-shadow: 0 20px 40px rgba(11, 58, 29, 0.08);
+  --glass-bg: rgba(255, 255, 255, 0.90);
+  --glass-border: rgba(255, 255, 255, 0.5);
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  color: var(--dark-text);
+  background-color: var(--bg-green-soft);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+input, textarea, [contenteditable="true"], [contenteditable="true"] * {
+  user-select: auto;
+  -webkit-user-select: auto;
+  -moz-user-select: auto;
+  -ms-user-select: auto;
+}
+
+/* Custom Premium Styles */
+.auth-bg {
+  background-image: linear-gradient(135deg, rgba(27, 48, 44, 0.65) 0%, rgba(0, 108, 104, 0.75) 100%), url('/greenery_bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.15);
+  padding: 40px;
+  width: 100%;
+  max-width: 580px;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* User Type Cards in Gateway */
+.user-type-card {
+  border: 2px solid #e2ece9;
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 24px 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  text-decoration: none;
+  color: var(--dark-text);
+}
+
+.user-type-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--primary-teal);
+  box-shadow: 0 12px 24px rgba(0, 164, 153, 0.08);
+}
+
+.user-type-card.active {
+  border-color: var(--primary-teal);
+  background-color: rgba(0, 164, 153, 0.03);
+}
+
+.user-type-icon-wrapper {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: rgba(0, 164, 153, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  color: var(--primary-teal);
+  font-size: 24px;
+  transition: all 0.3s ease;
+}
+
+.user-type-card:hover .user-type-icon-wrapper {
+  background-color: var(--primary-teal);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+/* Custom Buttons */
+.btn-teal {
+  background-color: var(--primary-teal);
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.btn-teal:hover {
+  background-color: var(--primary-teal-hover);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.btn-teal:active {
+  transform: translateY(0);
+}
+
+.btn-outline-teal {
+  background-color: transparent;
+  color: var(--primary-teal);
+  border: 2px solid var(--primary-teal);
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.btn-outline-teal:hover {
+  background-color: var(--primary-teal);
+  color: #ffffff;
+}
+
+/* Form Controls styling */
+.form-control {
+  border-radius: 10px;
+  border: 1px solid #c9dad5;
+  padding: 12px 16px;
+  transition: all 0.2s ease;
+}
+
+.form-control:focus {
+  border-color: var(--primary-teal);
+  box-shadow: 0 0 0 0.25rem rgba(0, 164, 153, 0.15);
+}
+
+.form-label {
+  font-weight: 500;
+  color: var(--dark-text);
+  margin-bottom: 6px;
+}
+
+/* Captcha styling */
+.captcha-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.captcha-box {
+  background-color: #f0f5f3;
+  border: 1px solid #c9dad5;
+  border-radius: 10px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 22px;
+  font-weight: bold;
+  letter-spacing: 5px;
+  padding: 10px 20px;
+  color: #334e49;
+  user-select: none;
+  background-image: linear-gradient(45deg, rgba(0,0,0,0.03) 25%, transparent 25%), 
+                    linear-gradient(-45deg, rgba(0,0,0,0.03) 25%, transparent 25%);
+  background-size: 10px 10px;
+  display: inline-block;
+}
+
+.btn-refresh {
+  background: none;
+  border: none;
+  color: var(--muted-text);
+  font-size: 20px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.btn-refresh:hover {
+  color: var(--primary-teal);
+}
+
+/* Transitions */
+.fade-in-route {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Hide Google Translate Banner and Widget for a cleaner Custom UI */
+.goog-te-banner-frame.skiptranslate,
+.goog-te-banner-frame,
+#goog-gt-tt,
+.goog-te-balloon-frame {
+  display: none !important;
+}
+body {
+  top: 0px !important;
+}
+#google_translate_element {
+  display: none !important;
+}
+.goog-logo-link {
+  display: none !important;
+}
+.goog-te-gadget {
+  font-size: 0px !important;
+}
+.goog-te-gadget .goog-te-combo {
+  display: none !important;
+}
+
+/* ================= GLOBAL CURVED & ROUNDED DROPDOWN STYLES ================= */
+
+/* All Select Inputs & Select Control Dropdowns */
+select,
+.form-select,
+.form-control select,
+.country-code-select,
+.country-select,
+.swap-asset-select,
+.buyer-project-select,
+.dropdown-select,
+.custom-select {
+  border-radius: 14px !important;
+  -webkit-border-radius: 14px !important;
+  -moz-border-radius: 14px !important;
+  border: 2px solid #e2e8f0 !important;
+  outline: none !important;
+  background-color: #ffffff !important;
+  padding-left: 14px !important;
+  padding-right: 40px !important;
+  font-size: 13.5px !important;
+  color: var(--dark-text, #0b3a1d) !important;
+  cursor: pointer !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2300a499' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 14px center !important;
+  background-size: 16px 16px !important;
+}
+
+select:focus,
+.form-select:focus,
+.form-control select:focus,
+.country-code-select:focus,
+.country-select:focus,
+.swap-asset-select:focus,
+.buyer-project-select:focus {
+  border-color: var(--primary-teal, #7bc043) !important;
+  box-shadow: 0 0 0 4px rgba(123, 192, 67, 0.18) !important;
+  border-radius: 14px !important;
+}
+
+/* Curved edges and distinct contrast colors for options inside dropdown list */
+select option,
+.form-select option,
+.swap-asset-select option {
+  border-radius: 8px !important;
+  padding: 10px 14px !important;
+  margin: 4px !important;
+  background-color: #ffffff !important;
+  color: #0b3a1d !important;
+  font-size: 13.5px !important;
+  font-family: 'Outfit', 'Segoe UI', sans-serif !important;
+}
+
+/* Fix text becoming invisible when cursor moves away */
+select option:not(:checked):not(:hover),
+.form-select option:not(:checked):not(:hover),
+.swap-asset-select option:not(:checked):not(:hover) {
+  background-color: #ffffff !important;
+  color: #0b3a1d !important;
+}
+
+select option:hover,
+select option:focus,
+select option:active,
+select option:checked,
+.form-select option:hover,
+.form-select option:focus,
+.form-select option:active,
+.form-select option:checked,
+.swap-asset-select option:hover,
+.swap-asset-select option:focus,
+.swap-asset-select option:active,
+.swap-asset-select option:checked {
+  background: linear-gradient(135deg, #7bc043 0%, #136c39 100%) !important;
+  background-color: #00a499 !important;
+  color: #ffffff !important;
+  border-radius: 8px !important;
+}
+
+/* Dropdown menus, floating search boxes, datalists and popups */
+.dropdown-menu,
+.dropdown-content,
+.search-dropdown,
+.buyer-search-dropdown,
+.lang-dropdown-menu,
+datalist,
+div[class*="dropdown-menu"],
+div[class*="select-options"],
+div[class*="custom-select-dropdown"],
+ul[class*="dropdown"] {
+  border-radius: 16px !important;
+  -webkit-border-radius: 16px !important;
+  -moz-border-radius: 16px !important;
+  border: 1px solid #d8e6e2 !important;
+  box-shadow: 0 14px 36px rgba(11, 58, 29, 0.14) !important;
+  overflow: hidden !important;
+  padding: 8px !important;
+  background-color: #ffffff !important;
+}
+
+.dropdown-item,
+.search-dropdown-item,
+.buyer-search-dropdown-item,
+.lang-dropdown-menu .dropdown-item,
+.option-item {
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  margin-bottom: 2px !important;
+  color: #0b3a1d !important;
+  background-color: #ffffff !important;
+  transition: all 0.2s ease !important;
+}
+
+.dropdown-item:hover,
+.search-dropdown-item:hover,
+.buyer-search-dropdown-item:hover,
+.lang-dropdown-menu .dropdown-item:hover,
+.option-item:hover {
+  background-color: rgba(123, 192, 67, 0.12) !important;
+  color: var(--dark-teal, #136c39) !important;
+  border-radius: 10px !important;
+}
+
+/* ================= REGISTRATION PAGE SCROLL & UNCLIPPED DROPDOWNS ================= */
+html, body {
+  overflow-y: auto !important;
+  overflow-x: hidden;
+}
+
+.wizard-card,
+.registration-card,
+.location-box,
+.card-box,
+.form-grid {
+  overflow: visible !important;
+}
+
+/* ================= HIDE NUMBER INPUT SPINNERS & PREVENT FIELD SCROLLING ================= */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+
+input[type=number] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
+
+

@@ -1,0 +1,31 @@
+<div class="custom-select-wrapper" [class.open]="isOpen" [class.open-up]="openUpward" [class.disabled]="disabled" [class.has-value]="value !== '' && value !== null" [ngClass]="customClass">
+  <div class="custom-select-trigger" (click)="toggleOpen()" tabindex="0" (keydown.enter)="toggleOpen()" (keydown.space)="toggleOpen()">
+    <span class="selected-text" [class.placeholder-text]="!value || value === ''">
+      {{ selectedOptionLabel }}
+    </span>
+    <span class="chevron-icon" [class.rotated]="isOpen">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m6 9 6 6 6-6"/>
+      </svg>
+    </span>
+  </div>
+
+  @if (isOpen) {
+    <div class="custom-select-dropdown">
+      <div class="options-list">
+        @for (opt of formattedOptions; track opt.value + '_' + $index) {
+          <div
+            class="option-item"
+            [class.selected]="opt.value === value"
+            [class.placeholder-option]="opt.value === ''"
+            (click)="selectOption(opt, $event)">
+            <span>{{ opt.label }}</span>
+            @if (opt.value === value && opt.value !== '') {
+              <span class="check-icon">✓</span>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

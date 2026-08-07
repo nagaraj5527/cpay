@@ -1,0 +1,3042 @@
+import * as registrationRepository from '../repositories/registration.repository.js';
+import { calculateCarbonReport, calculateDetailedAquacultureCarbon } from '../utils/carbonCalculator.js';
+import { calculateAquacultureCarbon } from './aquaculture_calculator.service.js';
+import { syncExcelWithInputs } from './excel_sync.service.js';
+import pool from '../config/postgres.js';
+import { v4 as uuidv4 } from 'uuid';
+
+const isUuid = (val) => val && val.length === 36 && val.includes('-');
+
+const resolveGeography = async (client, stateName, districtName, mandalName, villageName, pincode) => {
+    // 1. Resolve State
+    let stateId;
+    if (isUuid(stateName)) {
+        stateId = stateName;
+    } else {
+        let stateResult = await client.query(
+            "SELECT state_id FROM cpay.states WHERE state_name ILIKE $1 OR state_code ILIKE $1 LIMIT 1",
+            [stateName]
+        );
+        if (stateResult.rows.length > 0) {
+            stateId = stateResult.rows[0].state_id;
+        } else {
+            stateId = uuidv4();
+            const code = stateName.substring(0, 2).toUpperCase();
+            await client.query(
+                "INSERT INTO cpay.states (state_id, state_code, state_name, is_active, created_at, updated_at) VALUES ($1, $2, $3, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                [stateId, code, stateName]
+            );
+        }
+    }
+
+    // 2. Resolve District
+    let districtId;
+    if (isUuid(districtName)) {
+        districtId = districtName;
+    } else {
+        let districtResult = await client.query(
+            "SELECT district_id FROM cpay.districts WHERE district_name ILIKE $1 AND state_id = $2 LIMIT 1",
+            [districtName, stateId]
+        );
+        if (districtResult.rows.length > 0) {
+            districtId = districtResult.rows[0].district_id;
+        } else {
+            districtId = uuidv4();
+            await client.query(
+                "INSERT INTO cpay.districts (district_id, state_id, district_name, is_active, created_at, updated_at) VALUES ($1, $2, $3, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                [districtId, stateId, districtName]
+            );
+        }
+    }
+
+    // 3. Resolve Mandal
+    let mandalId;
+    if (isUuid(mandalName)) {
+        mandalId = mandalName;
+    } else {
+        let mandalResult = await client.query(
+            "SELECT mandal_id FROM cpay.mandals WHERE mandal_name ILIKE $1 AND district_id = $2 LIMIT 1",
+            [mandalName, districtId]
+        );
+        if (mandalResult.rows.length > 0) {
+            mandalId = mandalResult.rows[0].mandal_id;
+        } else {
+            mandalId = uuidv4();
+            await client.query(
+                "INSERT INTO cpay.mandals (mandal_id, district_id, mandal_name, is_active, created_at, updated_at) VALUES ($1, $2, $3, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                [mandalId, districtId, mandalName]
+            );
+        }
+    }
+
+    // 4. Resolve Village
+    let villageId;
+    if (isUuid(villageName)) {
+        villageId = villageName;
+    } else {
+        let villageResult = await client.query(
+            "SELECT village_id FROM cpay.villages WHERE village_name ILIKE $1 AND mandal_id = $2 LIMIT 1",
+            [villageName, mandalId]
+        );
+        if (villageResult.rows.length > 0) {
+            villageId = villageResult.rows[0].village_id;
+        } else {
+            villageId = uuidv4();
+            await client.query(
+                "INSERT INTO cpay.villages (village_id, mandal_id, village_name, pincode, is_active, created_at, updated_at) VALUES ($1, $2, $3, $4, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                [villageId, mandalId, villageName, pincode]
+            );
+        }
+    }
+
+    return { stateId, districtId, mandalId, villageId };
+};
+
+/*
+=========================================================
+Start Registration
+=========================================================
+*/
+
+export const startRegistration = async (user, data) => {
+
+    const {
+
+        registrationTypeId,
+
+        userTypeId
+
+    } = data;
+
+    /*
+    ============================================
+    Validation
+    ============================================
+    */
+
+    if (!registrationTypeId) {
+
+        throw new Error("Registration Type is required");
+
+    }
+
+    if (!userTypeId) {
+
+        throw new Error("User Type is required");
+
+    }
+
+    /*
+    ============================================
+    Generate Application Number
+    ============================================
+    */
+
+    const applicationNumber = await registrationRepository.generateApplicationNumber();
+
+    /*
+    ============================================
+    Create Registration
+    ============================================
+    */
+
+    const registration = await registrationRepository.createRegistration({
+
+        applicationNumber,
+
+        userId: user.userId,
+
+        registrationTypeId,
+
+        userTypeId
+
+    });
+
+    return {
+
+        success: true,
+
+        message: "Registration Started Successfully",
+
+        data: registration
+
+    };
+
+};
+
+/*
+=========================================================
+Save Personal Details
+=========================================================
+*/
+
+export const savePersonalDetails = async (user, data) => {
+
+    const {
+
+        registrationId,
+
+        fullName,
+
+        gender,
+
+        aadhaarNumber,
+
+        panNumber,
+
+        email,
+
+        emailAddress,
+
+        mobileNumber
+
+    } = data;
+
+    const userEmail = email || emailAddress || user.email;
+    const userMobile = mobileNumber || user.mobileNumber || user.mobile_number;
+
+    /*
+    ============================================
+    Validation
+    ============================================
+    */
+
+    if (!fullName) {
+
+        throw new Error("Full Name is required");
+
+    }
+
+    /*
+    ============================================
+    Save Details
+    ============================================
+    */
+
+    await registrationRepository.savePersonalDetails({
+
+        userId: user.userId,
+
+        fullName,
+
+        gender,
+
+        aadhaarNumber,
+
+        panNumber,
+
+        email: userEmail,
+
+        mobileNumber: userMobile
+
+    });
+
+    if (registrationId) {
+        await registrationRepository.updateCurrentStep(
+            registrationId,
+            2
+        );
+    }
+
+    return {
+
+        success: true,
+
+        message: "Personal Details Saved Successfully"
+
+    };
+
+};
+
+/*
+=========================================================
+Save Organization Details
+=========================================================
+*/
+
+export const saveOrganizationDetails = async (user, data) => {
+
+    await registrationRepository.saveOrganizationDetails({ ...data, userId: user.userId });
+
+    await registrationRepository.updateCurrentStep(
+
+        data.registrationId,
+
+        2
+
+    );
+
+    return {
+
+        success: true,
+
+        message: "Organization Details Saved Successfully"
+
+    };
+
+};
+
+export const saveGovernmentDetails = async(user,data)=>{
+
+    await registrationRepository.saveGovernmentDetails({ ...data, userId: user.userId });
+
+    await registrationRepository.updateCurrentStep(
+
+        data.registrationId,
+
+        2
+
+    );
+
+    return{
+
+        success:true,
+
+        message:"Government Details Saved Successfully"
+
+    };
+
+};
+
+/*
+=========================================================
+Save Address Details
+=========================================================
+*/
+
+export const saveAddressDetails = async (user, data) => {
+
+    const {
+        registrationId,
+        stateId,
+        districtId,
+        mandalId,
+        villageId,
+        pincode
+    } = data;
+
+    if (!registrationId) {
+        throw new Error("Registration ID is required");
+    }
+
+    if (!stateId) {
+        throw new Error("State is required");
+    }
+
+    if (!districtId) {
+        throw new Error("District is required");
+    }
+
+    if (!mandalId) {
+        throw new Error("Mandal is required");
+    }
+
+    if (!villageId) {
+        throw new Error("Village is required");
+    }
+
+    if (!pincode) {
+        throw new Error("Pincode is required");
+    }
+
+    // Resolve geography string names to database UUIDs
+    const resolvedGeo = await resolveGeography(
+        pool,
+        stateId,
+        districtId,
+        mandalId,
+        villageId,
+        pincode
+    );
+
+    await registrationRepository.saveAddressDetails({
+        registrationId,
+        stateId: resolvedGeo.stateId,
+        districtId: resolvedGeo.districtId,
+        mandalId: resolvedGeo.mandalId,
+        villageId: resolvedGeo.villageId,
+        pincode
+    });
+
+    await registrationRepository.updateCurrentStep(
+        registrationId,
+        3
+    );
+
+    return {
+
+        success: true,
+
+        message: "Address Details Saved Successfully",
+
+        data: {
+            stateId: resolvedGeo.stateId,
+            districtId: resolvedGeo.districtId,
+            mandalId: resolvedGeo.mandalId,
+            villageId: resolvedGeo.villageId
+        }
+
+    };
+
+};
+
+/*
+=========================================================
+Save Land Details
+=========================================================
+*/
+
+export const saveLandDetails = async (user, data) => {
+
+    const {
+
+        registrationId,
+
+        landTypeId,
+
+        surveyNumber,
+
+        subDivisionNumber,
+
+        totalArea,
+
+        unitId,
+
+        latitude,
+
+        longitude,
+
+        mongoPhotoId
+
+    } = data;
+
+    if (!registrationId)
+        throw new Error("Registration ID is required");
+
+    if (!landTypeId)
+        throw new Error("Land Type is required");
+
+    if (!surveyNumber)
+        throw new Error("Survey Number is required");
+
+    if (!totalArea)
+        throw new Error("Total Area is required");
+
+    if (!unitId)
+        throw new Error("Unit is required");
+
+    // Resolve land type name to UUID
+    let resolvedLandTypeId = landTypeId;
+    if (!isUuid(landTypeId)) {
+        let nameMatch = 'OPEN_LAND';
+        if (landTypeId.toLowerCase().includes('fish')) nameMatch = 'FISH_POND';
+        else if (landTypeId.toLowerCase().includes('gov')) nameMatch = 'GOVERNMENT_LAND';
+        else if (landTypeId.toLowerCase().includes('house')) nameMatch = 'HOUSE';
+
+        const lTypeResult = await pool.query(
+            "SELECT land_type_id FROM cpay.land_types WHERE land_type_name = $1 LIMIT 1",
+            [nameMatch]
+        );
+        if (lTypeResult.rows.length > 0) {
+            resolvedLandTypeId = lTypeResult.rows[0].land_type_id;
+        }
+    }
+
+    // Resolve unit name to UUID
+    let resolvedUnitId = unitId;
+    if (!isUuid(unitId)) {
+        let cleanUnit = unitId;
+        if (cleanUnit.toLowerCase().startsWith('acre')) cleanUnit = 'Acre';
+        else if (cleanUnit.toLowerCase().startsWith('hectare')) cleanUnit = 'Hectare';
+
+        const uResult = await pool.query(
+            "SELECT unit_id FROM cpay.units WHERE unit_name ILIKE $1 OR unit_symbol ILIKE $1 LIMIT 1",
+            [cleanUnit]
+        );
+        if (uResult.rows.length > 0) {
+            resolvedUnitId = uResult.rows[0].unit_id;
+        }
+    }
+
+    // Check duplicate survey number for this user
+    const dupRes = await pool.query(`
+        SELECT 1 FROM cpay.land_details ld
+        JOIN cpay.registration r ON ld.registration_id = r.registration_id
+        WHERE r.user_id = $1 
+          AND ld.survey_number = $2 
+          AND COALESCE(ld.sub_division_number, '') = COALESCE($3, '')
+        LIMIT 1;
+    `, [user.userId, surveyNumber, subDivisionNumber || '']);
+
+    if (dupRes.rows.length > 0) {
+        throw new Error("This Survey Number is already registered. Please use another Survey Number.");
+    }
+
+    const land = await registrationRepository.saveLandDetails({
+
+        registrationId,
+
+        userId: user.userId,
+
+        landTypeId: resolvedLandTypeId,
+
+        surveyNumber,
+
+        subDivisionNumber,
+
+        totalArea,
+
+        unitId: resolvedUnitId,
+
+        latitude,
+
+        longitude,
+
+        mongoPhotoId
+
+    });
+
+    await registrationRepository.updateCurrentStep(
+
+        registrationId,
+
+        4
+
+    );
+
+    return {
+
+        success: true,
+
+        message: "Land Details Saved Successfully",
+
+        data: land
+
+    };
+
+};
+
+/*
+=========================================================
+Save Plantation Details
+=========================================================
+*/
+
+export const savePlantationDetails = async (user, data) => {
+
+    const {
+
+        registrationId,
+
+        landId,
+
+        plantationCategoryId,
+
+        speciesName,
+
+        numberOfPlants,
+
+        plantationAge,
+
+        plantationArea,
+
+        areaUnitId,
+
+        remarks
+
+    } = data;
+
+    if (!registrationId)
+        throw new Error("Registration ID is required");
+
+    if (!landId)
+        throw new Error("Land ID is required");
+
+    if (!plantationCategoryId)
+        throw new Error("Plantation Category is required");
+
+    if (!numberOfPlants)
+        throw new Error("Number of Plants is required");
+
+    // Resolve category name to UUID
+    let resolvedCategoryId = plantationCategoryId;
+    if (!isUuid(plantationCategoryId)) {
+        let nameMatch = 'TREE';
+        if (plantationCategoryId.toLowerCase().includes('crop')) nameMatch = 'CROP';
+        else if (plantationCategoryId.toLowerCase().includes('garden')) nameMatch = 'GARDEN';
+        else if (plantationCategoryId.toLowerCase().includes('mangrove')) nameMatch = 'MANGROVE';
+        else if (plantationCategoryId.toLowerCase().includes('other')) nameMatch = 'OTHER';
+
+        const catResult = await pool.query(
+            "SELECT plantation_category_id FROM cpay.plantation_categories WHERE category_name = $1 LIMIT 1",
+            [nameMatch]
+        );
+        if (catResult.rows.length > 0) {
+            resolvedCategoryId = catResult.rows[0].plantation_category_id;
+        }
+    }
+
+    // Resolve unit name to UUID
+    let resolvedAreaUnitId = areaUnitId;
+    if (!isUuid(areaUnitId)) {
+        let cleanUnit = areaUnitId;
+        if (cleanUnit.toLowerCase().startsWith('acre')) cleanUnit = 'Acre';
+        else if (cleanUnit.toLowerCase().startsWith('hectare')) cleanUnit = 'Hectare';
+
+        const uResult = await pool.query(
+            "SELECT unit_id FROM cpay.units WHERE unit_name ILIKE $1 OR unit_symbol ILIKE $1 LIMIT 1",
+            [cleanUnit]
+        );
+        if (uResult.rows.length > 0) {
+            resolvedAreaUnitId = uResult.rows[0].unit_id;
+        }
+    }
+
+    // Resolve speciesName to plantSpeciesId to prevent join errors
+    let plantSpeciesId = null;
+    const specResult = await pool.query(
+        "SELECT plant_species_id FROM cpay.plant_species WHERE common_name ILIKE $1 LIMIT 1",
+        [speciesName]
+    );
+    if (specResult.rows.length > 0) {
+        plantSpeciesId = specResult.rows[0].plant_species_id;
+    } else {
+        const fallbackResult = await pool.query("SELECT plant_species_id FROM cpay.plant_species LIMIT 1");
+        if (fallbackResult.rows.length > 0) {
+            plantSpeciesId = fallbackResult.rows[0].plant_species_id;
+        }
+    }
+
+    await registrationRepository.savePlantationDetails({
+
+        registrationId,
+
+        landId,
+
+        plantationCategoryId: resolvedCategoryId,
+
+        speciesName,
+
+        numberOfPlants,
+
+        plantationAge,
+
+        plantationArea,
+
+        areaUnitId: resolvedAreaUnitId,
+
+        remarks,
+
+        plantSpeciesId
+
+    });
+
+    await registrationRepository.updateCurrentStep(
+
+        registrationId,
+
+        5
+
+    );
+
+    return {
+
+        success: true,
+
+        message: "Plantation Details Saved Successfully"
+
+    };
+
+};
+
+/*
+=========================================================
+Save Aquaculture Details
+=========================================================
+*/
+
+export const saveAquacultureDetails = async (user, data) => {
+
+    const {
+
+        registrationId,
+
+        landId,
+
+        aquacultureType,
+
+        fishSpeciesId,
+
+        prawnSpeciesId,
+
+        stockQuantity,
+
+        cultureDays,
+
+        pondArea,
+
+        areaUnitId,
+
+        feedConsumed,
+
+        feedUnitId,
+
+        fcr,
+
+        remarks,
+
+        cropsPerYear,
+        netBiomassGain,
+        feedCrudeProtein,
+        feedCarbonContent,
+        dobProportion,
+        dobEF,
+        gncEF,
+        nRetentionEfficiency,
+        cRetentionEfficiency,
+        n2oN_EF,
+        gwpCH4,
+        gwpN2O,
+        dieselEF,
+        dieselBaseline,
+        dieselImproved,
+        baselineAnaerobicFraction,
+        improvedAnaerobicFraction,
+        fcrImprovement,
+        measuredCH4Baseline,
+        measuredCH4Improved,
+        measuredN2OBaseline,
+        measuredN2OImproved
+
+    } = data;
+
+    if (!registrationId)
+        throw new Error("Registration ID is required");
+
+    if (!landId)
+        throw new Error("Land ID is required");
+
+    if (!aquacultureType)
+        throw new Error("Aquaculture Type is required");
+
+    // 1. Resolve fishSpeciesId
+    let resolvedFishSpeciesId = fishSpeciesId || null;
+    if (resolvedFishSpeciesId && !isUuid(resolvedFishSpeciesId)) {
+        let nameMatch = 'IMC';
+        if (resolvedFishSpeciesId.toLowerCase().includes('panga')) nameMatch = 'PANGASIUS';
+        else if (resolvedFishSpeciesId.toLowerCase().includes('roop')) nameMatch = 'ROOPCHAND';
+        else if (resolvedFishSpeciesId.toLowerCase().includes('tilapia')) nameMatch = 'TILAPIA';
+
+        const fResult = await pool.query(
+            "SELECT fish_species_id FROM cpay.fish_species WHERE species_name = $1 LIMIT 1",
+            [nameMatch]
+        );
+        if (fResult.rows.length > 0) {
+            resolvedFishSpeciesId = fResult.rows[0].fish_species_id;
+        }
+    }
+
+    // 2. Resolve prawnSpeciesId
+    let resolvedPrawnSpeciesId = prawnSpeciesId || null;
+    if (resolvedPrawnSpeciesId && !isUuid(resolvedPrawnSpeciesId)) {
+        let nameMatch = 'TIGER_PRAWN';
+        if (resolvedPrawnSpeciesId.toLowerCase().includes('vannamei')) nameMatch = 'VANNAMEI';
+        else if (resolvedPrawnSpeciesId.toLowerCase().includes('scampi')) nameMatch = 'SCAMPI';
+        else if (resolvedPrawnSpeciesId.toLowerCase().includes('banana')) nameMatch = 'BANANA_PRAWN';
+        else if (resolvedPrawnSpeciesId.toLowerCase().includes('kuruma')) nameMatch = 'KURUMA_PRAWN';
+
+        const pResult = await pool.query(
+            "SELECT prawn_species_id FROM cpay.prawn_species WHERE species_name = $1 LIMIT 1",
+            [nameMatch]
+        );
+        if (pResult.rows.length > 0) {
+            resolvedPrawnSpeciesId = pResult.rows[0].prawn_species_id;
+        }
+    }
+
+    // 3. Resolve areaUnitId
+    let resolvedAreaUnitId = areaUnitId;
+    if (areaUnitId && !isUuid(areaUnitId)) {
+        let cleanUnit = areaUnitId;
+        if (cleanUnit.toLowerCase().startsWith('acre')) cleanUnit = 'Acre';
+        else if (cleanUnit.toLowerCase().startsWith('hectare')) cleanUnit = 'Hectare';
+
+        const uResult = await pool.query(
+            "SELECT unit_id FROM cpay.units WHERE unit_name ILIKE $1 OR unit_symbol ILIKE $1 LIMIT 1",
+            [cleanUnit]
+        );
+        if (uResult.rows.length > 0) {
+            resolvedAreaUnitId = uResult.rows[0].unit_id;
+        }
+    }
+
+    // 4. Resolve feedUnitId
+    let resolvedFeedUnitId = feedUnitId;
+    if (feedUnitId && !isUuid(feedUnitId)) {
+        let cleanUnit = feedUnitId;
+        if (cleanUnit.toLowerCase().startsWith('kg') || cleanUnit.toLowerCase().startsWith('kilo')) cleanUnit = 'Kilogram';
+        else if (cleanUnit.toLowerCase().startsWith('ton')) cleanUnit = 'Ton';
+
+        const uResult = await pool.query(
+            "SELECT unit_id FROM cpay.units WHERE unit_name ILIKE $1 OR unit_symbol ILIKE $1 LIMIT 1",
+            [cleanUnit]
+        );
+        if (uResult.rows.length > 0) {
+            resolvedFeedUnitId = uResult.rows[0].unit_id;
+        }
+    }
+
+    await registrationRepository.saveAquacultureDetails({
+
+        registrationId,
+
+        landId,
+
+        aquacultureType,
+
+        fishSpeciesId: resolvedFishSpeciesId,
+
+        prawnSpeciesId: resolvedPrawnSpeciesId,
+
+        stockQuantity,
+
+        cultureDays,
+
+        pondArea,
+
+        areaUnitId: resolvedAreaUnitId,
+
+        feedConsumed,
+
+        feedUnitId: resolvedFeedUnitId,
+
+        fcr,
+
+        remarks,
+
+        cropsPerYear,
+        netBiomassGain,
+        feedCrudeProtein,
+        feedCarbonContent,
+        dobProportion,
+        dobEF,
+        gncEF,
+        nRetentionEfficiency,
+        cRetentionEfficiency,
+        n2oN_EF,
+        gwpCH4,
+        gwpN2O,
+        dieselEF,
+        dieselBaseline,
+        dieselImproved,
+        baselineAnaerobicFraction,
+        improvedAnaerobicFraction,
+        fcrImprovement,
+        measuredCH4Baseline,
+        measuredCH4Improved,
+        measuredN2OBaseline,
+        measuredN2OImproved
+
+    });
+
+    await registrationRepository.updateCurrentStep(
+
+        registrationId,
+
+        5
+
+    );
+
+    return {
+
+        success: true,
+
+        message: "Aquaculture Details Saved Successfully"
+
+    };
+
+};
+
+/*
+=========================================================
+Carbon Calculation
+=========================================================
+*/
+
+export const saveCarbonCalculation = async (user,data)=>{
+
+    const{
+
+        registrationId,
+        estimatedCO2,
+        carbonCredits,
+        marketValue
+
+    }=data;
+
+    if(!registrationId){
+
+        throw new Error("Registration ID is required");
+
+    }
+
+    /*
+    ============================================
+    Calculation & Rate Resolution
+    ============================================
+    */
+
+    let annualCarbon = 0;
+    let carbonCreditsVal = 0;
+    let carbonRate = 12.5; // fallback rate
+    let estimatedValue = 0;
+
+    const rate = await registrationRepository.getCurrentCarbonRate();
+    if (rate) {
+        carbonRate = Number(rate.carbon_rate);
+    }
+
+    if (estimatedCO2 !== undefined && carbonCredits !== undefined && marketValue !== undefined) {
+        annualCarbon = Number(estimatedCO2);
+        carbonCreditsVal = Number(carbonCredits);
+        estimatedValue = Number(marketValue);
+    } else {
+        const plantation = await registrationRepository.getPlantationDetails(registrationId);
+
+        if (plantation) {
+            const report = calculateCarbonReport(
+                plantation.category_name,
+                plantation.number_of_plants,
+                plantation.plantation_age || 0,
+                carbonRate
+            );
+            annualCarbon = report.annualCarbon;
+            carbonCreditsVal = report.carbonCredits;
+            estimatedValue = report.estimatedValue;
+        } else {
+            // Fallback to check aquaculture details
+            const aquaRes = await pool.query(
+                "SELECT * FROM cpay.aquaculture_details WHERE registration_id = $1 LIMIT 1",
+                [registrationId]
+            );
+            if (aquaRes.rows.length > 0) {
+                const aqua = aquaRes.rows[0];
+                let extraInputs = {};
+                if (aqua.remarks) {
+                    try {
+                        const parsed = JSON.parse(aqua.remarks);
+                        if (parsed && parsed.extraInputs) {
+                            extraInputs = parsed.extraInputs;
+                        }
+                    } catch (e) {
+                        // Not JSON or no extra inputs
+                    }
+                }
+                
+                const speciesRes = await pool.query(
+                    "SELECT species_name FROM cpay.fish_species WHERE fish_species_id = $1 UNION SELECT species_name FROM cpay.prawn_species WHERE prawn_species_id = $1 LIMIT 1",
+                    [aqua.fish_species_id || aqua.prawn_species_id]
+                );
+                const speciesName = speciesRes.rows.length > 0 ? speciesRes.rows[0].species_name : 'Rohu';
+
+                // Calculate using full detailed model
+                const report = calculateDetailedAquacultureCarbon({
+                    speciesName,
+                    pondArea: Number(aqua.pond_area),
+                    annualProduction: extraInputs.annualProduction || (Number(aqua.feed_consumed) / (Number(aqua.fcr) || 1.6)),
+                    actualFCR: Number(aqua.fcr),
+                    seedStocked: Number(aqua.stock_quantity),
+                    electricityUsed: extraInputs.electricityUsed || 12000,
+                    dieselUsed: extraInputs.dieselUsed || 800,
+                    limeApplied: extraInputs.limeApplied || 2000,
+                    ureaApplied: extraInputs.ureaApplied || 300,
+                    dapApplied: extraInputs.dapApplied || 150,
+                    manureApplied: extraInputs.manureApplied || 1000,
+                    landUseChangeEmissions: extraInputs.landUseChangeEmissions || 0,
+                    mangroveArea: extraInputs.mangroveArea || 0.5,
+                    treesOnBunds: extraInputs.treesOnBunds || 100,
+                    pondBurialArea: extraInputs.pondBurialArea || 0,
+                    otherRemovals: extraInputs.otherRemovals || 0,
+                    baselineFCR: extraInputs.baselineFCR || 2.0,
+                    baselineElectricity: extraInputs.baselineElectricity || 18000,
+                    baselineDiesel: extraInputs.baselineDiesel || 1500,
+                    baselineUrea: extraInputs.baselineUrea || 500,
+                    freeAllowance: extraInputs.freeAllowance || 0,
+                    carbonPrice: carbonRate
+                });
+
+                annualCarbon = report.totalEmissions;
+                carbonCreditsVal = report.reductionCredits;
+                estimatedValue = report.reductionCreditRevenue;
+            } else {
+                throw new Error("Plantation or Aquaculture Details Not Found");
+            }
+        }
+    }
+
+    /*
+    ============================================
+    Save Result
+    ============================================
+    */
+
+    await registrationRepository.saveCarbonCalculation({
+
+        registrationId,
+
+        annualCarbonSequestration: annualCarbon,
+
+        carbonCredits: carbonCreditsVal,
+
+        carbonRate: carbonRate,
+
+        estimatedValue: estimatedValue
+
+    });
+
+    await registrationRepository.updateCurrentStep(
+
+        registrationId,
+
+        6
+
+    );
+
+    return {
+
+        success: true,
+
+        message: "Carbon Calculation Completed",
+
+        data: {
+            annualCarbon,
+            carbonCredits: carbonCreditsVal,
+            carbonRate,
+            estimatedValue
+        }
+
+    };
+
+};
+
+/*
+=========================================================
+Save Consent
+=========================================================
+*/
+
+export const saveConsent = async (user, data) => {
+
+    const {
+
+        registrationId,
+
+        consentAccepted,
+
+        declarationAccepted
+
+    } = data;
+
+    if (!registrationId) {
+
+        throw new Error("Registration ID is required");
+
+    }
+
+    if (consentAccepted !== true) {
+
+        throw new Error("Please accept the consent");
+
+    }
+
+    if (declarationAccepted !== true) {
+
+        throw new Error("Please accept the declaration");
+
+    }
+
+    await registrationRepository.saveConsent({
+
+        registrationId,
+
+        consentAccepted,
+
+        declarationAccepted
+
+    });
+
+    await registrationRepository.updateCurrentStep(
+
+        registrationId,
+
+        7
+
+    );
+
+    return {
+
+        success: true,
+
+        message: "Consent Saved Successfully"
+
+    };
+
+};
+
+/*
+=========================================================
+Preview Registration
+=========================================================
+*/
+
+export const previewRegistration = async (user, registrationId) => {
+
+    if (!registrationId) {
+
+        throw new Error("Registration ID is required");
+
+    }
+
+    const preview = await registrationRepository.getRegistrationPreview(
+
+        registrationId
+
+    );
+
+    return {
+
+        success: true,
+
+        data: preview
+
+    };
+
+};
+
+/*
+=========================================================
+Final Submit
+=========================================================
+*/
+
+export const submitRegistration = async (user, data) => {
+
+    const {
+
+        registrationId
+
+    } = data;
+
+    if (!registrationId) {
+
+        throw new Error("Registration ID is required");
+
+    }
+
+    const registration = await registrationRepository.getRegistrationById(
+
+        registrationId
+
+    );
+
+    if (!registration) {
+
+        throw new Error("Registration not found");
+
+    }
+
+    if (registration.application_status === 'SUBMITTED') {
+
+        throw new Error("Application already submitted");
+
+    }
+
+    await registrationRepository.submitRegistration(
+
+        registrationId
+
+    );
+
+    await registrationRepository.addApplicationHistory({
+
+        registrationId,
+
+        status: "SUBMITTED",
+
+        remarks: "Application Submitted Successfully",
+
+        updatedBy: user.userId
+
+    });
+
+    return {
+
+        success: true,
+
+        message: "Application Submitted Successfully"
+
+    };
+
+};
+
+/*
+=========================================================
+Get User Registration Status
+=========================================================
+*/
+
+export const getUserRegistrationStatus = async (user) => {
+
+    const reg = await registrationRepository.getRegistrationByUserId(user.userId);
+
+    return {
+
+        success: true,
+
+        data: reg || null
+
+    };
+
+};
+
+export const getPincodeDetails = async (pincode) => {
+    try {
+        const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+        if (!response.ok) {
+            throw new Error(`Postal API failed with status ${response.status}`);
+        }
+        const data = await response.json();
+        return {
+            success: true,
+            data: data
+        };
+    } catch (err) {
+        throw new Error(`Pincode lookup failed: ${err.message}`);
+    }
+};
+
+export const getLandWeather = async (registrationId) => {
+    try {
+        const landQuery = `
+            SELECT latitude, longitude 
+            FROM cpay.land_details 
+            WHERE registration_id = $1 
+            LIMIT 1;
+        `;
+        const landRes = await pool.query(landQuery, [registrationId]);
+        if (landRes.rows.length === 0) {
+            throw new Error("Land details not found for this registration");
+        }
+
+        const { latitude, longitude } = landRes.rows[0];
+        if (!latitude || !longitude) {
+            throw new Error("Land coordinates (latitude/longitude) are missing");
+        }
+
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code`;
+        const weatherResponse = await fetch(url);
+        if (!weatherResponse.ok) {
+            throw new Error(`Open-Meteo weather API failed with status ${weatherResponse.status}`);
+        }
+        const data = await weatherResponse.json();
+        return {
+            success: true,
+            coordinates: { latitude, longitude },
+            weather: data.current
+        };
+    } catch (err) {
+        throw new Error(`Failed to fetch weather: ${err.message}`);
+    }
+};
+
+export const calculateCarbonLive = async (user, data) => {
+    const {
+        landType,
+        category,
+        subCategory,
+        quantity,
+        age,
+        area,
+        unit,
+        electricityUsed,
+        dieselUsed,
+        limeApplied,
+        ureaApplied,
+        dapApplied,
+        manureApplied,
+        landUseChange,
+        mangroveArea,
+        treesOnBunds,
+        pondBurialArea,
+        otherRemovals,
+        baselineFCR,
+        baselineElectricity,
+        baselineDiesel,
+        baselineUrea,
+        fcr,
+        qtyFeedConsumed
+    } = data;
+
+    let carbonPrice = 120; // default price
+
+    if (landType === 'Fish Pond') {
+        let calculatedPondArea = Number(area || 40.0);
+        if (unit === 'Acre' && area) {
+            calculatedPondArea = Number(area) * 0.404686;
+        }
+
+        const report = calculateDetailedAquacultureCarbon({
+            pondArea: calculatedPondArea,
+            cropDuration: Number(data.daysOfCulture || data.age * 30 || 200.0),
+            cropsPerYear: Number(data.cropsPerYear !== undefined ? data.cropsPerYear : 1.5),
+            netBiomassGain: Number(data.netBiomassGain !== undefined ? data.netBiomassGain : 198.0),
+            feedCrudeProtein: Number(data.feedCrudeProtein !== undefined ? data.feedCrudeProtein : 0.28),
+            feedCarbonContent: Number(data.feedCarbonContent !== undefined ? data.feedCarbonContent : 0.40),
+            dobProportion: Number(data.dobProportion !== undefined ? data.dobProportion : 0.9091),
+            dobEF: Number(data.dobEF !== undefined ? data.dobEF : 0.4),
+            gncEF: Number(data.gncEF !== undefined ? data.gncEF : 1.2),
+            nRetentionEfficiency: Number(data.nRetentionEfficiency !== undefined ? data.nRetentionEfficiency : 0.25),
+            cRetentionEfficiency: Number(data.cRetentionEfficiency !== undefined ? data.cRetentionEfficiency : 0.22),
+            n2oN_EF: Number(data.n2oN_EF !== undefined ? data.n2oN_EF : 0.0060),
+            gwpCH4: Number(data.gwpCH4 !== undefined ? data.gwpCH4 : 28.0),
+            gwpN2O: Number(data.gwpN2O !== undefined ? data.gwpN2O : 265.0),
+            dieselEF: Number(data.dieselEF !== undefined ? data.dieselEF : 3.0),
+            dieselBaseline: Number(data.dieselBaseline !== undefined ? data.dieselBaseline : 2000.0),
+            dieselImproved: Number(data.dieselImproved !== undefined ? data.dieselImproved : 1600.0),
+            baselineAnaerobicFraction: Number(data.baselineAnaerobicFraction !== undefined ? data.baselineAnaerobicFraction : 0.20),
+            improvedAnaerobicFraction: Number(data.improvedAnaerobicFraction !== undefined ? data.improvedAnaerobicFraction : 0.08),
+            baselineFCR: Number(data.fcr !== undefined ? data.fcr : 2.90),
+            fcrImprovement: Number(data.fcrImprovement !== undefined ? data.fcrImprovement : 0.10),
+            measuredCH4Baseline: data.measuredCH4Baseline !== undefined ? data.measuredCH4Baseline : null,
+            measuredCH4Improved: data.measuredCH4Improved !== undefined ? data.measuredCH4Improved : null,
+            measuredN2OBaseline: data.measuredN2OBaseline !== undefined ? data.measuredN2OBaseline : null,
+            measuredN2OImproved: data.measuredN2OImproved !== undefined ? data.measuredN2OImproved : null,
+            carbonPrice: carbonPrice
+        });
+
+        return {
+            success: true,
+            ...report
+        };
+    } else {
+        const report = calculateCarbonReport(
+            category,
+            quantity,
+            age,
+            carbonPrice
+        );
+        return {
+            success: true,
+            estimatedCO2: report.carbonCredits,
+            carbonCredits: report.carbonCredits,
+            marketValue: report.estimatedValue,
+            ...report
+        };
+    }
+};
+
+export const syncParcels = async (user, data) => {
+    const { registrationId, parcels } = data;
+    if (!registrationId) {
+        throw new Error("Registration ID is required");
+    }
+
+    // 1. Clear existing records for this registration
+    await pool.query("DELETE FROM cpay.carbon_calculation WHERE registration_id = $1", [registrationId]);
+    await pool.query("DELETE FROM cpay.plantation_details WHERE registration_id = $1", [registrationId]);
+    await pool.query("DELETE FROM cpay.aquaculture_details WHERE registration_id = $1", [registrationId]);
+    await pool.query("DELETE FROM cpay.land_details WHERE registration_id = $1", [registrationId]);
+
+    // 2. Insert each parcel
+    for (const p of (parcels || [])) {
+        const landId = uuidv4();
+        
+        let landTypeId = '6139faea-981c-4d2e-98e8-97f515cab780'; // default Fish Pond
+        if (p.plantation && p.plantation.landType !== 'Fish Pond') {
+            landTypeId = '1f40ec43-9b8c-499d-a4ae-691bd3400954'; // Dry Land
+        }
+
+        const surveyNo = p.survey?.surveyNo || 'A';
+        const subDivisionNo = p.survey?.subDivisionNo || '1';
+        const areaNum = parseFloat(p.area) || 1.0;
+        const unitSymbol = p.survey?.unit || 'Acre';
+
+        // Insert Land Details
+        await pool.query(`
+            INSERT INTO cpay.land_details 
+            (land_id, registration_id, user_id, land_type_id, survey_number, sub_division_number, total_area, unit_id, latitude, longitude, geo_verified, is_active)
+            VALUES ($1, $2, $3, (SELECT land_type_id FROM cpay.land_types WHERE land_type_id::text = $4::text OR land_type_name ILIKE $5::text LIMIT 1), $6, $7, $8, (SELECT unit_id FROM cpay.units WHERE unit_id::text = $9::text OR unit_name ILIKE $9::text OR unit_symbol ILIKE $9::text LIMIT 1), $10, $11, FALSE, TRUE)
+        `, [
+            landId,
+            registrationId,
+            user.userId,
+            landTypeId,
+            p.plantation?.landType === 'Fish Pond' ? 'FISH_POND' : 'OPEN_LAND',
+            surveyNo,
+            subDivisionNo,
+            areaNum,
+            unitSymbol,
+            p.latitude || (14.4450 + (Math.random() - 0.5) * 0.012),
+            p.longitude || (79.9860 + (Math.random() - 0.5) * 0.012)
+        ]);
+
+        // Insert Plantation/Aquaculture Details
+        if (p.plantation && p.plantation.landType === 'Fish Pond') {
+            const stockQty = p.plantation.quantity || 240000;
+            const days = p.plantation.daysOfCulture || (p.plantation.age ? Math.round(p.plantation.age * 30) : 60);
+            
+            await pool.query(`
+                INSERT INTO cpay.aquaculture_details
+                (
+                    aquaculture_id, registration_id, land_id, aquaculture_type, fish_species_id, prawn_species_id, 
+                    stock_quantity, culture_days, pond_area, area_unit_id, feed_consumed, feed_unit_id, fcr, remarks,
+                    crops_per_year, net_biomass_gain, feed_crude_protein, feed_carbon_content, dob_proportion, 
+                    dob_emission_factor, gnc_emission_factor, n_retention_efficiency, c_retention_efficiency, 
+                    n2o_n_emission_factor, gwp_ch4, gwp_n2o, diesel_emission_factor, diesel_baseline, diesel_improved, 
+                    baseline_anaerobic_fraction, improved_anaerobic_fraction, fcr_improvement, 
+                    measured_ch4_baseline, measured_ch4_improved, measured_n2o_baseline, measured_n2o_improved
+                )
+                VALUES ($1, $2, $3, $4, 
+                  (SELECT fish_species_id FROM cpay.fish_species WHERE species_name = $5 OR species_name = 'IMC' LIMIT 1), 
+                  (SELECT prawn_species_id FROM cpay.prawn_species WHERE species_name = $6 OR species_name = 'VANNAMEI' LIMIT 1), 
+                  $7, $8, $9, (SELECT unit_id FROM cpay.units WHERE unit_name ILIKE $10 OR unit_symbol ILIKE $10 LIMIT 1), 
+                  $11, (SELECT unit_id FROM cpay.units WHERE unit_name ILIKE $12 OR unit_symbol ILIKE $12 LIMIT 1), $13, $14,
+                  $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36)
+            `, [
+                uuidv4(),
+                registrationId,
+                landId,
+                p.plantation.plantationType || 'Fish',
+                p.plantation.subCategory || 'Rohu',
+                p.plantation.subCategory || 'Vannamei',
+                stockQty,
+                days,
+                parseFloat(p.plantation.area || p.area) || 1.0,
+                p.plantation.unit || 'Acre',
+                p.plantation.qtyFeedConsumed || 10000,
+                'Kilogram',
+                p.plantation.fcr || 0.5,
+                'Synchronized via dashboard',
+                
+                Number(p.plantation.cropsPerYear !== undefined ? p.plantation.cropsPerYear : 1.5),
+                Number(p.plantation.netBiomassGain !== undefined ? p.plantation.netBiomassGain : 198.0),
+                Number(p.plantation.feedCrudeProtein !== undefined ? p.plantation.feedCrudeProtein : 0.28),
+                Number(p.plantation.feedCarbonContent !== undefined ? p.plantation.feedCarbonContent : 0.40),
+                Number(p.plantation.dobProportion !== undefined ? p.plantation.dobProportion : 0.9091),
+                Number(p.plantation.dobEF !== undefined ? p.plantation.dobEF : 0.4),
+                Number(p.plantation.gncEF !== undefined ? p.plantation.gncEF : 1.2),
+                Number(p.plantation.nRetentionEfficiency !== undefined ? p.plantation.nRetentionEfficiency : 0.25),
+                Number(p.plantation.cRetentionEfficiency !== undefined ? p.plantation.cRetentionEfficiency : 0.22),
+                Number(p.plantation.n2oN_EF !== undefined ? p.plantation.n2oN_EF : 0.0060),
+                Number(p.plantation.gwpCH4 !== undefined ? p.plantation.gwpCH4 : 28.0),
+                Number(p.plantation.gwpN2O !== undefined ? p.plantation.gwpN2O : 265.0),
+                Number(p.plantation.dieselEF !== undefined ? p.plantation.dieselEF : 3.0),
+                Number(p.plantation.dieselBaseline !== undefined ? p.plantation.dieselBaseline : 2000.0),
+                Number(p.plantation.dieselImproved !== undefined ? p.plantation.dieselImproved : 1600.0),
+                Number(p.plantation.baselineAnaerobicFraction !== undefined ? p.plantation.baselineAnaerobicFraction : 0.20),
+                Number(p.plantation.improvedAnaerobicFraction !== undefined ? p.plantation.improvedAnaerobicFraction : 0.08),
+                Number(p.plantation.fcrImprovement !== undefined ? p.plantation.fcrImprovement : 0.10),
+                
+                p.plantation.measuredCH4Baseline !== undefined ? p.plantation.measuredCH4Baseline : null,
+                p.plantation.measuredCH4Improved !== undefined ? p.plantation.measuredCH4Improved : null,
+                p.plantation.measuredN2OBaseline !== undefined ? p.plantation.measuredN2OBaseline : null,
+                p.plantation.measuredN2OImproved !== undefined ? p.plantation.measuredN2OImproved : null
+            ]);
+        } else {
+            const pl = p.plantation || {};
+            await pool.query(`
+                INSERT INTO cpay.plantation_details
+                (plantation_id, registration_id, land_id, plantation_category_id, number_of_plants, plantation_age, plantation_area, area_unit_id, remarks, plant_species_id)
+                VALUES ($1, $2, $3, (SELECT plantation_category_id FROM cpay.plantation_categories WHERE category_name = $4 OR category_name = 'TREE' LIMIT 1), $5, $6, $7, (SELECT unit_id FROM cpay.units WHERE unit_name ILIKE $8 OR unit_symbol ILIKE $8 LIMIT 1), $9, (SELECT plant_species_id FROM cpay.plant_species WHERE common_name ILIKE $10 LIMIT 1))
+            `, [
+                uuidv4(),
+                registrationId,
+                landId,
+                pl.plantationType || 'Tree',
+                pl.quantity || p.trees || 100,
+                pl.age || 5,
+                parseFloat(pl.area || p.area) || 1.0,
+                pl.unit || 'Acre',
+                'Updated via seller dashboard',
+                pl.subCategory || 'Teak'
+            ]);
+        }
+
+        // Insert Carbon Calculation
+        let credits = areaNum * 20;
+        if (p.plantation && p.plantation.landType === 'Fish Pond') {
+            const report = calculateDetailedAquacultureCarbon({
+                pondArea: parseFloat(p.plantation.area || p.area) || 1.0,
+                cropDuration: p.plantation.daysOfCulture || days,
+                cropsPerYear: p.plantation.cropsPerYear || 1.5,
+                netBiomassGain: p.plantation.netBiomassGain || 198.0,
+                feedCrudeProtein: p.plantation.feedCrudeProtein || 0.28,
+                feedCarbonContent: p.plantation.feedCarbonContent || 0.40,
+                dobProportion: p.plantation.dobProportion || 0.9091,
+                dobEF: p.plantation.dobEF || 0.4,
+                gncEF: p.plantation.gncEF || 1.2,
+                nRetentionEfficiency: p.plantation.nRetentionEfficiency || 0.25,
+                cRetentionEfficiency: p.plantation.cRetentionEfficiency || 0.22,
+                n2oN_EF: p.plantation.n2oN_EF || 0.0060,
+                gwpCH4: p.plantation.gwpCH4 || 28.0,
+                gwpN2O: p.plantation.gwpN2O || 265.0,
+                dieselEF: p.plantation.dieselEF || 3.0,
+                dieselBaseline: p.plantation.dieselBaseline || 2000.0,
+                dieselImproved: p.plantation.dieselImproved || 1600.0,
+                baselineAnaerobicFraction: p.plantation.baselineAnaerobicFraction || 0.20,
+                improvedAnaerobicFraction: p.plantation.improvedAnaerobicFraction || 0.08,
+                baselineFCR: p.plantation.fcr || 2.90,
+                fcrImprovement: p.plantation.fcrImprovement || 0.10,
+                measuredCH4Baseline: p.plantation.measuredCH4Baseline || null,
+                measuredCH4Improved: p.plantation.measuredCH4Improved || null,
+                measuredN2OBaseline: p.plantation.measuredN2OBaseline || null,
+                measuredN2OImproved: p.plantation.measuredN2OImproved || null,
+                carbonPrice: 120
+            });
+            credits = report.reductionCredits;
+        } else {
+            const report = calculateCarbonReport(
+                p.plantation?.plantationType || 'Tree',
+                p.plantation?.quantity || p.trees || 100,
+                p.plantation?.age || 5,
+                120
+            );
+            credits = report.carbonCredits;
+        }
+
+        await pool.query(`
+            INSERT INTO cpay.carbon_calculation
+            (calculation_id, registration_id, land_id, estimated_co2, carbon_credits, market_rate, market_value, source_type)
+            VALUES ($1, $2, $3, $4, $4, 120, $5, 'DASHBOARD')
+            ON CONFLICT (registration_id) DO UPDATE SET
+                land_id = EXCLUDED.land_id,
+                estimated_co2 = EXCLUDED.estimated_co2,
+                carbon_credits = EXCLUDED.carbon_credits,
+                market_rate = EXCLUDED.market_rate,
+                market_value = EXCLUDED.market_value,
+                calculated_at = CURRENT_TIMESTAMP
+        `, [
+            uuidv4(),
+            registrationId,
+            landId,
+            credits,
+            credits * 120
+        ]);
+    }
+
+    return {
+        success: true,
+        message: "All parcels synchronized successfully with PostgreSQL"
+    };
+};
+
+export const getParcelsList = async (user, registrationId) => {
+    if (!registrationId) {
+        throw new Error("Registration ID is required");
+    }
+
+    const query = `
+        SELECT 
+            ld.*,
+            lt.land_type_name,
+            u.unit_name as land_unit_name,
+            pd.plantation_detail_id, pd.plantation_category_id, pd.plant_species_id, pd.number_of_plants, pd.plantation_age, pd.remarks as plant_remarks,
+            pc.category_name,
+            ps.common_name,
+            ad.aquaculture_id, ad.aquaculture_type, ad.fish_species_id, ad.prawn_species_id, ad.stock_quantity, ad.culture_days, ad.feed_consumed, ad.fcr, ad.remarks as aqua_remarks,
+            ad.crops_per_year, ad.net_biomass_gain, ad.feed_crude_protein, ad.feed_carbon_content, ad.dob_proportion, ad.dob_emission_factor, ad.gnc_emission_factor,
+            ad.n_retention_efficiency, ad.c_retention_efficiency, ad.n2o_n_emission_factor, ad.gwp_ch4, ad.gwp_n2o, ad.diesel_emission_factor, ad.diesel_baseline, ad.diesel_improved,
+            ad.baseline_anaerobic_fraction, ad.improved_anaerobic_fraction, ad.fcr_improvement, ad.measured_ch4_baseline, ad.measured_ch4_improved, ad.measured_n2o_baseline, ad.measured_n2o_improved,
+            fs.species_name as fish_name,
+            pwn.species_name as prawn_name,
+            cc.carbon_credits, cc.market_value
+        FROM cpay.land_details ld
+        LEFT JOIN cpay.land_types lt ON ld.land_type_id = lt.land_type_id
+        LEFT JOIN cpay.units u ON ld.unit_id = u.unit_id
+        LEFT JOIN cpay.plantation_details pd ON ld.land_id = pd.land_id
+        LEFT JOIN cpay.plantation_categories pc ON pd.plantation_category_id = pc.plantation_category_id
+        LEFT JOIN cpay.plant_species ps ON pd.plant_species_id = ps.plant_species_id
+        LEFT JOIN cpay.aquaculture_details ad ON ld.land_id = ad.land_id
+        LEFT JOIN cpay.fish_species fs ON ad.fish_species_id = fs.fish_species_id
+        LEFT JOIN cpay.prawn_species pwn ON ad.prawn_species_id = pwn.prawn_species_id
+        LEFT JOIN (
+            SELECT DISTINCT ON (land_id) land_id, carbon_credits, market_value 
+            FROM cpay.carbon_calculation 
+            ORDER BY land_id, calculated_at DESC
+        ) cc ON ld.land_id = cc.land_id
+        WHERE ld.registration_id = $1
+    `;
+
+    const result = await pool.query(query, [registrationId]);
+    const parcels = [];
+
+    for (const row of result.rows) {
+        const hasAqua = row.aquaculture_id !== null;
+        const nameVal = `Cooperative Parcel ${row.survey_number}/${row.sub_division_number}`;
+        let cropCategory = 'Agroforestry';
+        let treesCount = 0;
+        if (row.plantation_detail_id) {
+            cropCategory = `${row.category_name} (${row.common_name})`;
+            treesCount = row.number_of_plants;
+        } else if (hasAqua) {
+            cropCategory = `Fish Pond (${row.aquaculture_type === 'Fish' ? 'Fish' : 'Prawns'} - ${row.fish_name || row.prawn_name || 'IMC'})`;
+            treesCount = row.stock_quantity;
+        }
+
+        parcels.push({
+            name: nameVal,
+            cropCategory: cropCategory,
+            area: `${row.total_area} ${row.land_unit_name}s`,
+            location: 'Nellore, Andhra Pradesh',
+            trees: treesCount,
+            status: 'Verified',
+            auditor: 'Ecosystem Standards Board',
+            date: new Date(row.created_at).toLocaleDateString(),
+            sequestrationRate: Math.round(row.carbon_credits || 0),
+            latitude: Number(row.latitude),
+            longitude: Number(row.longitude),
+            survey: {
+                surveyNo: row.survey_number,
+                subDivisionNo: row.sub_division_number,
+                area: row.total_area.toString(),
+                unit: row.land_unit_name
+            },
+            plantation: hasAqua ? {
+                landType: 'Fish Pond',
+                plantationType: row.aquaculture_type,
+                subCategory: row.fish_name || row.prawn_name || 'IMC',
+                quantity: row.stock_quantity,
+                daysOfCulture: row.culture_days,
+                age: Math.round(row.culture_days / 30),
+                area: row.total_area,
+                unit: row.land_unit_name,
+                qtyFeedConsumed: row.feed_consumed,
+                fcr: row.fcr,
+                
+                cropsPerYear: Number(row.crops_per_year),
+                netBiomassGain: Number(row.net_biomass_gain),
+                feedCrudeProtein: Number(row.feed_crude_protein),
+                feedCarbonContent: Number(row.feed_carbon_content),
+                dobProportion: Number(row.dob_proportion),
+                dobEF: Number(row.dob_emission_factor),
+                gncEF: Number(row.gnc_emission_factor),
+                nRetentionEfficiency: Number(row.n_retention_efficiency),
+                cRetentionEfficiency: Number(row.c_retention_efficiency),
+                n2oN_EF: Number(row.n2o_n_emission_factor),
+                gwpCH4: Number(row.gwp_ch4),
+                gwpN2O: Number(row.gwp_n2o),
+                dieselEF: Number(row.diesel_emission_factor),
+                dieselBaseline: Number(row.diesel_baseline),
+                dieselImproved: Number(row.diesel_improved),
+                baselineAnaerobicFraction: Number(row.baseline_anaerobic_fraction),
+                improvedAnaerobicFraction: Number(row.improved_anaerobic_fraction),
+                fcrImprovement: Number(row.fcr_improvement),
+                measuredCH4Baseline: row.measured_ch4_baseline,
+                measuredCH4Improved: row.measured_ch4_improved,
+                measuredN2OBaseline: row.measured_n2o_baseline,
+                measuredN2OImproved: row.measured_n2o_improved
+            } : {
+                landType: 'Open Land',
+                plantationType: row.category_name,
+                subCategory: row.common_name,
+                quantity: row.number_of_plants,
+                age: row.plantation_age,
+                area: row.total_area,
+                unit: row.land_unit_name
+            }
+        });
+    }
+
+    return {
+        success: true,
+        data: parcels
+    };
+};
+
+export const submitFullRegistration = async (user, data) => {
+    const {
+        registrationTypeId,
+        userTypeId,
+        personalDetails,
+        addressDetails,
+        landDetails,
+        plantationDetails,
+        aquacultureDetails,
+        carbonCalculation,
+        consentDetails
+    } = data;
+
+    if (!registrationTypeId || !userTypeId) {
+        throw new Error("Registration Type and User Type are required");
+    }
+
+    let resolvedRegTypeId = registrationTypeId;
+    if (!isUuid(resolvedRegTypeId)) {
+        const rRes = await pool.query("SELECT registration_type_id FROM cpay.registration_types WHERE registration_type_name ILIKE $1 LIMIT 1", [registrationTypeId]);
+        if (rRes.rows.length > 0) resolvedRegTypeId = rRes.rows[0].registration_type_id;
+        else {
+            const fb = await pool.query("SELECT registration_type_id FROM cpay.registration_types LIMIT 1");
+            resolvedRegTypeId = fb.rows[0].registration_type_id;
+        }
+    } else {
+        const check = await pool.query("SELECT registration_type_id FROM cpay.registration_types WHERE registration_type_id = $1 LIMIT 1", [resolvedRegTypeId]);
+        if (check.rows.length === 0) {
+            const fb = await pool.query("SELECT registration_type_id FROM cpay.registration_types LIMIT 1");
+            resolvedRegTypeId = fb.rows[0].registration_type_id;
+        }
+    }
+
+    let resolvedUserTypeId = userTypeId;
+    if (!isUuid(resolvedUserTypeId)) {
+        const uRes = await pool.query("SELECT user_type_id FROM cpay.user_types WHERE user_type_name ILIKE $1 OR category ILIKE $1 LIMIT 1", [userTypeId]);
+        if (uRes.rows.length > 0) resolvedUserTypeId = uRes.rows[0].user_type_id;
+        else {
+            const fb = await pool.query("SELECT user_type_id FROM cpay.user_types LIMIT 1");
+            resolvedUserTypeId = fb.rows[0].user_type_id;
+        }
+    } else {
+        const check = await pool.query("SELECT user_type_id FROM cpay.user_types WHERE user_type_id = $1 LIMIT 1", [resolvedUserTypeId]);
+        if (check.rows.length === 0) {
+            const fb = await pool.query("SELECT user_type_id FROM cpay.user_types LIMIT 1");
+            resolvedUserTypeId = fb.rows[0].user_type_id;
+        }
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // Check duplicate survey number for this user
+        const dupRes = await client.query(`
+            SELECT 1 FROM cpay.land_details ld
+            JOIN cpay.registration r ON ld.registration_id = r.registration_id
+            WHERE r.user_id = $1 
+              AND ld.survey_number = $2 
+              AND COALESCE(ld.sub_division_number, '') = COALESCE($3, '')
+            LIMIT 1;
+        `, [user.userId, landDetails.surveyNumber, landDetails.subDivisionNumber || '']);
+
+        if (dupRes.rows.length > 0) {
+            throw new Error("This Survey Number is already registered. Please use another Survey Number.");
+        }
+
+        // 1. Generate Application Number
+        const countRes = await client.query("SELECT COUNT(*) AS total FROM cpay.registration");
+        const count = Number(countRes.rows[0].total) + 1;
+        const year = new Date().getFullYear();
+        const applicationNumber = `CPAY${year}${count.toString().padStart(6, '0')}`;
+
+        // 2. Create Registration
+        const regRes = await client.query(
+            `INSERT INTO cpay.registration
+             (application_number, user_id, registration_type_id, user_type_id, application_status, current_step, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, 'DRAFT', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+             RETURNING registration_id`,
+            [applicationNumber, user.userId, resolvedRegTypeId, resolvedUserTypeId]
+        );
+        const registrationId = regRes.rows[0].registration_id;
+
+        // 3. Save Personal/Organization/Government Details
+        const utRes = await client.query("SELECT category FROM cpay.user_types WHERE user_type_id = $1 LIMIT 1", [resolvedUserTypeId]);
+        const category = utRes.rows.length > 0 ? utRes.rows[0].category : 'INDIVIDUAL';
+
+        if (category === 'ORGANIZATION') {
+            await client.query(
+                `INSERT INTO cpay.organization_details
+                 (user_id, organization_name, registration_number, gst_number, pan_number, email, mobile_number, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+                [
+                    user.userId,
+                    personalDetails.fullName,
+                    personalDetails.registrationId || null,
+                    personalDetails.gstNumber || null,
+                    personalDetails.panNumber || null,
+                    personalDetails.emailAddress || null,
+                    personalDetails.mobileNumber
+                ]
+            );
+        } else if (category === 'GOVERNMENT') {
+            await client.query(
+                `INSERT INTO cpay.government_details
+                 (user_id, department_name, division_name, manager_name, manager_id, pan_number, email, mobile_number, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+                [
+                    user.userId,
+                    personalDetails.fullName,
+                    personalDetails.divisionName || null,
+                    personalDetails.managerName || null,
+                    personalDetails.managerId || null,
+                    personalDetails.panNumber || null,
+                    personalDetails.emailAddress || null,
+                    personalDetails.mobileNumber
+                ]
+            );
+        } else {
+            await client.query(
+                `INSERT INTO cpay.individual_details
+                 (user_id, full_name, gender, aadhaar_number, pan_number, email, mobile_number, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+                [
+                    user.userId,
+                    personalDetails.fullName,
+                    personalDetails.gender || null,
+                    personalDetails.aadhaarNumber ? personalDetails.aadhaarNumber.replace(/\s/g, '') : null,
+                    personalDetails.panNumber || null,
+                    personalDetails.emailAddress || null,
+                    personalDetails.mobileNumber
+                ]
+            );
+        }
+
+        // 4. Save Address Details
+        const resolvedGeo = await resolveGeography(
+            client,
+            addressDetails.state,
+            addressDetails.district,
+            addressDetails.mandal,
+            addressDetails.village,
+            addressDetails.pincode
+        );
+
+        const line1 = addressDetails.addressLine1 || addressDetails.address_line1 || addressDetails.street || (addressDetails.village ? `${addressDetails.village}, ${addressDetails.district || ''}` : 'Address Details');
+        await client.query(
+            `INSERT INTO cpay.address_details
+             (registration_id, address_line1, state_id, district_id, mandal_id, village_id, pincode, latitude, longitude, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+            [
+                registrationId,
+                line1,
+                resolvedGeo.stateId,
+                resolvedGeo.districtId,
+                resolvedGeo.mandalId,
+                resolvedGeo.villageId,
+                addressDetails.pincode || null,
+                addressDetails.latitude ? Number(addressDetails.latitude) : 14.4450,
+                addressDetails.longitude ? Number(addressDetails.longitude) : 79.9860
+            ]
+        );
+
+        // 5. Save Land Details
+        let resolvedLandTypeId = landDetails.landTypeId || landDetails.landType || 'OPEN_LAND';
+        if (!isUuid(resolvedLandTypeId)) {
+            const strVal = String(resolvedLandTypeId).toLowerCase();
+            let nameMatch = 'OPEN_LAND';
+            if (strVal.includes('fish')) nameMatch = 'FISH_POND';
+            else if (strVal.includes('gov')) nameMatch = 'GOVERNMENT_LAND';
+            else if (strVal.includes('house')) nameMatch = 'HOUSE';
+
+            const lTypeResult = await client.query(
+                "SELECT land_type_id FROM cpay.land_types WHERE land_type_name = $1 LIMIT 1",
+                [nameMatch]
+            );
+            if (lTypeResult.rows.length > 0) {
+                resolvedLandTypeId = lTypeResult.rows[0].land_type_id;
+            } else {
+                const fb = await client.query("SELECT land_type_id FROM cpay.land_types LIMIT 1");
+                resolvedLandTypeId = fb.rows[0].land_type_id;
+            }
+        }
+
+        let resolvedUnitId = landDetails.unitId || landDetails.unit || 'Acre';
+        if (!isUuid(resolvedUnitId)) {
+            const strVal = String(resolvedUnitId).toLowerCase();
+            let cleanUnit = 'Acre';
+            if (strVal.startsWith('acre')) cleanUnit = 'Acre';
+            else if (strVal.startsWith('hectare')) cleanUnit = 'Hectare';
+
+            const uResult = await client.query(
+                "SELECT unit_id FROM cpay.units WHERE unit_name ILIKE $1 OR unit_symbol ILIKE $1 LIMIT 1",
+                [cleanUnit]
+            );
+            if (uResult.rows.length > 0) {
+                resolvedUnitId = uResult.rows[0].unit_id;
+            } else {
+                const fb = await client.query("SELECT unit_id FROM cpay.units LIMIT 1");
+                resolvedUnitId = fb.rows[0].unit_id;
+            }
+        }
+
+        let photoId = landDetails.photoId || landDetails.mongoPhotoId || 'photo_placeholder';
+        if (landDetails.imagePreview && landDetails.imagePreview.startsWith('data:')) {
+            try {
+                const match = landDetails.imagePreview.match(/^data:([^;]+);base64,(.+)$/);
+                if (match) {
+                    const contentType = match[1];
+                    const base64Data = match[2];
+                    const buffer = Buffer.from(base64Data, 'base64');
+                    
+                    const docRes = await client.query(
+                        `INSERT INTO cpay.documents (registration_id, document_type, filename, content_type, data, uploaded_at)
+                         VALUES ($1, 'LAND_PHOTO', $2, $3, $4, CURRENT_TIMESTAMP)
+                         ON CONFLICT (registration_id, document_type)
+                         DO UPDATE SET filename = EXCLUDED.filename, content_type = EXCLUDED.content_type, data = EXCLUDED.data, uploaded_at = CURRENT_TIMESTAMP
+                         RETURNING document_id`,
+                        [registrationId, `land_photo_${Date.now()}.png`, contentType, buffer]
+                    );
+                    if (docRes.rows.length > 0) {
+                        photoId = docRes.rows[0].document_id;
+                    }
+                }
+            } catch (pgErr) {
+                console.error("⚠️ Failed to save land photo to PostgreSQL in submitFullRegistration:", pgErr);
+            }
+        }
+
+        const landRes = await client.query(
+            `INSERT INTO cpay.land_details
+             (registration_id, user_id, land_type_id, survey_number, sub_division_number, total_area, unit_id, latitude, longitude, photo_id, mongo_photo_id, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+             RETURNING land_id`,
+            [
+                registrationId,
+                user.userId,
+                resolvedLandTypeId,
+                landDetails.surveyNumber || landDetails.surveyNo || '125',
+                landDetails.subDivisionNumber || landDetails.subDivisionNo || null,
+                Number(landDetails.totalArea || landDetails.landArea || landDetails.area || 50),
+                resolvedUnitId,
+                landDetails.latitude ? Number(landDetails.latitude) : 14.4450,
+                landDetails.longitude ? Number(landDetails.longitude) : 79.9860,
+                photoId
+            ]
+        );
+        const landId = landRes.rows[0].land_id;
+
+        // 6. Save Plantation or Aquaculture Details
+        const fishPondCheck = await client.query(
+            "SELECT land_type_name FROM cpay.land_types WHERE land_type_id = $1 LIMIT 1",
+            [resolvedLandTypeId]
+        );
+        const isFishPond = fishPondCheck.rows.length > 0 && fishPondCheck.rows[0].land_type_name === 'FISH_POND';
+
+        if (isFishPond) {
+            let resolvedFishSpeciesId = aquacultureDetails.fishSpeciesId || null;
+            if (resolvedFishSpeciesId && !isUuid(resolvedFishSpeciesId)) {
+                let nameMatch = 'IMC';
+                if (resolvedFishSpeciesId.toLowerCase().includes('panga')) nameMatch = 'PANGASIUS';
+                else if (resolvedFishSpeciesId.toLowerCase().includes('roop')) nameMatch = 'ROOPCHAND';
+                else if (resolvedFishSpeciesId.toLowerCase().includes('tilapia')) nameMatch = 'TILAPIA';
+
+                const fResult = await client.query(
+                    "SELECT fish_species_id FROM cpay.fish_species WHERE species_name = $1 LIMIT 1",
+                    [nameMatch]
+                );
+                if (fResult.rows.length > 0) {
+                    resolvedFishSpeciesId = fResult.rows[0].fish_species_id;
+                }
+            }
+
+            let resolvedPrawnSpeciesId = aquacultureDetails.prawnSpeciesId || null;
+            if (resolvedPrawnSpeciesId && !isUuid(resolvedPrawnSpeciesId)) {
+                let nameMatch = 'TIGER_PRAWN';
+                if (resolvedPrawnSpeciesId.toLowerCase().includes('vannamei')) nameMatch = 'VANNAMEI';
+                else if (resolvedPrawnSpeciesId.toLowerCase().includes('scampi')) nameMatch = 'SCAMPI';
+                else if (resolvedPrawnSpeciesId.toLowerCase().includes('banana')) nameMatch = 'BANANA_PRAWN';
+                else if (resolvedPrawnSpeciesId.toLowerCase().includes('kuruma')) nameMatch = 'KURUMA_PRAWN';
+
+                const pResult = await client.query(
+                    "SELECT prawn_species_id FROM cpay.prawn_species WHERE species_name = $1 LIMIT 1",
+                    [nameMatch]
+                );
+                if (pResult.rows.length > 0) {
+                    resolvedPrawnSpeciesId = pResult.rows[0].prawn_species_id;
+                }
+            }
+
+            let resolvedAreaUnitId = aquacultureDetails.areaUnitId;
+            if (resolvedAreaUnitId && !isUuid(resolvedAreaUnitId)) {
+                let cleanUnit = resolvedAreaUnitId;
+                if (cleanUnit.toLowerCase().startsWith('acre')) cleanUnit = 'Acre';
+                else if (cleanUnit.toLowerCase().startsWith('hectare')) cleanUnit = 'Hectare';
+
+                const uResult = await client.query(
+                    "SELECT unit_id FROM cpay.units WHERE unit_name ILIKE $1 OR unit_symbol ILIKE $1 LIMIT 1",
+                    [cleanUnit]
+                );
+                if (uResult.rows.length > 0) {
+                    resolvedAreaUnitId = uResult.rows[0].unit_id;
+                }
+            }
+
+            let resolvedFeedUnitId = aquacultureDetails.feedUnitId;
+            if (resolvedFeedUnitId && !isUuid(resolvedFeedUnitId)) {
+                let cleanUnit = resolvedFeedUnitId;
+                if (cleanUnit.toLowerCase().startsWith('kg') || cleanUnit.toLowerCase().startsWith('kilo')) cleanUnit = 'Kilogram';
+                else if (cleanUnit.toLowerCase().startsWith('ton')) cleanUnit = 'Ton';
+
+                const uResult = await client.query(
+                    "SELECT unit_id FROM cpay.units WHERE unit_name ILIKE $1 OR unit_symbol ILIKE $1 LIMIT 1",
+                    [cleanUnit]
+                );
+                if (uResult.rows.length > 0) {
+                    resolvedFeedUnitId = uResult.rows[0].unit_id;
+                }
+            }
+
+            const pondsToSave = (aquacultureDetails.ponds && Array.isArray(aquacultureDetails.ponds) && aquacultureDetails.ponds.length > 0)
+                ? aquacultureDetails.ponds
+                : [aquacultureDetails];
+
+            await client.query("DELETE FROM cpay.aquaculture_details WHERE registration_id = $1", [registrationId]);
+
+            for (let pIdx = 0; pIdx < pondsToSave.length; pIdx++) {
+                const pond = pondsToSave[pIdx];
+                const pName = pond.name || `POND ${pIdx + 1}`;
+                const pSpecies = pond.selectedSpecies || pond.subCategory || pond.species || 'IMC';
+                const pStock = Number(pond.stockingDensity || pond.stockQuantity || pond.quantity || 1000);
+                const pCultureDays = Number(pond.cultureDurationDays || pond.cultureDays || pond.daysOfCulture || 120);
+                const pArea = Number(pond.pondAreaHa || pond.area || pond.pondArea || 1.0);
+                const pFcr = Number(pond.averageFcr || pond.farmReportedFcr || pond.fcr || 1.2);
+                const pFeed = Number(pond.feedConsumed || (pStock * pFcr));
+
+                await client.query(
+                    `INSERT INTO cpay.aquaculture_details
+                     (registration_id, land_id, aquaculture_type, fish_species_id, prawn_species_id, stock_quantity, culture_days, pond_area, area_unit_id, feed_consumed, feed_unit_id, fcr, remarks,
+                      crops_per_year, net_biomass_gain, feed_crude_protein, feed_carbon_content, dob_proportion, dob_emission_factor, gnc_emission_factor, n_retention_efficiency, c_retention_efficiency, n2o_n_emission_factor, gwp_ch4, gwp_n2o, diesel_emission_factor, diesel_baseline, diesel_improved, baseline_anaerobic_fraction, improved_anaerobic_fraction, fcr_improvement, measured_ch4_baseline, measured_ch4_improved, measured_n2o_baseline, measured_n2o_improved, created_at, updated_at)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+                    [
+                        registrationId,
+                        landId,
+                        pond.aquacultureType || aquacultureDetails.aquacultureType || 'FISH',
+                        resolvedFishSpeciesId,
+                        resolvedPrawnSpeciesId,
+                        pStock,
+                        pCultureDays,
+                        pArea,
+                        resolvedAreaUnitId,
+                        pFeed,
+                        resolvedFeedUnitId || '349cabe3-8158-418d-b186-998d6bc4cbb5',
+                        pFcr,
+                        `Survey Pond: ${pName} | Species: ${pSpecies}`,
+                        aquacultureDetails.cropsPerYear !== undefined ? Number(aquacultureDetails.cropsPerYear) : 1.5,
+                        aquacultureDetails.netBiomassGain !== undefined ? Number(aquacultureDetails.netBiomassGain) : 198.0,
+                        aquacultureDetails.feedCrudeProtein !== undefined ? Number(aquacultureDetails.feedCrudeProtein) : 0.28,
+                        aquacultureDetails.feedCarbonContent !== undefined ? Number(aquacultureDetails.feedCarbonContent) : 0.40,
+                        aquacultureDetails.dobProportion !== undefined ? Number(aquacultureDetails.dobProportion) : 0.9091,
+                        aquacultureDetails.dobEF !== undefined ? Number(aquacultureDetails.dobEF) : 0.4,
+                        aquacultureDetails.gncEF !== undefined ? Number(aquacultureDetails.gncEF) : 1.2,
+                        aquacultureDetails.nRetentionEfficiency !== undefined ? Number(aquacultureDetails.nRetentionEfficiency) : 0.25,
+                        aquacultureDetails.cRetentionEfficiency !== undefined ? Number(aquacultureDetails.cRetentionEfficiency) : 0.22,
+                        aquacultureDetails.n2oN_EF !== undefined ? Number(aquacultureDetails.n2oN_EF) : 0.0060,
+                        aquacultureDetails.gwpCH4 !== undefined ? Number(aquacultureDetails.gwpCH4) : 28.0,
+                        aquacultureDetails.gwpN2O !== undefined ? Number(aquacultureDetails.gwpN2O) : 265.0,
+                        aquacultureDetails.dieselEF !== undefined ? Number(aquacultureDetails.dieselEF) : 3.0,
+                        aquacultureDetails.dieselBaseline !== undefined ? Number(aquacultureDetails.dieselBaseline) : 2000.0,
+                        aquacultureDetails.dieselImproved !== undefined ? Number(aquacultureDetails.dieselImproved) : 1600.0,
+                        aquacultureDetails.baselineAnaerobicFraction !== undefined ? Number(aquacultureDetails.baselineAnaerobicFraction) : 0.20,
+                        aquacultureDetails.improvedAnaerobicFraction !== undefined ? Number(aquacultureDetails.improvedAnaerobicFraction) : 0.08,
+                        aquacultureDetails.fcrImprovement !== undefined ? Number(aquacultureDetails.fcrImprovement) : 0.10,
+                        aquacultureDetails.measuredCH4Baseline !== undefined && aquacultureDetails.measuredCH4Baseline !== null ? Number(aquacultureDetails.measuredCH4Baseline) : null,
+                        aquacultureDetails.measuredCH4Improved !== undefined && aquacultureDetails.measuredCH4Improved !== null ? Number(aquacultureDetails.measuredCH4Improved) : null,
+                        aquacultureDetails.measuredN2OBaseline !== undefined && aquacultureDetails.measuredN2OBaseline !== null ? Number(aquacultureDetails.measuredN2OBaseline) : null,
+                        aquacultureDetails.measuredN2OImproved !== undefined && aquacultureDetails.measuredN2OImproved !== null ? Number(aquacultureDetails.measuredN2OImproved) : null
+                    ]
+                );
+            }
+        } else {
+            const plant = plantationDetails || {};
+            let resolvedCategoryId = plant.plantationCategoryId || plant.plantationType || plant.category || 'TREE';
+            if (!isUuid(resolvedCategoryId)) {
+                const strVal = String(resolvedCategoryId).toLowerCase();
+                let nameMatch = 'TREE';
+                if (strVal.includes('crop')) nameMatch = 'CROP';
+                else if (strVal.includes('garden')) nameMatch = 'GARDEN';
+                else if (strVal.includes('mangrove')) nameMatch = 'MANGROVE';
+                else if (strVal.includes('other')) nameMatch = 'OTHER';
+
+                const catResult = await client.query(
+                    "SELECT plantation_category_id FROM cpay.plantation_categories WHERE category_name = $1 LIMIT 1",
+                    [nameMatch]
+                );
+                if (catResult.rows.length > 0) {
+                    resolvedCategoryId = catResult.rows[0].plantation_category_id;
+                } else {
+                    const fb = await client.query("SELECT plantation_category_id FROM cpay.plantation_categories LIMIT 1");
+                    resolvedCategoryId = fb.rows[0].plantation_category_id;
+                }
+            }
+
+            let resolvedAreaUnitId = plant.areaUnitId || plant.unit || 'Acre';
+            if (!isUuid(resolvedAreaUnitId)) {
+                const strVal = String(resolvedAreaUnitId).toLowerCase();
+                let cleanUnit = 'Acre';
+                if (strVal.startsWith('acre')) cleanUnit = 'Acre';
+                else if (strVal.startsWith('hectare')) cleanUnit = 'Hectare';
+
+                const uResult = await client.query(
+                    "SELECT unit_id FROM cpay.units WHERE unit_name ILIKE $1 OR unit_symbol ILIKE $1 LIMIT 1",
+                    [cleanUnit]
+                );
+                if (uResult.rows.length > 0) {
+                    resolvedAreaUnitId = uResult.rows[0].unit_id;
+                } else {
+                    const fb = await client.query("SELECT unit_id FROM cpay.units LIMIT 1");
+                    resolvedAreaUnitId = fb.rows[0].unit_id;
+                }
+            }
+
+            let plantSpeciesId = null;
+            const specResult = await client.query(
+                "SELECT plant_species_id FROM cpay.plant_species WHERE common_name ILIKE $1 LIMIT 1",
+                [plantationDetails.speciesName]
+            );
+            if (specResult.rows.length > 0) {
+                plantSpeciesId = specResult.rows[0].plant_species_id;
+            } else {
+                const fallbackResult = await client.query("SELECT plant_species_id FROM cpay.plant_species LIMIT 1");
+                if (fallbackResult.rows.length > 0) {
+                    plantSpeciesId = fallbackResult.rows[0].plant_species_id;
+                }
+            }
+
+            const plantQty = plantationDetails.numberOfPlants || plantationDetails.quantity ? Number(plantationDetails.numberOfPlants || plantationDetails.quantity) : 100;
+            const plantAge = plantationDetails.plantationAge || plantationDetails.age ? Number(plantationDetails.plantationAge || plantationDetails.age) : 1;
+            const plantArea = plantationDetails.plantationArea || plantationDetails.area ? Number(plantationDetails.plantationArea || plantationDetails.area) : Number(landDetails.totalArea || 1);
+
+            await client.query(
+                `INSERT INTO cpay.plantation_details
+                 (registration_id, land_id, plantation_category_id, plant_species_id, number_of_plants, plantation_age, plantation_area, area_unit_id, remarks, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+                [
+                    registrationId,
+                    landId,
+                    resolvedCategoryId,
+                    plantSpeciesId,
+                    plantQty,
+                    plantAge,
+                    plantArea,
+                    resolvedAreaUnitId,
+                    plantationDetails.remarks || ''
+                ]
+            );
+        }
+
+        // 7. Save Carbon Calculation
+        let carbonRate = 120.00;
+        const rateRes = await client.query(
+            "SELECT rate_per_credit FROM cpay.carbon_rate_master WHERE is_active = TRUE ORDER BY effective_from DESC LIMIT 1"
+        );
+        if (rateRes.rows.length > 0) {
+            carbonRate = Number(rateRes.rows[0].rate_per_credit);
+        }
+
+        const carbon = carbonCalculation || {};
+        const estCO2 = Number(carbon.estimatedCO2 || carbon.co2Absorbed || carbon.co2_absorbed || 803.17);
+        const credits = Number(carbon.carbonCredits || carbon.credits || 535.45);
+        const mktVal = Number(carbon.marketValue || carbon.estimatedValue || carbon.market_value || (credits * carbonRate));
+
+        await client.query(
+            `INSERT INTO cpay.carbon_calculation
+             (registration_id, land_id, estimated_co2, carbon_credits, market_rate, market_value, calculated_at, source_type, formula_version, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, 'WIZARD', '1.0', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+             ON CONFLICT (registration_id) DO UPDATE SET
+                 land_id = EXCLUDED.land_id,
+                 estimated_co2 = EXCLUDED.estimated_co2,
+                 carbon_credits = EXCLUDED.carbon_credits,
+                 market_rate = EXCLUDED.market_rate,
+                 market_value = EXCLUDED.market_value,
+                 calculated_at = CURRENT_TIMESTAMP,
+                 updated_at = CURRENT_TIMESTAMP`,
+            [
+                registrationId,
+                landId,
+                estCO2,
+                credits,
+                carbonRate,
+                mktVal
+            ]
+        );
+
+        // 8. Save Consent Details
+        const consent = consentDetails || {};
+        const acceptTerms = consent.consentAccepted ?? consent.acceptedTerms ?? true;
+        const acceptPrivacy = consent.declarationAccepted ?? consent.acceptedPrivacy ?? true;
+
+        await client.query(
+            `INSERT INTO cpay.consent_details
+             (registration_id, accept_terms, accept_privacy, accept_declaration, consent_date, ip_address, declaration_version, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, $5, '1.0', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+            [
+                registrationId,
+                acceptTerms,
+                acceptPrivacy,
+                acceptPrivacy,
+                '127.0.0.1'
+            ]
+        );
+
+        // 9. Update Status to SUBMITTED
+        await client.query(
+            `UPDATE cpay.registration
+             SET application_status = 'SUBMITTED',
+                 current_step = 8,
+                 submitted_at = CURRENT_TIMESTAMP,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE registration_id = $1`,
+            [registrationId]
+        );
+
+        // 10. Add Application History
+        const historyId = uuidv4();
+        await client.query(
+            `INSERT INTO cpay.application_status_history
+             (history_id, registration_id, current_status, previous_status, remarks, changed_by, changed_at)
+             VALUES ($1, $2, 'SUBMITTED', 'DRAFT', 'Application Submitted Successfully', $3, CURRENT_TIMESTAMP)`,
+            [historyId, registrationId, user.userId]
+        );
+
+        await client.query('COMMIT');
+        
+        return {
+            success: true,
+            message: "Application Submitted Successfully",
+            data: {
+                registrationId,
+                applicationNumber
+            }
+        };
+
+    } finally {
+        client.release();
+    }
+};
+
+export const getUserAssets = async (user) => {
+    const query = `
+        SELECT 
+            r.registration_id,
+            r.application_number,
+            r.application_status,
+            r.remarks as rejection_remarks,
+            r.created_at as registered_date,
+            ld.land_id,
+            ld.survey_number,
+            ld.sub_division_number,
+            ld.total_area,
+            ld.latitude,
+            ld.longitude,
+            lt.land_type_name,
+            u_unit.unit_name as land_unit_name,
+            ad.state_name,
+            ad.district_name,
+            ad.mandal_name,
+            ad.village_name,
+            ad.pincode,
+            pd.plantation_id,
+            pd.number_of_plants,
+            pd.plantation_age,
+            pd.plantation_area,
+            pc.category_name,
+            ps.common_name as species_name,
+            aq.aquaculture_id,
+            aq.aquaculture_type,
+            aq.stock_quantity,
+            aq.culture_days,
+            aq.pond_area,
+            aq.feed_consumed,
+            aq.fcr,
+            aq.remarks as aqua_remarks,
+            aq_fish.species_name as fish_name,
+            aq_prawn.species_name as prawn_name,
+            cc.carbon_credits,
+            cc.market_value,
+            vd_auditor.name as auditor_name
+        FROM cpay.registration r
+        LEFT JOIN (
+            SELECT ad_inner.*, s.state_name, d.district_name, m.mandal_name, v.village_name
+            FROM cpay.address_details ad_inner
+            LEFT JOIN cpay.states s ON ad_inner.state_id = s.state_id
+            LEFT JOIN cpay.districts d ON ad_inner.district_id = d.district_id
+            LEFT JOIN cpay.mandals m ON ad_inner.mandal_id = m.mandal_id
+            LEFT JOIN cpay.villages v ON ad_inner.village_id = v.village_id
+        ) ad ON r.registration_id = ad.registration_id
+        LEFT JOIN cpay.land_details ld ON r.registration_id = ld.registration_id
+        LEFT JOIN cpay.land_types lt ON ld.land_type_id = lt.land_type_id
+        LEFT JOIN cpay.units u_unit ON ld.unit_id = u_unit.unit_id
+        LEFT JOIN cpay.plantation_details pd ON (pd.land_id = ld.land_id OR pd.registration_id = r.registration_id)
+        LEFT JOIN cpay.plantation_categories pc ON pd.plantation_category_id = pc.plantation_category_id
+        LEFT JOIN cpay.plant_species ps ON pd.plant_species_id = ps.plant_species_id
+        LEFT JOIN cpay.aquaculture_details aq ON (aq.land_id = ld.land_id OR aq.registration_id = r.registration_id)
+        LEFT JOIN cpay.fish_species aq_fish ON aq.fish_species_id = aq_fish.fish_species_id
+        LEFT JOIN cpay.prawn_species aq_prawn ON aq.prawn_species_id = aq_prawn.prawn_species_id
+        LEFT JOIN cpay.carbon_calculation cc ON r.registration_id = cc.registration_id
+        LEFT JOIN (
+            SELECT DISTINCT ON (registration_id) registration_id, changed_by
+            FROM cpay.application_status_history
+            WHERE current_status IN ('VERIFIED_CORRECT', 'VERIFIED_WRONG', 'SUBMITTED')
+            ORDER BY registration_id, changed_at DESC
+        ) ash ON r.registration_id = ash.registration_id
+        LEFT JOIN cpay.valuator_details vd_auditor ON ash.changed_by = vd_auditor.user_id
+        WHERE (r.user_id = $1 OR ld.user_id = $1)
+          AND (ld.survey_number IS NOT NULL OR ld.land_id IS NOT NULL)
+        ORDER BY r.created_at DESC;
+    `;
+    const result = await pool.query(query, [user.userId]);
+
+    const groupedMap = new Map();
+    result.rows.filter(row => row.survey_number || row.land_id).forEach(row => {
+        const key = row.registration_id || row.land_id;
+        if (!groupedMap.has(key)) {
+            groupedMap.set(key, []);
+        }
+        groupedMap.get(key).push(row);
+    });
+
+    const assets = Array.from(groupedMap.values()).map((rows, idx) => {
+        const primaryRow = rows[0];
+        const hasAqua = rows.some(r => r.aquaculture_id !== null || r.land_type_name === 'Aquaculture' || r.land_type_name === 'FISH_POND');
+        const sNo = primaryRow.survey_number || '195';
+        const subDiv = primaryRow.sub_division_number || '6H';
+        const nameVal = `Parcel ${sNo}/${subDiv}`;
+        let cropCategory = 'Agroforestry';
+        let treesCount = 0;
+        
+        if (primaryRow.plantation_id) {
+            cropCategory = `${primaryRow.category_name || 'Plantation'} (${primaryRow.species_name || 'Trees'})`;
+            treesCount = primaryRow.number_of_plants || 0;
+        } else if (hasAqua) {
+            cropCategory = `Fish Pond (${primaryRow.aquaculture_type || 'Fish'} - ${primaryRow.fish_name || primaryRow.prawn_name || 'Vannamei'})`;
+            treesCount = primaryRow.stock_quantity || 0;
+        }
+
+        let parcelStatus = 'PENDING';
+        if (primaryRow.application_status === 'VERIFIED_CORRECT') {
+            parcelStatus = 'VERIFIED';
+        } else if (primaryRow.application_status === 'VERIFIED_WRONG') {
+            parcelStatus = 'REJECTED';
+        } else if (primaryRow.application_status === 'RESUBMISSION_REQUIRED' || primaryRow.application_status === 'UNDER_REVIEW') {
+            parcelStatus = 'UNDER REVIEW';
+        }
+
+        const auditorNameStr = primaryRow.auditor_name ? `Auditor ${primaryRow.auditor_name}` : 'UNFCCC Lead Auditor';
+        const sNoClean = primaryRow.survey_number || (primaryRow.application_number ? primaryRow.application_number.replace('APP-', '') : 'Parcel');
+        const subDivClean = primaryRow.sub_division_number ? `/${primaryRow.sub_division_number}` : '';
+        const actualAreaNum = primaryRow.total_area !== null && primaryRow.total_area !== undefined ? parseFloat(primaryRow.total_area) : (primaryRow.pond_area ? parseFloat(primaryRow.pond_area) : 0);
+        
+        let calcReport = null;
+        if (hasAqua && actualAreaNum > 0) {
+            try {
+                calcReport = calculateAquacultureCarbon({
+                    pond_area_ha: actualAreaNum * 0.404686,
+                    species_name: primaryRow.fish_name || primaryRow.prawn_name || 'IMC',
+                    crops_per_year: primaryRow.crops_per_year || 1.5,
+                    stocking_density: primaryRow.stock_quantity ? (primaryRow.stock_quantity / (actualAreaNum * 0.404686)) : undefined,
+                    farm_reported_fcr: primaryRow.fcr || undefined,
+                    total_feed_required_kg: primaryRow.feed_consumed || undefined
+                });
+            } catch (e) {
+                console.error("Aquaculture calc calculation error:", e);
+            }
+        }
+
+        const totalProdKg = primaryRow.total_production_kg ? Math.round(parseFloat(primaryRow.total_production_kg)) : (calcReport ? Math.round(calcReport.total_production_kg) : (actualAreaNum > 0 ? Math.round(actualAreaNum * 0.404686 * 7500) : 0));
+        const totalCreditsVal = primaryRow.carbon_credits !== null && primaryRow.carbon_credits !== undefined ? parseFloat(primaryRow.carbon_credits) : (calcReport ? parseFloat(calcReport.carbon_credit_per_year_t.toFixed(2)) : (actualAreaNum > 0 ? parseFloat((actualAreaNum * 6.8).toFixed(2)) : 0));
+        const portfolioValINR = Math.round(totalCreditsVal * 120); // Standard carbon rate ₹120/credit
+
+        // Build child ponds list matching exact registered asset total area & species
+        const aquaRows = rows.filter(r => r.aquaculture_id || r.pond_area);
+        let ponds = [];
+        if (aquaRows.length > 0) {
+            const sumPondArea = aquaRows.reduce((acc, r) => acc + (parseFloat(r.pond_area) || 0), 0);
+            ponds = aquaRows.map((r, pIdx) => {
+                let pName = `POND ${pIdx + 1}`;
+                let pSpecies = r.fish_name || r.prawn_name || (r.aquaculture_type ? 'IMC' : 'IMC');
+                if (r.aqua_remarks && r.aqua_remarks.includes('Survey Pond:')) {
+                    const match = r.aqua_remarks.match(/Survey Pond:\s*([^|]+)/);
+                    if (match && match[1]) pName = match[1].trim();
+                    const specMatch = r.aqua_remarks.match(/Species:\s*([^|]+)/);
+                    if (specMatch && specMatch[1] && specMatch[1].trim().toLowerCase() !== 'neem') pSpecies = specMatch[1].trim();
+                }
+                const pAreaNum = parseFloat(r.pond_area) || (actualAreaNum / aquaRows.length);
+                const ratio = sumPondArea > 0 ? (pAreaNum / sumPondArea) : (1 / aquaRows.length);
+                const pCredits = (totalCreditsVal * ratio).toFixed(2);
+                let pStock = Math.round(totalProdKg * ratio);
+                
+                if (pAreaNum > 0) {
+                    try {
+                        const singlePondCalc = calculateAquacultureCarbon({
+                            pond_area_ha: pAreaNum * 0.404686,
+                            species_name: pSpecies,
+                            crops_per_year: r.crops_per_year || 1.5,
+                            stocking_density: r.stock_quantity ? Number(r.stock_quantity) : undefined,
+                            farm_reported_fcr: r.fcr ? Number(r.fcr) : undefined,
+                            total_feed_required_kg: r.feed_consumed ? Number(r.feed_consumed) : undefined
+                        });
+                        if (singlePondCalc && singlePondCalc.total_production_kg && singlePondCalc.total_production_kg > 0) {
+                            pStock = Math.round(singlePondCalc.total_production_kg);
+                        }
+                    } catch (e) {}
+                }
+
+                return {
+                    id: r.aquaculture_id || `${primaryRow.registration_id}_pond_${pIdx + 1}`,
+                    name: pName,
+                    species: pSpecies,
+                    area: `${pAreaNum.toFixed(2)} Acres`,
+                    credits: pCredits,
+                    production: `${pStock.toLocaleString('en-IN')} Kg`,
+                    status: parcelStatus
+                };
+            });
+        } else {
+            ponds = [
+                {
+                    id: `${primaryRow.registration_id}_pond_1`,
+                    name: 'Pond 1',
+                    species: primaryRow.fish_name || primaryRow.prawn_name || 'IMC',
+                    area: `${actualAreaNum.toFixed(2)} Acres`,
+                    credits: totalCreditsVal.toFixed(2),
+                    production: `${Math.round(totalProdKg).toLocaleString('en-IN')} Kg`,
+                    status: parcelStatus
+                }
+            ];
+        }
+
+        return {
+            id: primaryRow.registration_id,
+            registration_id: primaryRow.registration_id,
+            surveyNo: sNoClean,
+            subDivisionNo: primaryRow.sub_division_number || '',
+            name: `Parcel ${sNoClean}${subDivClean}`,
+            cropCategory: cropCategory,
+            area: `${actualAreaNum} ${primaryRow.land_unit_name || 'Acre'}s`,
+            totalPondArea: `${actualAreaNum} ${primaryRow.land_unit_name || 'Acre'}s`,
+            totalProduction: `${totalProdKg.toLocaleString('en-IN')} Kg`,
+            totalCarbonCredits: totalCreditsVal.toFixed(2),
+            portfolioValue: `₹${portfolioValINR.toLocaleString('en-IN')}`,
+            location: `${primaryRow.village_name || primaryRow.district_name || 'Location'}, ${primaryRow.state_name || 'State'}`,
+            trees: treesCount,
+            status: parcelStatus,
+            auditor: primaryRow.application_status === 'VERIFIED_CORRECT' ? auditorNameStr : (primaryRow.application_status === 'VERIFIED_WRONG' ? `${auditorNameStr} (Rejected)` : 'Ecosystem Standards Board'),
+            date: primaryRow.registered_date ? new Date(primaryRow.registered_date).toLocaleDateString() : 'Pending',
+            sequestrationRate: totalCreditsVal,
+            rejectionReason: primaryRow.rejection_remarks || '',
+            latitude: Number(primaryRow.latitude) || 14.4450,
+            longitude: Number(primaryRow.longitude) || 79.9860,
+            showPonds: false,
+            ponds: ponds,
+            address: {
+                state: primaryRow.state_name,
+                district: primaryRow.district_name,
+                mandal: primaryRow.mandal_name,
+                village: primaryRow.village_name,
+                pincode: primaryRow.pincode
+            },
+            survey: {
+                surveyNo: primaryRow.survey_number,
+                subDivisionNo: primaryRow.sub_division_number,
+                area: primaryRow.total_area ? primaryRow.total_area.toString() : '0',
+                unit: primaryRow.land_unit_name || 'Acre',
+                landType: primaryRow.land_type_name
+            },
+            plantation: hasAqua ? {
+                landType: 'Fish Pond',
+                plantationType: primaryRow.aquaculture_type || 'Fish',
+                subCategory: primaryRow.fish_name || primaryRow.prawn_name || 'Vannamei',
+                quantity: primaryRow.stock_quantity,
+                daysOfCulture: primaryRow.culture_days,
+                age: primaryRow.culture_days ? Math.round(primaryRow.culture_days / 30) : 4,
+                area: primaryRow.total_area,
+                unit: primaryRow.land_unit_name,
+                qtyFeedConsumed: primaryRow.feed_consumed,
+                fcr: primaryRow.fcr
+            } : {
+                landType: 'Open Land',
+                plantationType: primaryRow.category_name || 'Fruit',
+                subCategory: primaryRow.species_name || 'Mango',
+                quantity: primaryRow.number_of_plants,
+                age: primaryRow.plantation_age,
+                area: primaryRow.total_area,
+                unit: primaryRow.land_unit_name
+            }
+        };
+    });
+
+    return {
+        success: true,
+        data: assets
+    };
+};
+
+export const addAsset = async (user, data) => {
+    const {
+        addressDetails,
+        landDetails,
+        plantationDetails,
+        aquacultureDetails,
+        carbonCalculation
+    } = data;
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // 1. Fetch user's primary registration & personal details to copy
+        const primaryRes = await client.query(`
+            SELECT 
+                r.registration_type_id,
+                COALESCE(r.user_type_id, u.user_type_id) as user_type_id,
+                ut.category,
+                ind.full_name as ind_name, ind.gender, ind.aadhaar_number, ind.pan_number as ind_pan, ind.email as ind_email, ind.mobile_number as ind_mob,
+                org.organization_name, org.registration_number, org.gst_number, org.pan_number as org_pan, org.mobile_number as org_mob, org.email as org_email,
+                gov.department_name, gov.designation as division_name, gov.officer_name as manager_name, gov.employee_id as manager_id, gov.pan_number as gov_pan, gov.mobile_number as gov_mob, gov.email as gov_email
+            FROM cpay.registration r
+            JOIN cpay.users u ON r.user_id = u.user_id
+            LEFT JOIN cpay.user_types ut ON COALESCE(r.user_type_id, u.user_type_id) = ut.user_type_id
+            LEFT JOIN cpay.individual_details ind ON u.user_id = ind.user_id
+            LEFT JOIN cpay.organization_details org ON u.user_id = org.user_id
+            LEFT JOIN cpay.government_details gov ON u.user_id = gov.user_id
+            WHERE r.user_id = $1
+            ORDER BY r.created_at ASC
+            LIMIT 1;
+        `, [user.userId]);
+
+        let registrationTypeId = null;
+        let userTypeId = null;
+
+        if (primaryRes.rows.length > 0) {
+            const primary = primaryRes.rows[0];
+            registrationTypeId = primary.registration_type_id;
+            userTypeId = primary.user_type_id;
+        }
+
+        if (!isUuid(registrationTypeId)) {
+            const regTypeRes = await client.query("SELECT registration_type_id FROM cpay.registration_types LIMIT 1");
+            if (regTypeRes.rows.length > 0) registrationTypeId = regTypeRes.rows[0].registration_type_id;
+        }
+
+        if (!isUuid(userTypeId)) {
+            const uTypeRes = await client.query("SELECT user_type_id FROM cpay.user_types LIMIT 1");
+            if (uTypeRes.rows.length > 0) userTypeId = uTypeRes.rows[0].user_type_id;
+        }
+
+        // Check duplicate survey number for this user
+        const sNo = landDetails.surveyNo || landDetails.surveyNumber;
+        const subNo = landDetails.subDivisionNo || landDetails.subDivisionNumber || '';
+
+        if (sNo) {
+            const dupRes = await client.query(`
+                SELECT 1 FROM cpay.land_details ld
+                JOIN cpay.registration r ON ld.registration_id = r.registration_id
+                WHERE r.user_id = $1 
+                  AND LOWER(TRIM(ld.survey_number)) = LOWER(TRIM($2))
+                  AND COALESCE(LOWER(TRIM(ld.sub_division_number)), '') = COALESCE(LOWER(TRIM($3)), '')
+                LIMIT 1;
+            `, [user.userId, sNo, subNo]);
+
+            if (dupRes.rows.length > 0) {
+                throw new Error("This Survey Number is already registered. Please use another Survey Number.");
+            }
+        }
+
+        // 2. Generate Application Number
+        const countRes = await client.query("SELECT COUNT(*) AS total FROM cpay.registration");
+        const count = Number(countRes.rows[0].total) + 1;
+        const year = new Date().getFullYear();
+        const applicationNumber = `CPAY${year}${count.toString().padStart(6, '0')}`;
+
+        // 3. Create new Registration record with status 'SUBMITTED'
+        const regRes = await client.query(
+            `INSERT INTO cpay.registration
+             (application_number, user_id, registration_type_id, user_type_id, application_status, current_step, remarks, submitted_at, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, 'SUBMITTED', 8, 'Asset added via Seller Dashboard', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+             RETURNING registration_id`,
+            [applicationNumber, user.userId, registrationTypeId, userTypeId]
+        );
+        const registrationId = regRes.rows[0].registration_id;
+
+        // 4. Save/Update Personal Details into cpay.individual_details
+        if (personalDetails && (personalDetails.fullName || personalDetails.full_name)) {
+            await client.query(
+                `INSERT INTO cpay.individual_details
+                 (user_id, full_name, gender, aadhaar_number, pan_number, email, mobile_number, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                 ON CONFLICT (user_id) DO UPDATE SET
+                    full_name = EXCLUDED.full_name,
+                    gender = EXCLUDED.gender,
+                    aadhaar_number = EXCLUDED.aadhaar_number,
+                    pan_number = EXCLUDED.pan_number,
+                    email = EXCLUDED.email,
+                    mobile_number = EXCLUDED.mobile_number,
+                    updated_at = CURRENT_TIMESTAMP`,
+                [
+                    user.userId,
+                    personalDetails.fullName || personalDetails.full_name,
+                    personalDetails.gender || null,
+                    personalDetails.aadhaarNumber || personalDetails.aadhaar_number || null,
+                    personalDetails.panNumber || personalDetails.pan_number || null,
+                    personalDetails.emailAddress || personalDetails.email || user.email,
+                    personalDetails.mobileNumber || personalDetails.mobile_number || user.mobile_number
+                ]
+            );
+        }
+
+        // 5. Resolve and save Address details
+        const { stateId, districtId, mandalId, villageId } = await resolveGeography(
+            client,
+            addressDetails.state || addressDetails.stateId,
+            addressDetails.district || addressDetails.districtId,
+            addressDetails.mandal || addressDetails.mandalId,
+            addressDetails.village || addressDetails.villageId,
+            addressDetails.pincode
+        );
+
+        const line1 = addressDetails.addressLine1 || addressDetails.address_line1 || addressDetails.street || 'Address Details';
+        await client.query(
+            `INSERT INTO cpay.address_details
+             (registration_id, address_line1, state_id, district_id, mandal_id, village_id, pincode, latitude, longitude, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+            [
+                registrationId,
+                line1,
+                stateId,
+                districtId,
+                mandalId,
+                villageId,
+                addressDetails.pincode || null,
+                addressDetails.latitude ? Number(addressDetails.latitude) : 14.4450,
+                addressDetails.longitude ? Number(addressDetails.longitude) : 79.9860
+            ]
+        );
+
+        // 6. Save Land Details
+        let resolvedLandTypeId = landDetails.landTypeId;
+        if (!isUuid(resolvedLandTypeId)) {
+            let landNameMatch = 'Mixed';
+            if (landDetails.landType === 'Fish Pond') landNameMatch = 'Aquaculture';
+            else if (landDetails.landType === 'Mixed') landNameMatch = 'Mixed';
+            else if (landDetails.landType === 'Dry Land') landNameMatch = 'Mixed';
+
+            const lTypeResult = await client.query(
+                "SELECT land_type_id FROM cpay.land_types WHERE land_type_name ILIKE $1 LIMIT 1",
+                [landNameMatch]
+            );
+            if (lTypeResult.rows.length > 0) {
+                resolvedLandTypeId = lTypeResult.rows[0].land_type_id;
+            } else {
+                const fb = await client.query("SELECT land_type_id FROM cpay.land_types LIMIT 1");
+                if (fb.rows.length > 0) resolvedLandTypeId = fb.rows[0].land_type_id;
+            }
+        }
+
+        let resolvedUnitId = landDetails.unitId || landDetails.unit;
+        if (!isUuid(resolvedUnitId)) {
+            let cleanUnit = resolvedUnitId || 'Acre';
+            if (cleanUnit.toLowerCase().startsWith('acre')) cleanUnit = 'Acre';
+            else if (cleanUnit.toLowerCase().startsWith('hectare')) cleanUnit = 'Hectare';
+
+            const uResult = await client.query(
+                "SELECT unit_id FROM cpay.units WHERE unit_name ILIKE $1 OR unit_symbol ILIKE $1 LIMIT 1",
+                [cleanUnit]
+            );
+            if (uResult.rows.length > 0) {
+                resolvedUnitId = uResult.rows[0].unit_id;
+            } else {
+                const fb = await client.query("SELECT unit_id FROM cpay.units LIMIT 1");
+                if (fb.rows.length > 0) resolvedUnitId = fb.rows[0].unit_id;
+            }
+        }
+
+        const landRes = await client.query(
+            `INSERT INTO cpay.land_details
+             (registration_id, user_id, land_type_id, survey_number, sub_division_number, total_area, unit_id, latitude, longitude, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+             RETURNING land_id`,
+            [
+                registrationId,
+                user.userId,
+                resolvedLandTypeId,
+                sNo,
+                subNo,
+                Number(landDetails.area || landDetails.totalArea),
+                resolvedUnitId,
+                landDetails.latitude ? Number(landDetails.latitude) : 14.4450,
+                landDetails.longitude ? Number(landDetails.longitude) : 79.9860
+            ]
+        );
+        const landId = landRes.rows[0].land_id;
+
+        // 7. Save Plantation or Aquaculture details
+        const isFishPond = landDetails.landType === 'Fish Pond';
+        if (isFishPond) {
+            const pondsToSave = (aquacultureDetails && Array.isArray(aquacultureDetails.ponds) && aquacultureDetails.ponds.length > 0)
+                ? aquacultureDetails.ponds
+                : [{
+                    name: 'Pond 1',
+                    selectedSpecies: plantationDetails.subCategory || 'IMC',
+                    pondAreaHa: Number(landDetails.area || landDetails.totalArea || 1.0),
+                    stockingDensity: Number(plantationDetails.quantity || 120),
+                    cultureDurationDays: Number(plantationDetails.daysOfCulture || (plantationDetails.age ? plantationDetails.age * 30 : 120)),
+                    averageFcr: Number(plantationDetails.fcr || 1.2),
+                    feedConsumed: Number(plantationDetails.qtyFeedConsumed || plantationDetails.feedConsumed || 500)
+                }];
+
+            for (let pIdx = 0; pIdx < pondsToSave.length; pIdx++) {
+                const pond = pondsToSave[pIdx];
+                const pName = pond.name || `POND ${pIdx + 1}`;
+                const pSpecies = pond.selectedSpecies || pond.subCategory || pond.species || plantationDetails.subCategory || 'IMC';
+
+                let resolvedFishSpeciesId = null;
+                if (pSpecies) {
+                    const fResult = await client.query(
+                        "SELECT fish_species_id FROM cpay.fish_species WHERE species_name ILIKE $1 OR scientific_name ILIKE $1 LIMIT 1",
+                        [pSpecies]
+                    );
+                    if (fResult.rows.length > 0) resolvedFishSpeciesId = fResult.rows[0].fish_species_id;
+                }
+                if (!resolvedFishSpeciesId) {
+                    const fbFish = await client.query("SELECT fish_species_id FROM cpay.fish_species LIMIT 1");
+                    if (fbFish.rows.length > 0) resolvedFishSpeciesId = fbFish.rows[0].fish_species_id;
+                }
+
+                let resolvedPrawnSpeciesId = null;
+                if (pSpecies) {
+                    const pResult = await client.query(
+                        "SELECT prawn_species_id FROM cpay.prawn_species WHERE species_name ILIKE $1 OR scientific_name ILIKE $1 LIMIT 1",
+                        [pSpecies]
+                    );
+                    if (pResult.rows.length > 0) resolvedPrawnSpeciesId = pResult.rows[0].prawn_species_id;
+                }
+                if (!resolvedPrawnSpeciesId) {
+                    const fbPrawn = await client.query("SELECT prawn_species_id FROM cpay.prawn_species LIMIT 1");
+                    if (fbPrawn.rows.length > 0) resolvedPrawnSpeciesId = fbPrawn.rows[0].prawn_species_id;
+                }
+
+                await client.query(
+                    `INSERT INTO cpay.aquaculture_details
+                     (registration_id, land_id, aquaculture_type, fish_species_id, prawn_species_id, stock_quantity, culture_days, pond_area, area_unit_id, feed_consumed, feed_unit_id, fcr, remarks, created_at, updated_at)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+                    [
+                        registrationId,
+                        landId,
+                        plantationDetails.plantationType || pond.aquacultureType || 'Fish',
+                        resolvedFishSpeciesId,
+                        resolvedPrawnSpeciesId,
+                        Number(pond.stockingDensity || pond.stockQuantity || plantationDetails.quantity || 120),
+                        Number(pond.cultureDurationDays || pond.cultureDays || plantationDetails.daysOfCulture || (plantationDetails.age ? plantationDetails.age * 30 : 120)),
+                        Number(pond.pondAreaHa || pond.area || landDetails.area || landDetails.totalArea || 1.0),
+                        resolvedUnitId,
+                        Number(pond.feedConsumed || plantationDetails.qtyFeedConsumed || 500),
+                        resolvedUnitId,
+                        Number(pond.averageFcr || pond.fcr || plantationDetails.fcr || 1.2),
+                        `Survey Pond: ${pName} | Species: ${pSpecies}`
+                    ]
+                );
+            }
+        } else {
+            let resolvedCategoryId = null;
+            const catResult = await client.query(
+                "SELECT plantation_category_id FROM cpay.plantation_categories WHERE category_name ILIKE $1 LIMIT 1",
+                [plantationDetails.plantationType || 'Timber']
+            );
+            if (catResult.rows.length > 0) {
+                resolvedCategoryId = catResult.rows[0].plantation_category_id;
+            } else {
+                const fb = await client.query("SELECT plantation_category_id FROM cpay.plantation_categories LIMIT 1");
+                if (fb.rows.length > 0) resolvedCategoryId = fb.rows[0].plantation_category_id;
+            }
+
+            let plantSpeciesId = null;
+            if (plantationDetails.subCategory) {
+                const specResult = await client.query(
+                    "SELECT plant_species_id FROM cpay.plant_species WHERE common_name ILIKE $1 LIMIT 1",
+                    [plantationDetails.subCategory]
+                );
+                if (specResult.rows.length > 0) plantSpeciesId = specResult.rows[0].plant_species_id;
+            }
+            if (!plantSpeciesId) {
+                const fbSpec = await client.query("SELECT plant_species_id FROM cpay.plant_species LIMIT 1");
+                if (fbSpec.rows.length > 0) plantSpeciesId = fbSpec.rows[0].plant_species_id;
+            }
+
+            await client.query(
+                `INSERT INTO cpay.plantation_details
+                 (registration_id, land_id, plantation_category_id, plant_species_id, number_of_plants, plantation_age, plantation_area, area_unit_id, remarks, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+                [
+                    registrationId,
+                    landId,
+                    resolvedCategoryId,
+                    plantSpeciesId,
+                    Number(plantationDetails.quantity || 120),
+                    Number(plantationDetails.age || 5),
+                    Number(landDetails.area || landDetails.totalArea),
+                    resolvedUnitId,
+                    plantationDetails.remarks || 'Plantation added from seller dashboard'
+                ]
+            );
+        }
+
+        // 8. Save Carbon Calculation
+        let carbonRate = 120.00;
+        const rateRes = await client.query(
+            "SELECT rate_per_credit FROM cpay.carbon_rate_master WHERE is_active = TRUE ORDER BY effective_from DESC LIMIT 1"
+        );
+        if (rateRes.rows.length > 0) {
+            carbonRate = Number(rateRes.rows[0].rate_per_credit);
+        }
+
+        let estCO2 = 500;
+        let credits = 300;
+
+        if (isFishPond && plantationDetails.ponds && Array.isArray(plantationDetails.ponds) && plantationDetails.ponds.length > 0) {
+            credits = 0;
+            estCO2 = 0;
+            for (const pond of plantationDetails.ponds) {
+                const aquaCalc = calculateAquacultureCarbon({
+                    culture_type: pond.selectedSpecies || pond.species || plantationDetails.subCategory || 'IMC',
+                    pond_area_ha: Number(pond.pondAreaHa || pond.area || 1.0),
+                    stocking_density: Number(pond.stockingDensity || pond.quantity || 6250),
+                    culture_duration_days: Number(pond.cultureDurationDays || pond.daysOfCulture || 240),
+                    total_feed_required_kg: Number(pond.feedConsumed || plantationDetails.qtyFeedConsumed || 0),
+                    actual_fcr_used: Number(pond.averageFcr || pond.fcr || 1.2)
+                });
+                credits += Number(aquaCalc.carbon_credit_per_year_t.toFixed(2));
+                estCO2 += Number(aquaCalc.co2e_reduction_per_crop_t.toFixed(2));
+            }
+        } else if (isFishPond) {
+            const aquaCalc = calculateAquacultureCarbon({
+                culture_type: plantationDetails.subCategory || plantationDetails.plantationType || 'IMC',
+                pond_area_ha: Number(landDetails.area || landDetails.totalArea || 1.0),
+                stocking_density: Number(plantationDetails.quantity || 6250),
+                culture_duration_days: Number(plantationDetails.daysOfCulture || 240),
+                total_feed_required_kg: Number(plantationDetails.qtyFeedConsumed || 0),
+                actual_fcr_used: Number(plantationDetails.fcr || 2.9)
+            });
+            credits = Number(aquaCalc.carbon_credit_per_year_t.toFixed(2));
+            estCO2 = Number(aquaCalc.co2e_reduction_per_crop_t.toFixed(2));
+        } else {
+            const carbon = carbonCalculation || {};
+            estCO2 = Number(carbon.estimatedCO2 || carbon.co2Absorbed || carbon.carbonCredits || 500);
+            credits = Number(carbon.carbonCredits || carbon.credits || 300);
+        }
+
+        const mktVal = credits * carbonRate;
+
+        await client.query(
+            `INSERT INTO cpay.carbon_calculation
+             (registration_id, land_id, estimated_co2, carbon_credits, market_rate, market_value, calculated_at, source_type, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, 'DASHBOARD', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+             ON CONFLICT (registration_id) DO UPDATE SET
+                 land_id = EXCLUDED.land_id,
+                 estimated_co2 = EXCLUDED.estimated_co2,
+                 carbon_credits = EXCLUDED.carbon_credits,
+                 market_rate = EXCLUDED.market_rate,
+                 market_value = EXCLUDED.market_value,
+                 calculated_at = CURRENT_TIMESTAMP,
+                 updated_at = CURRENT_TIMESTAMP`,
+            [
+                registrationId,
+                landId,
+                estCO2,
+                credits,
+                carbonRate,
+                mktVal
+            ]
+        );
+
+        // 9. Add Application History
+        const historyId = uuidv4();
+        await client.query(
+            `INSERT INTO cpay.application_status_history
+             (history_id, registration_id, current_status, previous_status, remarks, changed_by, changed_at)
+             VALUES ($1, $2, 'SUBMITTED', 'DRAFT', 'Asset added and submitted from Seller Dashboard', $3, CURRENT_TIMESTAMP)`,
+            [historyId, registrationId, user.userId]
+        );
+
+        // 10. Create Verification Request
+        await client.query(
+            `INSERT INTO cpay.verification_requests
+             (registration_id, land_id, status, submitted_at, created_at, updated_at)
+             VALUES ($1, $2, 'PENDING', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+            [registrationId, landId]
+        );
+
+        await client.query('COMMIT');
+
+        return {
+            success: true,
+            message: "Asset added and submitted successfully to Auditor queue",
+            data: {
+                registrationId,
+                applicationNumber
+            }
+        };
+
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error("❌ Add Asset Transaction Failed:", err);
+        throw err;
+    } finally {
+        client.release();
+    }
+};
+
+export const getReportData = async (user, registrationIdParam) => {
+    let registrationId = registrationIdParam;
+    if (!registrationId) {
+        const activeReg = await getUserRegistrationStatus(user);
+        if (activeReg && activeReg.data) {
+            registrationId = activeReg.data.registration_id || activeReg.data.registrationId;
+        }
+    }
+
+    let userInputs = {};
+    if (registrationId) {
+        const client = await pool.connect();
+        try {
+            const query = `
+                SELECT aq.*, cc.*, ld.area, ld.land_type_id, lt.land_type_name
+                FROM cpay.registrations r
+                LEFT JOIN cpay.land_details ld ON r.registration_id = ld.registration_id
+                LEFT JOIN cpay.land_types lt ON ld.land_type_id = lt.land_type_id
+                LEFT JOIN cpay.aquaculture_details aq ON r.registration_id = aq.registration_id
+                LEFT JOIN cpay.carbon_calculations cc ON r.registration_id = cc.registration_id
+                WHERE r.registration_id = $1
+                LIMIT 1
+            `;
+            const res = await client.query(query, [registrationId]);
+            if (res.rows.length > 0) {
+                const row = res.rows[0];
+                userInputs = {
+                    culture_type: row.aquaculture_type || 'IMC',
+                    pond_area_ha: Number(row.pond_area || row.area || 1.0),
+                    stocking_density: Number(row.stock_quantity || 6250),
+                    culture_duration_days: Number(row.culture_days || 240),
+                    actual_fcr_used: Number(row.fcr || 3.0),
+                    crops_per_year: Number(row.crops_per_year || 1.5),
+                    total_feed_required_kg: Number(row.feed_consumed || 0),
+                    baselineAnaerobicFraction: Number(row.baseline_anaerobic_fraction || 0.20),
+                    improvedAnaerobicFraction: Number(row.improved_anaerobic_fraction || 0.08),
+                    fcrImprovement: Number(row.fcr_improvement || 0.10),
+                    measuredCH4Baseline: row.measured_ch4_baseline,
+                    measuredCH4Improved: row.measured_ch4_improved,
+                    measuredN2OBaseline: row.measured_n2o_baseline,
+                    measuredN2OImproved: row.measured_n2o_improved
+                };
+            }
+        } catch (e) {
+            console.error("Error reading database inputs for report:", e);
+        } finally {
+            client.release();
+        }
+    }
+
+    const reportData = syncExcelWithInputs(userInputs);
+    return {
+        success: true,
+        data: reportData
+    };
+};
+
+export const submitBuyerRegistration = async (data) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const { personalDetails, mobileNumber, email, buyerName, companyName } = data;
+        const mobile = mobileNumber || data.mobile || personalDetails?.mobileNumber || data.personalDetails?.mobile_number;
+        if (!mobile) throw new Error("Mobile number is required for buyer registration");
+
+        const name = buyerName || personalDetails?.fullName || personalDetails?.companyName || companyName || 'Buyer';
+        const cleanMobile = mobile.replace(/[^0-9]/g, '');
+        const userEmail = email || personalDetails?.email || `buyer_${cleanMobile.slice(-10)}@cpay.org`;
+        const panNum = personalDetails?.panNumber || data.panNumber || 'ABCDE1234F';
+
+        // 1. Find or Create User in cpay.users
+        let userRes = await client.query("SELECT user_id FROM cpay.users WHERE mobile_number = $1 OR mobile_number = $2 LIMIT 1", [mobile, cleanMobile.slice(-10)]);
+        let userId;
+        if (userRes.rows.length > 0) {
+            userId = userRes.rows[0].user_id;
+        } else {
+            userId = uuidv4();
+            const dummyHash = uuidv4();
+            const roleRes = await client.query("SELECT role_id FROM cpay.roles WHERE role_name ILIKE 'BUYER' LIMIT 1");
+            const roleId = roleRes.rows.length > 0 ? roleRes.rows[0].role_id : 'ab679f90-78c1-4d8a-8b10-35dad4d67925';
+            await client.query(
+                `INSERT INTO cpay.users (user_id, role_id, email, mobile_number, password_hash, user_type_name, is_active, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, 'Buyer', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+                [userId, roleId, userEmail, mobile, dummyHash]
+            );
+        }
+
+        // 2. Generate Application Number
+        const countRes = await client.query("SELECT COUNT(*) AS total FROM cpay.registration");
+        const count = Number(countRes.rows[0].total) + 1;
+        const year = new Date().getFullYear();
+        const applicationNumber = `CPAY${year}${count.toString().padStart(6, '0')}`;
+
+        // 3. Get Registration Type ID & User Type ID
+        const regTypeRes = await client.query("SELECT registration_type_id FROM cpay.registration_types LIMIT 1");
+        const regTypeId = regTypeRes.rows.length > 0 ? regTypeRes.rows[0].registration_type_id : uuidv4();
+        const uTypeRes = await client.query("SELECT user_type_id FROM cpay.user_types LIMIT 1");
+        const uTypeId = uTypeRes.rows.length > 0 ? uTypeRes.rows[0].user_type_id : uuidv4();
+
+        // 4. Insert into cpay.registration with status 'VERIFIED_CORRECT'
+        const regRes = await client.query(
+            `INSERT INTO cpay.registration
+             (application_number, user_id, registration_type_id, user_type_id, application_status, current_step, remarks, submitted_at, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, 'VERIFIED_CORRECT', 8, 'Buyer Registration Completed', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+             RETURNING registration_id`,
+            [applicationNumber, userId, regTypeId, uTypeId]
+        );
+
+        // 5. Insert/Update cpay.individual_details
+        await client.query(
+            `INSERT INTO cpay.individual_details
+             (user_id, full_name, gender, aadhaar_number, pan_number, email, mobile_number, created_at, updated_at)
+             VALUES ($1, $2, 'Male', $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+             ON CONFLICT (user_id) DO UPDATE SET
+                full_name = EXCLUDED.full_name,
+                pan_number = COALESCE(EXCLUDED.pan_number, cpay.individual_details.pan_number),
+                email = EXCLUDED.email,
+                mobile_number = EXCLUDED.mobile_number,
+                updated_at = CURRENT_TIMESTAMP`,
+            [
+                userId,
+                name,
+                personalDetails?.aadhaarNumber || null,
+                panNum,
+                userEmail,
+                mobile
+            ]
+        );
+
+        await client.query('COMMIT');
+        return {
+            success: true,
+            message: 'Buyer registration successfully inserted into PostgreSQL database',
+            applicationNumber,
+            userId
+        };
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('❌ Error submitting buyer registration to PostgreSQL database:', error);
+        throw error;
+    } finally {
+        client.release();
+    }
+};
+
+export const checkSurvey = async (user, surveyNumber, subDivisionNumber = '') => {
+    if (!surveyNumber) return { exists: false, message: "No survey number provided" };
+    
+    const client = await pool.connect();
+    try {
+        const res = await client.query(`
+            SELECT 1 FROM cpay.land_details ld
+            JOIN cpay.registration r ON ld.registration_id = r.registration_id
+            WHERE r.user_id = $1 
+              AND LOWER(TRIM(ld.survey_number)) = LOWER(TRIM($2))
+              AND COALESCE(LOWER(TRIM(ld.sub_division_number)), '') = COALESCE(LOWER(TRIM($3)), '')
+            LIMIT 1;
+        `, [user.userId, surveyNumber, subDivisionNumber]);
+
+        const exists = res.rows.length > 0;
+        return {
+            exists,
+            message: exists ? "This Survey Number is already registered. Please use another Survey Number." : "Survey Number is available"
+        };
+    } finally {
+        client.release();
+    }
+};

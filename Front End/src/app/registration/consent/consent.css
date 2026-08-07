@@ -1,0 +1,866 @@
+/* ================= PAGE ================= */
+
+html,
+body{
+
+    margin:0;
+
+    padding:0;
+
+    width:100%;
+
+    height:100vh;
+
+    overflow:hidden;
+
+    font-family:'Segoe UI',sans-serif;
+
+    background:linear-gradient(135deg, var(--bg-green-soft) 0%, #ffffff 100%);
+}
+
+/* ================= HEADER ================= */
+
+.app-header{
+
+    width:100%;
+
+    height:85px;
+
+    background:#ffffff;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    padding:0 35px;
+
+    border-bottom:1px solid #e5e7eb;
+
+    box-shadow:0 4px 15px rgba(0,0,0,.05);
+
+    position:fixed;
+
+    top:0;
+
+    left:0;
+
+    z-index:9999;
+
+    box-sizing:border-box;
+}
+
+.header-left{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+}
+
+.header-left img{
+
+    width:55px;
+
+    height:55px;
+
+    object-fit:contain;
+}
+
+.header-left h1{
+
+    margin:0;
+
+    font-size:24px;
+
+    font-weight:700;
+
+    color:var(--dark-teal);
+}
+
+.header-left p{
+
+    margin:3px 0 0;
+
+    font-size:13px;
+
+    color:#64748b;
+}
+
+.portal-badge{
+
+    padding:10px 22px;
+
+    border-radius:25px;
+
+    background:var(--bg-green-soft);
+
+    color:var(--primary-teal);
+
+    font-size:14px;
+
+    font-weight:700;
+}
+
+/* ================= STEPPER ================= */
+
+.stepper-container{
+
+    width:95%;
+    max-width:1280px;
+
+    margin:10px auto;
+
+    padding:16px;
+
+    background:#ffffff;
+
+    border-radius:18px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:flex-start;
+
+    gap:10px;
+
+    box-shadow:0 6px 20px rgba(0,0,0,.05);
+
+    overflow-x:auto;
+}
+
+.step{
+
+    width:85px;
+
+    text-align:center;
+
+    flex-shrink:0;
+}
+
+.circle{
+
+    width:36px;
+
+    height:36px;
+
+    border-radius:50%;
+
+    border:2px solid #dbe4ef;
+
+    background:#ffffff;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    margin:auto;
+
+    font-size:12px;
+
+    font-weight:600;
+
+    color:#64748b;
+}
+
+.completed .circle{
+
+    background:var(--primary-teal);
+
+    color:white;
+
+    border:none;
+}
+
+.active .circle{
+
+    background:linear-gradient(135deg, var(--primary-teal) 0%, var(--dark-teal) 100%);
+
+    color:white;
+
+    border:none;
+}
+
+.step span{
+
+    display:block;
+
+    margin-top:6px;
+
+    font-size:10px;
+
+    line-height:14px;
+
+    color:#475569;
+}
+
+.line{
+
+    width:24px;
+
+    height:2px;
+
+    background:#dbe4ef;
+
+    margin-top:17px;
+}
+
+.active-line{
+
+    background:var(--primary-teal);
+}
+
+/* ================= CARD ================= */
+
+.wizard-card{
+
+    width:88%;
+
+    max-width:1100px;
+
+    margin:95px auto 15px auto;
+
+    background:#ffffff;
+
+    border-radius:16px;
+
+    overflow:hidden;
+
+    box-shadow:0 4px 15px rgba(0,0,0,.05);
+}
+
+/* ================= HEADER ================= */
+
+.wizard-header{
+
+    position:relative;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    padding:22px 30px;
+
+    border-bottom:1px solid #e5e7eb;
+
+    background:linear-gradient(135deg, #ffffff 0%, var(--bg-green-soft) 100%);
+}
+
+.wizard-header h2{
+
+    margin:0;
+
+    text-align:center;
+
+    font-size:28px;
+
+    font-weight:700;
+
+    color:#0f172a;
+}
+
+.progress-badge{
+
+    position:absolute;
+
+    right:30px;
+
+    top:50%;
+
+    transform:translateY(-50%);
+
+    background:#e8fff0;
+
+    color:var(--primary-teal);
+
+    padding:10px 18px;
+
+    border-radius:20px;
+
+    font-size:13px;
+
+    font-weight:600;
+}
+
+/* ================= FORM CONTAINER ================= */
+
+.form-container{
+
+    padding:25px;
+}
+
+/* ================= SECTION TITLE ================= */
+
+.section-title{
+
+    text-align:center;
+
+    margin-bottom:25px;
+}
+
+.section-title h3{
+
+    margin:0;
+
+    font-size:38px;
+
+    font-weight:800;
+
+    color:#081f4d;
+}
+
+.section-title span{
+
+    display:block;
+
+    margin-top:8px;
+
+    color:#64748b;
+
+    font-size:15px;
+}
+
+/* ================= CONSENT BOX ================= */
+
+.consent-box{
+
+    background:#f8fbff;
+
+    border:2px solid #dbe4ef;
+
+    border-radius:18px;
+
+    padding:25px;
+
+    margin-bottom:25px;
+
+    color:#334155;
+
+    max-width:820px;
+
+    margin-left:auto;
+
+    margin-right:auto;
+}
+
+.consent-box p{
+
+    margin-bottom:18px;
+
+    line-height:30px;
+
+    font-size:15px;
+}
+
+.consent-box p:last-child{
+
+    margin-bottom:0;
+}
+
+/* ================= CHECKBOX SECTION ================= */
+
+.checkbox-group{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    padding:14px 18px;
+
+    margin-bottom:12px;
+
+    background:#ffffff;
+
+    border:2px solid #e2e8f0;
+
+    border-radius:14px;
+
+    transition:.3s;
+
+    max-width:820px;
+
+    margin-left:auto;
+
+    margin-right:auto;
+}
+
+.checkbox-group:hover{
+
+    border-color:var(--primary-teal);
+
+    background:#f0fdff;
+}
+
+.checkbox-group input{
+
+    width:20px;
+
+    height:20px;
+
+    accent-color:var(--primary-teal);
+
+    cursor:pointer;
+}
+
+.checkbox-group label{
+
+    font-size:15px;
+
+    color:#334155;
+
+    cursor:pointer;
+}
+
+/* ================= FORM GRID ================= */
+
+.form-grid{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:18px;
+
+    margin-top:25px;
+
+    max-width:820px;
+
+    margin-left:auto;
+
+    margin-right:auto;
+}
+
+.form-group{
+
+    display:flex;
+
+    flex-direction:column;
+}
+
+.form-group label{
+
+    display:block;
+
+    margin-bottom:8px;
+
+    font-size:14px;
+
+    font-weight:600;
+
+    color:#334155;
+}
+
+.form-group input{
+
+    width:100%;
+
+    height:50px;
+
+    border:2px solid #dbe4ef;
+
+    border-radius:14px;
+
+    padding:0 15px;
+
+    font-size:14px;
+
+    transition:.3s;
+}
+
+.form-group input:focus{
+
+    outline:none;
+
+    border-color:var(--primary-teal);
+
+    box-shadow:0 0 0 4px rgba(0, 164, 153, .12);
+}
+
+/* ================= FOOTER BUTTONS ================= */
+
+.footer-buttons{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-top:30px;
+
+    max-width:820px;
+
+    margin-left:auto;
+
+    margin-right:auto;
+}
+
+.back-btn{
+
+    width:140px;
+
+    height:50px;
+
+    border:2px solid #d1d5db;
+
+    background:#ffffff;
+
+    border-radius:12px;
+
+    font-size:14px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:.3s;
+}
+
+.back-btn:hover{
+
+    background:#f8fafc;
+}
+
+.next-btn{
+
+    width:190px;
+
+    height:50px;
+
+    border:none;
+
+    border-radius:12px;
+
+    color:#ffffff;
+
+    font-size:14px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    background:linear-gradient(90deg, var(--primary-teal) 0%, var(--dark-teal) 100%);
+
+    box-shadow:0 8px 20px rgba(0, 164, 153, .25);
+
+    transition:.3s;
+}
+
+.next-btn:hover{
+
+    transform:translateY(-2px);
+}
+
+/* ================= OTP MODAL ================= */
+
+.otp-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+}
+
+.otp-modal-card {
+    background: #ffffff;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 460px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    overflow: hidden;
+    animation: modalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.otp-modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.otp-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #94a3b8;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+}
+
+.close-btn:hover {
+    color: #475569;
+}
+
+.otp-modal-body {
+    padding: 24px;
+    text-align: center;
+}
+
+.verification-desc {
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 24px;
+}
+
+.otp-inputs-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.otp-digit-input {
+    width: 48px;
+    height: 54px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    transition: all 0.2s ease;
+}
+
+.otp-digit-input:focus {
+    outline: none;
+    border-color: var(--primary-teal);
+    box-shadow: 0 0 0 4px rgba(0, 164, 153, 0.12);
+}
+
+.otp-error-message {
+    color: #ef4444;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 16px;
+}
+
+.otp-timer-row {
+    margin-top: 15px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.resend-link-btn {
+    background: none;
+    border: none;
+    color: var(--primary-teal);
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+}
+
+.resend-link-btn:hover {
+    color: var(--dark-teal);
+}
+
+.otp-modal-footer {
+    padding: 16px 24px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.cancel-modal-btn {
+    padding: 10px 18px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cancel-modal-btn:hover {
+    background: #f1f5f9;
+}
+
+.verify-modal-btn {
+    padding: 10px 20px;
+    border: none;
+    background: var(--primary-teal);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 164, 153, 0.15);
+    transition: all 0.2s ease;
+}
+
+.verify-modal-btn:hover {
+    background: var(--dark-teal);
+}
+
+/* ================= INLINE OTP FIELD ================= */
+
+.input-with-btn {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+}
+
+.input-with-btn input {
+    flex: 1;
+}
+
+.get-otp-btn {
+    height: 52px;
+    padding: 0 15px;
+    background: var(--primary-teal);
+    border: none;
+    border-radius: 14px;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.get-otp-btn:hover:not(:disabled) {
+    background: var(--dark-teal);
+}
+
+.get-otp-btn:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
+    color: #94a3b8;
+}
+
+.otp-inline-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.otp-digit-inline-input {
+    width: 40px;
+    height: 44px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    transition: all 0.2s ease;
+}
+
+.otp-digit-inline-input:focus {
+    outline: none;
+    border-color: var(--primary-teal);
+    box-shadow: 0 0 0 3px rgba(0, 164, 153, 0.12);
+}
+
+.verify-otp-btn {
+    height: 44px;
+    padding: 0 20px;
+    background: var(--primary-teal);
+    border: none;
+    border-radius: 10px;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.verify-otp-btn:hover {
+    background: var(--dark-teal);
+}
+
+.otp-inline-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media(max-width:768px){
+
+    .wizard-header{
+
+        flex-direction:column;
+
+        align-items:flex-start;
+
+        gap:12px;
+    }
+
+    .form-grid{
+
+        grid-template-columns:1fr;
+    }
+
+    .footer-buttons{
+
+        flex-direction:column;
+
+        gap:12px;
+    }
+
+    .back-btn,
+    .next-btn{
+
+        width:100%;
+    }
+
+    .form-container{
+
+        padding:18px;
+    }
+
+    .section-title h3{
+
+        font-size:28px;
+    }
+
+    .consent-box{
+
+        padding:18px;
+    }
+}

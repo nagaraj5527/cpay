@@ -1,0 +1,112 @@
+<div class="text-center mb-4">
+  <!-- Centered Logo at the top -->
+  <div class="mb-3">
+    <div class="bg-white rounded-3 p-2 d-inline-block shadow-sm">
+      <img src="/logo.jpg" alt="C-PAY Logo" class="img-fluid" style="height: 64px; width: auto; display: block;">
+    </div>
+  </div>
+  <!-- APCCB Title below the logo -->
+  <h1 class="h2 fw-bold mb-1" style="letter-spacing: -0.5px; font-size: 32px; color: var(--primary-teal);">C-<span style="color: #000000;">PAY</span></h1>
+  <!-- Subtitle below the title -->
+  <p class="small fw-semibold text-muted mb-3 text-center">Carbon Credit Bank</p>
+  <h3 class="fw-bold text-dark mb-4">Login</h3>
+</div>
+
+<form (ngSubmit)="onSubmit()" #loginForm="ngForm">
+  <!-- Alerts for Error/Success -->
+  <div *ngIf="errorMessage" class="alert alert-danger py-2 px-3 small" role="alert">
+    {{ errorMessage }}
+  </div>
+  <div *ngIf="successMessage" class="alert alert-success py-2 px-3 small" role="alert">
+    {{ successMessage }}
+  </div>
+
+  <!-- Login Type Dropdown -->
+  <div class="mb-3">
+    <label for="loginType" class="form-label">Login As</label>
+    <app-custom-select 
+      [options]="loginTypeOptions" 
+      [(ngModel)]="loginType" 
+      name="loginType"
+      placeholder="Select Role">
+    </app-custom-select>
+  </div>
+
+  <!-- Mobile Number -->
+  <div class="mb-3">
+    <label for="mobileNumber" class="form-label">Mobile Number</label>
+    <div class="input-group">
+      <input type="text" list="countryCodes" class="form-control" style="max-width: 80px; border-top-left-radius: 10px; border-bottom-left-radius: 10px; border-right: none; font-weight: 500; background-color: #fff; text-align: center;" [(ngModel)]="countryCode" name="countryCode" placeholder="+91" maxlength="7">
+      <datalist id="countryCodes">
+        @for (c of countriesList; track c.name) {
+          <option [value]="c.code">{{ c.flag }} {{ c.name }}</option>
+        }
+      </datalist>
+      <input type="tel" id="mobileNumber" name="mobileNumber" class="form-control" 
+             placeholder="Enter mobile number" [(ngModel)]="mobileNumber" 
+             maxlength="10" pattern="[0-9]{10}" required
+             style="border-top-left-radius: 0; border-bottom-left-radius: 0;"
+             [disabled]="isSendingOtp || isSubmitting">
+      <button class="btn btn-teal" type="button" (click)="sendOtp()" [disabled]="isSendingOtp || isSubmitting">
+        <span *ngIf="!isSendingOtp">Send OTP</span>
+        <span *ngIf="isSendingOtp">Sending...</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Enter OTP -->
+  <div class="mb-3">
+    <label for="otp" class="form-label">Enter OTP</label>
+    <input type="text" id="otp" name="otp" class="form-control" 
+           placeholder="Enter 6 digit OTP" [(ngModel)]="otp" 
+           maxlength="6" required [disabled]="!otpSent">
+  </div>
+
+  <!-- Captcha -->
+  <div class="mb-3">
+    <label for="captcha" class="form-label">Captcha</label>
+    <div class="row g-2 align-items-center">
+      <div class="col-6">
+        <input type="text" id="captcha" name="captcha" class="form-control" 
+               placeholder="Enter captcha" [(ngModel)]="captchaInput" 
+               (input)="captchaInput = captchaInput.toUpperCase()"
+               style="text-transform: uppercase;"
+               autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" required>
+      </div>
+      <div class="col-6">
+        <div class="captcha-container">
+          <div class="captcha-box">{{ generatedCaptcha }}</div>
+          <button type="button" class="btn-refresh" (click)="generateCaptcha()" title="Refresh Captcha">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Remember Me -->
+  <div class="mb-4">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="rememberMe" name="rememberMe" [(ngModel)]="rememberMe">
+      <label class="form-check-label text-muted small" for="rememberMe">
+        Remember me
+      </label>
+    </div>
+  </div>
+
+  <!-- Login Button -->
+  <button type="submit" class="btn btn-teal w-100 py-3 mb-4" [disabled]="isSubmitting">
+    <span *ngIf="!isSubmitting">{{ (!mobileNumber || mobileNumber.trim().length === 0) ? 'Back' : 'Login' }}</span>
+    <span *ngIf="isSubmitting">Logging in...</span>
+  </button>
+
+  <!-- Register Link -->
+  <div class="text-center mt-2">
+    <span class="text-muted small">Don't have an account? </span>
+    <a href="javascript:void(0)" (click)="goToRegistration()" class="small fw-semibold text-decoration-none" style="color: var(--primary-teal); cursor: pointer;">Register now</a>
+  </div>
+</form>
+
+
+
+

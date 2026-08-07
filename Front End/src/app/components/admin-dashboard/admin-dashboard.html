@@ -1,0 +1,937 @@
+<div class="admin-wrapper" [class.dark-theme]="isDarkMode">
+  <!-- Layout Body -->
+  <div class="layout-body" [class.sidebar-collapsed]="isSidebarCollapsed">
+    <!-- Dark Navy Left Sidebar -->
+    <aside class="sidebar-navy">
+      <!-- C-PAY Logo Header -->
+      <div class="sidebar-logo-header">
+        <div class="logo-icon-box">
+          <img src="cpay_tree_logo.png" class="sidebar-logo-img" alt="C-PAY Logo" />
+        </div>
+        <div class="logo-text-block">
+          <span class="logo-title">C-PAY</span>
+          <span class="logo-subtitle">Carbon Credit Platform</span>
+        </div>
+      </div>
+
+      <!-- Navigation Menu Groups -->
+      <nav class="sidebar-nav-tree">
+        <ul>
+          <!-- 1. Dashboard -->
+          <li [class.active]="activeTab === 'Dashboard'" (click)="selectTab('Dashboard')">
+            <i class="bi bi-grid-1x2-fill"></i>
+            <span>Dashboard</span>
+          </li>
+
+          <!-- USER MANAGEMENT -->
+          <li class="nav-section-title">USER MANAGEMENT</li>
+          <li [class.active]="activeTab === 'Users'" (click)="selectTab('Users')">
+            <i class="bi bi-people"></i>
+            <span>Users</span>
+          </li>
+          <li [class.active]="activeTab === 'Permissions'" (click)="selectTab('Permissions')">
+            <i class="bi bi-key"></i>
+            <span>Permissions</span>
+          </li>
+
+          <!-- REGISTRATION -->
+          <li class="nav-section-title">REGISTRATION</li>
+          <li [class.active]="activeTab === 'Registrations'" (click)="selectTab('Registrations')">
+            <i class="bi bi-file-earmark-text"></i>
+            <span>Registrations</span>
+          </li>
+          <li [class.active]="activeTab === 'PendingApprovals'" (click)="selectTab('PendingApprovals')" class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-clock-history"></i>
+              <span>Pending Approvals</span>
+            </div>
+            <span class="badge-pending-counter" *ngIf="pendingQueueList.length > 0">{{ pendingQueueList.length }}</span>
+          </li>
+          <li [class.active]="activeTab === 'Approved'" (click)="selectTab('Approved')">
+            <i class="bi bi-check-circle"></i>
+            <span>Approved</span>
+          </li>
+          <li [class.active]="activeTab === 'Rejected'" (click)="selectTab('Rejected')">
+            <i class="bi bi-x-circle"></i>
+            <span>Rejected</span>
+          </li>
+
+          <!-- CARBON CREDITS -->
+          <li class="nav-section-title">CARBON CREDITS</li>
+          <li [class.active]="activeTab === 'Calculations'" (click)="selectTab('Calculations')">
+            <i class="bi bi-calculator"></i>
+            <span>Calculations</span>
+          </li>
+          <li [class.active]="activeTab === 'CreditGeneration'" (click)="selectTab('CreditGeneration')">
+            <i class="bi bi-patch-check"></i>
+            <span>Credit Generation</span>
+          </li>
+          <li [class.active]="activeTab === 'MarketValue'" (click)="selectTab('MarketValue')">
+            <i class="bi bi-currency-rupee"></i>
+            <span>Market Value</span>
+          </li>
+
+          <!-- VERIFICATION -->
+          <li class="nav-section-title">VERIFICATION</li>
+          <li [class.active]="activeTab === 'Documents'" (click)="selectTab('Documents')">
+            <i class="bi bi-file-earmark-check"></i>
+            <span>Documents</span>
+          </li>
+          <li [class.active]="activeTab === 'Verifications'" (click)="selectTab('Verifications')">
+            <i class="bi bi-shield-check"></i>
+            <span>Verifications</span>
+          </li>
+
+          <!-- REPORTS -->
+          <li class="nav-section-title">REPORTS</li>
+          <li [class.active]="activeTab === 'Reports'" (click)="selectTab('Reports')">
+            <i class="bi bi-graph-up"></i>
+            <span>Reports & Analytics</span>
+          </li>
+
+          <!-- AUDIT & SYSTEM -->
+          <li class="nav-section-title">AUDIT & SYSTEM</li>
+          <li [class.active]="activeTab === 'AuditLogs'" (click)="selectTab('AuditLogs')">
+            <i class="bi bi-journal-code"></i>
+            <span>Audit Logs</span>
+          </li>
+          <li [class.active]="activeTab === 'SystemSettings'" (click)="selectTab('SystemSettings')">
+            <i class="bi bi-gear"></i>
+            <span>System Settings</span>
+          </li>
+
+          <!-- LOGOUT -->
+          <li class="nav-logout-item" (click)="logoutAdmin()" style="margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 14px; cursor: pointer;">
+            <i class="bi bi-box-arrow-right text-danger" style="font-size: 18px;"></i>
+            <span class="text-danger fw-bold">Logout</span>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main Right Content Wrapper -->
+    <div class="content-wrapper">
+      <!-- Top Header Bar -->
+      <header class="top-header-bar">
+        <div class="header-left-group">
+          <button class="btn-sidebar-toggle" (click)="toggleSidebar()">
+            <i class="bi bi-list"></i>
+          </button>
+          <h2 class="header-page-title">Super Admin Dashboard</h2>
+        </div>
+
+        <!-- Global Search Bar -->
+        <div class="global-search-container">
+          <i class="bi bi-search search-icon"></i>
+          <input type="text" class="search-input" placeholder="Search for registrations, users, lands..." [(ngModel)]="searchQuery" />
+        </div>
+
+        <!-- Header Right Utilities -->
+        <div class="header-right-utilities">
+          <!-- Notification Bell -->
+          <button class="utility-btn position-relative">
+            <i class="bi bi-bell"></i>
+            <span class="badge-dot-count">8</span>
+          </button>
+
+          <!-- Message Envelope -->
+          <button class="utility-btn position-relative">
+            <i class="bi bi-envelope"></i>
+            <span class="badge-dot-count">3</span>
+          </button>
+
+          <!-- Dark/Light Theme Switcher -->
+          <button class="utility-btn" (click)="toggleTheme()">
+            <i class="bi" [class.bi-sun-fill]="isDarkMode" [class.bi-moon-fill]="!isDarkMode"></i>
+          </button>
+
+          <!-- Super Admin Profile Pill -->
+          <div class="user-profile-pill" (click)="selectTab('SystemSettings')" title="Click to view Profile & System Settings" style="cursor: pointer;">
+            <img *ngIf="adminPhoto" [src]="adminPhoto" class="user-avatar" alt="Super Admin" />
+            <div *ngIf="!adminPhoto" class="user-avatar-placeholder">
+              <i class="bi bi-person-fill"></i>
+            </div>
+            <span class="user-name">Super Admin</span>
+            <i class="bi bi-chevron-down dropdown-arrow"></i>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Workspace Scroll Area -->
+      <main class="main-workspace">
+
+        <!-- Sub-Header Greeting Bar -->
+        <div class="greeting-bar">
+          <div>
+            <h1 class="greeting-title">{{ getGreeting() }}, Super Admin! {{ getGreetingEmoji() }}</h1>
+            <p class="greeting-subtitle">Here's what's happening with your platform today.</p>
+          </div>
+          <!-- Date Filter Picker -->
+          <div class="date-picker-btn">
+            <i class="bi bi-calendar-event"></i>
+            <span>01 Aug 2025 - 01 Aug 2025</span>
+            <i class="bi bi-chevron-down"></i>
+          </div>
+        </div>
+
+        <!-- ================= MAIN DASHBOARD TAB ================= -->
+        <div *ngIf="activeTab === 'Dashboard'" class="animate-fadeIn">
+          
+          <!-- Top 6 KPI Cards Grid -->
+          <div class="kpi-6-grid mb-4">
+            <!-- 1. Total Users -->
+            <div class="kpi-metric-card">
+              <div class="kpi-icon-circle bg-green-icon">
+                <i class="bi bi-people"></i>
+              </div>
+              <div class="kpi-details">
+                <span class="kpi-label">Total Users</span>
+                <h3 class="kpi-number">{{ kpiCards[0].value }}</h3>
+                <span class="kpi-trend text-success"><i class="bi bi-arrow-up-short"></i> 12.5% <span class="text-muted small">vs last month</span></span>
+              </div>
+            </div>
+
+            <!-- 2. Total Registrations -->
+            <div class="kpi-metric-card">
+              <div class="kpi-icon-circle bg-blue-icon">
+                <i class="bi bi-file-earmark-text"></i>
+              </div>
+              <div class="kpi-details">
+                <span class="kpi-label">Total Registrations</span>
+                <h3 class="kpi-number">{{ kpiCards[1].value }}</h3>
+                <span class="kpi-trend text-success"><i class="bi bi-arrow-up-short"></i> 8.3% <span class="text-muted small">vs last month</span></span>
+              </div>
+            </div>
+
+            <!-- 3. Pending Approvals -->
+            <div class="kpi-metric-card">
+              <div class="kpi-icon-circle bg-orange-icon">
+                <i class="bi bi-clock-history"></i>
+              </div>
+              <div class="kpi-details">
+                <span class="kpi-label">Pending Approvals</span>
+                <h3 class="kpi-number">{{ kpiCards[2].value }}</h3>
+                <span class="kpi-trend text-danger"><i class="bi bi-arrow-down-short"></i> 5.2% <span class="text-muted small">vs last month</span></span>
+              </div>
+            </div>
+
+            <!-- 4. Approved Assets -->
+            <div class="kpi-metric-card">
+              <div class="kpi-icon-circle bg-purple-icon">
+                <i class="bi bi-check-circle"></i>
+              </div>
+              <div class="kpi-details">
+                <span class="kpi-label">Approved Assets</span>
+                <h3 class="kpi-number">{{ kpiCards[3].value }}</h3>
+                <span class="kpi-trend text-success"><i class="bi bi-arrow-up-short"></i> 14.6% <span class="text-muted small">vs last month</span></span>
+              </div>
+            </div>
+
+            <!-- 5. Carbon Credits -->
+            <div class="kpi-metric-card">
+              <div class="kpi-icon-circle bg-teal-icon">
+                <i class="bi bi-leaf"></i>
+              </div>
+              <div class="kpi-details">
+                <span class="kpi-label">Carbon Credits</span>
+                <h3 class="kpi-number">{{ kpiCards[4].value }}</h3>
+                <span class="kpi-subtext text-muted">Total Credits Generated</span>
+              </div>
+            </div>
+
+            <!-- 6. Market Value -->
+            <div class="kpi-metric-card">
+              <div class="kpi-icon-circle bg-pink-icon">
+                <i class="bi bi-currency-rupee"></i>
+              </div>
+              <div class="kpi-details">
+                <span class="kpi-label">Market Value</span>
+                <h3 class="kpi-number">{{ kpiCards[5].value }}</h3>
+                <span class="kpi-subtext text-muted">Total Market Value</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Charts Row (2 Columns) -->
+          <div class="row g-4 mb-4">
+            <!-- Left (2/3): Carbon Credits Generated Monthly Trend -->
+            <div class="col-lg-8">
+              <div class="dashboard-panel p-4 h-100">
+                <div class="panel-header d-flex justify-content-between align-items-center mb-3">
+                  <h4 class="panel-title">Carbon Credits Generated (Monthly Trend)</h4>
+                  <div class="filter-dropdown-btn">
+                    <span>This Year</span>
+                    <i class="bi bi-chevron-down ms-2"></i>
+                  </div>
+                </div>
+
+                <!-- Monthly Translucent Translucent Area Chart -->
+                <div class="chart-area-container" style="height: 250px; position: relative;">
+                  <svg viewBox="0 0 800 250" class="chart-svg-full">
+                    <defs>
+                      <linearGradient id="greenFillGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#10b981" stop-opacity="0.3" />
+                        <stop offset="100%" stop-color="#10b981" stop-opacity="0" />
+                      </linearGradient>
+                    </defs>
+
+                    <!-- Gridlines -->
+                    <line x1="40" y1="30" x2="780" y2="30" stroke="#f1f5f9" stroke-width="1" />
+                    <text x="0" y="35" class="chart-axis-label">800K</text>
+
+                    <line x1="40" y1="80" x2="780" y2="80" stroke="#f1f5f9" stroke-width="1" />
+                    <text x="0" y="85" class="chart-axis-label">600K</text>
+
+                    <line x1="40" y1="130" x2="780" y2="130" stroke="#f1f5f9" stroke-width="1" />
+                    <text x="0" y="135" class="chart-axis-label">400K</text>
+
+                    <line x1="40" y1="180" x2="780" y2="180" stroke="#f1f5f9" stroke-width="1" />
+                    <text x="0" y="185" class="chart-axis-label">200K</text>
+
+                    <line x1="40" y1="220" x2="780" y2="220" stroke="#e2e8f0" stroke-width="1" />
+                    <text x="25" y="225" class="chart-axis-label">0</text>
+
+                    <!-- Translucent Gradient Area -->
+                    <path d="M60,180 Q120,160 180,130 T300,150 T420,100 T540,65 T660,110 T760,150 L760,220 L60,220 Z" fill="url(#greenFillGradient)" />
+
+                    <!-- Smooth Curve Line -->
+                    <path d="M60,180 Q120,160 180,130 T300,150 T420,100 T540,65 T660,110 T760,150" fill="none" stroke="#10b981" stroke-width="3.5" stroke-linecap="round" />
+
+                    <!-- Glowing Data Dots -->
+                    <circle cx="60" cy="180" r="4" fill="#10b981" stroke="#ffffff" stroke-width="2" />
+                    <circle cx="180" cy="130" r="4" fill="#10b981" stroke="#ffffff" stroke-width="2" />
+                    <circle cx="300" cy="150" r="4" fill="#10b981" stroke="#ffffff" stroke-width="2" />
+                    <circle cx="420" cy="100" r="4" fill="#10b981" stroke="#ffffff" stroke-width="2" />
+                    <circle cx="540" cy="65" r="5" fill="#10b981" stroke="#ffffff" stroke-width="2" />
+                    <circle cx="660" cy="110" r="4" fill="#10b981" stroke="#ffffff" stroke-width="2" />
+                    <circle cx="760" cy="150" r="4" fill="#10b981" stroke="#ffffff" stroke-width="2" />
+                  </svg>
+
+                  <!-- Month Labels -->
+                  <div class="chart-month-labels">
+                    <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+                    <span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right (1/3): Registration Status Donut Chart -->
+            <div class="col-lg-4">
+              <div class="dashboard-panel p-4 h-100">
+                <h4 class="panel-title mb-3">Registration Status</h4>
+                
+                <div class="donut-chart-flex">
+                  <!-- SVG Donut Chart -->
+                  <div class="donut-svg-wrapper">
+                    <svg viewBox="0 0 160 160" class="donut-svg">
+                      <!-- Total Circle Path Segments -->
+                      <!-- Approved (72%) - Green -->
+                      <circle cx="80" cy="80" r="60" fill="transparent" stroke="#10b981" stroke-width="22" stroke-dasharray="271 377" stroke-dashoffset="0" />
+                      <!-- Pending (18%) - Orange -->
+                      <circle cx="80" cy="80" r="60" fill="transparent" stroke="#f97316" stroke-width="22" stroke-dasharray="68 377" stroke-dashoffset="-271" />
+                      <!-- Rejected (10%) - Red -->
+                      <circle cx="80" cy="80" r="60" fill="transparent" stroke="#ef4444" stroke-width="22" stroke-dasharray="38 377" stroke-dashoffset="-339" />
+                    </svg>
+
+                    <!-- Donut Center Label -->
+                    <div class="donut-center-label">
+                      <span class="donut-sub">Total</span>
+                      <span class="donut-val">8,216</span>
+                    </div>
+                  </div>
+
+                  <!-- Donut Legend Breakdown -->
+                  <div class="donut-legend-list">
+                    <div class="legend-item">
+                      <span class="legend-badge bg-green-badge"></span>
+                      <span class="legend-name">Approved</span>
+                      <span class="legend-pct">72%</span>
+                      <span class="legend-cnt">5,916</span>
+                    </div>
+                    <div class="legend-item">
+                      <span class="legend-badge bg-orange-badge"></span>
+                      <span class="legend-name">Pending</span>
+                      <span class="legend-pct">18%</span>
+                      <span class="legend-cnt">1,476</span>
+                    </div>
+                    <div class="legend-item">
+                      <span class="legend-badge bg-red-badge"></span>
+                      <span class="legend-name">Rejected</span>
+                      <span class="legend-pct">10%</span>
+                      <span class="legend-cnt">824</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Middle Row Cards (3 Columns) -->
+          <div class="row g-4 mb-4">
+            <!-- 1. Latest Registrations -->
+            <div class="col-lg-5">
+              <div class="dashboard-panel p-4 h-100">
+                <div class="panel-header d-flex justify-content-between align-items-center mb-3">
+                  <h4 class="panel-title">Latest Registrations</h4>
+                  <a (click)="selectTab('Registrations')" class="link-view-all">View All</a>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="table table-borderless table-custom align-middle">
+                    <thead>
+                      <tr>
+                        <th>Application No.</th>
+                        <th>Applicant Name</th>
+                        <th>District</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let item of latestRegistrations">
+                        <td class="fw-semibold text-primary-dark">{{ item.applicationNo }}</td>
+                        <td>{{ item.applicantName }}</td>
+                        <td>{{ item.district }}</td>
+                        <td>
+                          <span class="status-pill" 
+                                [class.pill-pending]="item.status === 'Pending'"
+                                [class.pill-approved]="item.status === 'Approved'"
+                                [class.pill-rejected]="item.status === 'Rejected'">
+                            {{ item.status }}
+                          </span>
+                        </td>
+                        <td class="text-muted small">{{ item.date }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Pending Approvals (By Type) -->
+            <div class="col-lg-4">
+              <div class="dashboard-panel p-4 h-100">
+                <div class="panel-header d-flex justify-content-between align-items-center mb-3">
+                  <h4 class="panel-title">Pending Approvals <span class="text-muted font-normal">(By Type)</span></h4>
+                  <a (click)="selectTab('PendingApprovals')" class="link-view-all">View All</a>
+                </div>
+
+                <div class="pending-types-list">
+                  <div *ngFor="let item of pendingApprovalsByType" class="pending-type-row">
+                    <div class="type-icon-box" [class]="item.bgClass">
+                      <i class="bi" [class]="item.icon"></i>
+                    </div>
+                    <span class="type-title">{{ item.type }}</span>
+                    <span class="type-badge-cnt">{{ item.count }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Top Districts (By Registrations) -->
+            <div class="col-lg-3">
+              <div class="dashboard-panel p-4 h-100">
+                <div class="panel-header d-flex justify-content-between align-items-center mb-3">
+                  <h4 class="panel-title">Top Districts <span class="text-muted font-normal">(By Registrations)</span></h4>
+                  <a (click)="openModal('addDistrict')" class="link-view-all">View All</a>
+                </div>
+
+                <div class="top-districts-list">
+                  <div *ngFor="let d of topDistricts" class="district-bar-row">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <span class="district-name"><span class="rank-num">{{ d.rank }}</span> {{ d.name }}</span>
+                      <span class="district-count">{{ d.count.toLocaleString() }}</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                      <div class="progress-bar-fill" [style.width.%]="d.percent" [style.background-color]="d.color"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Row: Quick Actions -->
+          <div class="dashboard-panel p-4">
+            <h4 class="panel-title mb-3">Quick Actions</h4>
+            <div class="quick-actions-bar">
+              <button class="quick-action-btn action-blue" (click)="openModal('addUser')">
+                <i class="bi bi-person-plus-fill"></i>
+                <span>Add New User</span>
+              </button>
+
+              <button class="quick-action-btn action-purple" (click)="openModal('createRole')">
+                <i class="bi bi-shield-plus"></i>
+                <span>Create Role</span>
+              </button>
+
+              <button class="quick-action-btn action-green" (click)="openModal('addDistrict')">
+                <i class="bi bi-geo-alt-fill"></i>
+                <span>Add District</span>
+              </button>
+
+              <button class="quick-action-btn action-orange" (click)="openModal('manageSpecies')">
+                <i class="bi bi-tree-fill"></i>
+                <span>Manage Species</span>
+              </button>
+
+              <button class="quick-action-btn action-blue-dark" (click)="openModal('carbonRate')">
+                <i class="bi bi-currency-rupee"></i>
+                <span>Carbon Rate Master</span>
+              </button>
+
+              <button class="quick-action-btn action-purple-dark" (click)="openModal('generateReport')">
+                <i class="bi bi-file-earmark-bar-graph"></i>
+                <span>Generate Report</span>
+              </button>
+
+              <button class="quick-action-btn action-grey" (click)="openModal('systemSettings')">
+                <i class="bi bi-gear-fill"></i>
+                <span>System Settings</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ================= USERS MANAGEMENT SUBMODULE ================= -->
+        <div *ngIf="activeTab === 'Users'" class="animate-fadeIn">
+          <div class="dashboard-panel p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h3 class="panel-title fs-5 mb-1">Approved User Accounts (Sellers, Buyers & Auditors)</h3>
+                <p class="text-muted small mb-0">Registered and admin-approved user accounts active on the platform.</p>
+              </div>
+              <button class="btn btn-teal-solid btn-sm" (click)="openModal('addUser')"><i class="bi bi-plus-lg"></i> Add User</button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table align-middle table-hover">
+                <thead>
+                  <tr>
+                    <th>User Name</th>
+                    <th>Email Address</th>
+                    <th>Mobile Number</th>
+                    <th>System Role</th>
+                    <th>Region</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let u of usersList">
+                    <td class="fw-bold">{{ u.displayName }}</td>
+                    <td>{{ u.email }}</td>
+                    <td>{{ u.mobile_number }}</td>
+                    <td><span class="badge bg-primary-light text-primary px-2 py-1">{{ u.displayRole }}</span></td>
+                    <td>{{ u.region }}</td>
+                    <td>
+                      <span class="badge" [class.bg-success-light]="u.is_active" [class.text-success]="u.is_active" [class.bg-danger-light]="!u.is_active" [class.text-danger]="!u.is_active">
+                        {{ u.statusLabel }}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-teal" (click)="startEditUser(u)"><i class="bi bi-pencil"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" (click)="deleteUser(u.user_id)"><i class="bi bi-trash"></i></button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= PENDING APPROVALS SUBMODULE ================= -->
+        <div *ngIf="activeTab === 'PendingApprovals'" class="animate-fadeIn">
+          <div class="dashboard-panel p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h3 class="panel-title fs-5 mb-1">Registration Applications & Pending Approval Queue</h3>
+                <p class="text-muted small mb-0">Review pending Sellers, Buyers, and Auditors registered in the platform database.</p>
+              </div>
+              <span class="badge bg-warning text-dark px-3 py-2 fw-bold" style="font-size: 13px;">
+                <i class="bi bi-clock-history me-1"></i> {{ pendingQueueList.length }} Pending Applications
+              </span>
+            </div>
+
+            <div class="table-responsive" *ngIf="pendingQueueList.length > 0">
+              <table class="table align-middle table-hover">
+                <thead>
+                  <tr>
+                    <th>Applicant Name</th>
+                    <th>Role / Type</th>
+                    <th>Mobile Number</th>
+                    <th>Email Address</th>
+                    <th>Identity / Doc</th>
+                    <th>Submitted Date</th>
+                    <th>Status</th>
+                    <th style="text-align: center;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of pendingQueueList">
+                    <td class="fw-bold text-dark">{{ item.applicant_name }}</td>
+                    <td>
+                      <span class="badge bg-primary-light text-primary px-2 py-1 fw-semibold">
+                        {{ item.applicant_type }}
+                      </span>
+                    </td>
+                    <td>{{ item.mobile_number }}</td>
+                    <td>{{ item.email || 'N/A' }}</td>
+                    <td><code>{{ item.identity_doc || 'N/A' }}</code></td>
+                    <td class="text-muted small">{{ item.date }}</td>
+                    <td>
+                      <span class="status-pill pill-pending">
+                        <i class="bi bi-clock me-1"></i> {{ item.status }}
+                      </span>
+                    </td>
+                    <td style="text-align: center;">
+                      <div class="d-flex gap-2 justify-content-center">
+                        <button class="btn btn-sm btn-success text-white fw-semibold" (click)="approvePendingApplicant(item)" title="Approve & Activate User">
+                          <i class="bi bi-check-circle-fill me-1"></i> Approve
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger fw-semibold" (click)="rejectPendingApplicant(item)" title="Reject Application">
+                          <i class="bi bi-x-circle me-1"></i> Reject
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div *ngIf="pendingQueueList.length === 0" class="text-center py-5" style="background: #f8fafc; border-radius: 12px; border: 1.5px dashed #cbd5e1;">
+              <i class="bi bi-check-circle-fill text-success" style="font-size: 48px;"></i>
+              <h5 class="mt-3 fw-bold text-dark">No Pending Approvals</h5>
+              <p class="text-muted small mb-0">All registered Sellers, Buyers, and Auditors have been reviewed and approved in the database.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= ROLES & PERMISSIONS SUBMODULE ================= -->
+        <div *ngIf="activeTab === 'Permissions'" class="animate-fadeIn">
+          <div class="dashboard-panel p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h3 class="panel-title fs-5 mb-0">RBAC Roles & Module Permissions Matrix</h3>
+              <button class="btn btn-purple-solid btn-sm" (click)="openModal('createRole')"><i class="bi bi-plus-lg"></i> Create Role</button>
+            </div>
+
+            <div class="row g-3">
+              <div *ngFor="let r of rolesList" class="col-md-6">
+                <div class="role-matrix-card border rounded-3 p-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="fw-bold mb-0 text-primary-dark"><i class="bi bi-shield-check text-purple"></i> {{ r.role_name }}</h5>
+                    <span class="badge badge-type-pill border">{{ r.users_count }} Assigned Users</span>
+                  </div>
+                  <p class="text-muted small mb-2">{{ r.description }}</p>
+                  <div class="d-flex gap-2 justify-content-end">
+                    <button class="btn btn-sm btn-outline-secondary" (click)="openModal('createRole')">Configure Permissions</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= REGISTRATIONS SUBMODULE ================= -->
+        <div *ngIf="activeTab === 'Registrations' || activeTab === 'Approved' || activeTab === 'Rejected'" class="animate-fadeIn">
+          <div class="dashboard-panel p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h3 class="panel-title fs-5 mb-0">Registration Applications & Approval Queue</h3>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table align-middle table-hover">
+                <thead>
+                  <tr>
+                    <th>Applicant Name</th>
+                    <th>Type</th>
+                    <th>Mobile</th>
+                    <th>PAN / Aadhaar</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let reg of registrationsList">
+                    <td class="fw-bold">{{ reg.entity_name }}</td>
+                    <td><span class="badge badge-type-pill border">{{ reg.registration_type_name }}</span></td>
+                    <td>{{ reg.mobile_number }}</td>
+                    <td><code>{{ reg.pan_number || 'N/A' }}</code></td>
+                    <td>
+                      <span class="status-pill" [class.pill-pending]="reg.application_status === 'Pending'" [class.pill-approved]="reg.application_status === 'Verified' || reg.application_status === 'APPROVED'" [class.pill-rejected]="reg.application_status === 'Rejected'">
+                        {{ reg.application_status }}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-teal" (click)="startEditRegistration(reg)"><i class="bi bi-pencil-square"></i> Edit</button>
+                        <button class="btn btn-sm btn-outline-danger" (click)="deleteRegistration(reg.registration_id)"><i class="bi bi-trash"></i> Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= AUDIT LOGS SUBMODULE ================= -->
+        <div *ngIf="activeTab === 'AuditLogs'" class="animate-fadeIn">
+          <div class="dashboard-panel p-4">
+            <h3 class="panel-title fs-5 mb-3">System Audit Logs</h3>
+            <div class="table-responsive">
+              <table class="table align-middle table-hover">
+                <thead>
+                  <tr>
+                    <th>Log ID</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Module</th>
+                    <th>Timestamp</th>
+                    <th>IP Address</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let log of auditLogsList">
+                    <td><code>{{ log.id }}</code></td>
+                    <td class="fw-semibold">{{ log.user }}</td>
+                    <td><span class="badge bg-dark text-white">{{ log.action }}</span></td>
+                    <td>{{ log.module }}</td>
+                    <td class="small text-muted">{{ log.timestamp }}</td>
+                    <td><span class="small font-monospace">{{ log.ip }}</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= SYSTEM SETTINGS SUBMODULE ================= -->
+        <div *ngIf="activeTab === 'SystemSettings'" class="animate-fadeIn">
+          <!-- Profile & Photo Management Panel -->
+          <div class="dashboard-panel p-4 mb-4">
+            <h3 class="panel-title fs-5 mb-3 d-flex align-items-center gap-2">
+              <i class="bi bi-person-badge text-primary"></i> Super Admin Profile & Avatar Settings
+            </h3>
+            <div class="row align-items-center g-4">
+              <div class="col-auto">
+                <div class="profile-avatar-container">
+                  <img *ngIf="adminPhoto" [src]="adminPhoto" class="profile-avatar-large shadow" alt="Admin Avatar" />
+                  <div *ngIf="!adminPhoto" class="profile-avatar-placeholder-large shadow">
+                    <i class="bi bi-person-fill"></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col">
+                <h5 class="fw-bold mb-1">Super Admin Account</h5>
+                <p class="text-secondary small mb-3">
+                  Default state is <strong>No Photo</strong> avatar icon. If you wish to set a custom profile photo, upload an image below.
+                </p>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                  <input type="file" #adminPhotoInput (change)="onAdminPhotoSelected($event)" accept="image/*" style="display: none;" />
+                  <button class="btn btn-primary btn-sm fw-bold px-3" (click)="adminPhotoInput.click()">
+                    <i class="bi bi-camera me-1"></i> {{ adminPhoto ? 'Change Photo' : 'Upload Profile Photo' }}
+                  </button>
+                  <button *ngIf="adminPhoto" class="btn btn-outline-danger btn-sm fw-bold px-3" (click)="removeAdminPhoto()">
+                    <i class="bi bi-trash me-1"></i> Remove Photo
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Platform System Settings Panel -->
+          <div class="dashboard-panel p-4">
+            <h3 class="panel-title fs-5 mb-3 d-flex align-items-center gap-2">
+              <i class="bi bi-sliders text-teal"></i> Platform System Settings
+            </h3>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label font-semibold">Carbon Credit Base Rate (₹ / tCO2e)</label>
+                <input type="number" class="form-control" [(ngModel)]="systemSettings.carbonRate" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label font-semibold">Market Value Multiplier</label>
+                <input type="number" class="form-control" [(ngModel)]="systemSettings.marketValue" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label font-semibold">SMTP Host</label>
+                <input type="text" class="form-control" [(ngModel)]="systemSettings.smtpHost" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label font-semibold">SMS Gateway Status</label>
+                <input type="text" class="form-control" [(ngModel)]="systemSettings.smsGateway" />
+              </div>
+            </div>
+            <div class="mt-4 text-end">
+              <button class="btn btn-teal-solid" (click)="saveSystemSettings()">Save System Settings</button>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ================= QUICK ACTION MODALS ================= -->
+  <!-- 1. Add User Modal -->
+  <div *ngIf="showAddUserModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold mb-0"><i class="bi bi-person-plus-fill text-primary"></i> Add New User</h4>
+        <button class="btn-close" (click)="closeModal('addUser')"></button>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Full Name</label>
+        <input type="text" class="form-control" [(ngModel)]="newUser.username" placeholder="e.g. Ramesh Varma" />
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-control" [(ngModel)]="newUser.email" placeholder="e.g. ramesh@cpay.in" />
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Mobile Number</label>
+        <input type="text" class="form-control" [(ngModel)]="newUser.mobile_number" placeholder="e.g. 9876543210" />
+      </div>
+      <div class="mb-4">
+        <label class="form-label">Assign Role</label>
+        <app-custom-select [options]="roleOptions" [(ngModel)]="newUser.role_name" placeholder="Select Role"></app-custom-select>
+      </div>
+      <div class="d-flex justify-content-end gap-2">
+        <button class="btn btn-light border" (click)="closeModal('addUser')">Cancel</button>
+        <button class="btn btn-primary" (click)="submitAddUser()">Create User</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Create Role Modal -->
+  <div *ngIf="showCreateRoleModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold mb-0"><i class="bi bi-shield-plus text-purple"></i> Create RBAC Role</h4>
+        <button class="btn-close" (click)="closeModal('createRole')"></button>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Role Name</label>
+        <input type="text" class="form-control" [(ngModel)]="newRole.role_name" placeholder="e.g. DISTRICT_INSPECTOR" />
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea class="form-control" rows="2" [(ngModel)]="newRole.description" placeholder="Role responsibilities..."></textarea>
+      </div>
+      <div class="d-flex justify-content-end gap-2">
+        <button class="btn btn-light border" (click)="closeModal('createRole')">Cancel</button>
+        <button class="btn btn-purple-solid" (click)="submitCreateRole()">Create Role</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Add District Modal -->
+  <div *ngIf="showAddDistrictModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold mb-0"><i class="bi bi-geo-alt-fill text-success"></i> Add District Master</h4>
+        <button class="btn-close" (click)="closeModal('addDistrict')"></button>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">District Name</label>
+        <input type="text" class="form-control" [(ngModel)]="newDistrict.district_name" placeholder="e.g. Visakhapatnam" />
+      </div>
+      <div class="mb-3">
+        <label class="form-label">State</label>
+        <input type="text" class="form-control" [(ngModel)]="newDistrict.state_name" readonly />
+      </div>
+      <div class="d-flex justify-content-end gap-2">
+        <button class="btn btn-light border" (click)="closeModal('addDistrict')">Cancel</button>
+        <button class="btn btn-success" (click)="submitAddDistrict()">Save District</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Carbon Rate Master Modal -->
+  <div *ngIf="showCarbonRateModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold mb-0"><i class="bi bi-currency-rupee text-primary"></i> Carbon Rate Master</h4>
+        <button class="btn-close" (click)="closeModal('carbonRate')"></button>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Base Rate per tCO2e (₹)</label>
+        <input type="number" class="form-control" [(ngModel)]="carbonRateModel.current_rate" />
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Effective Date</label>
+        <input type="date" class="form-control" [(ngModel)]="carbonRateModel.effective_date" />
+      </div>
+      <div class="d-flex justify-content-end gap-2">
+        <button class="btn btn-light border" (click)="closeModal('carbonRate')">Cancel</button>
+        <button class="btn btn-primary" (click)="submitCarbonRate()">Update Rate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Generate Report Modal -->
+  <div *ngIf="showGenerateReportModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold mb-0"><i class="bi bi-file-earmark-bar-graph text-purple"></i> Export System Report</h4>
+        <button class="btn-close" (click)="closeModal('generateReport')"></button>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Report Type</label>
+        <select class="form-select" [(ngModel)]="reportFilter.reportType">
+          <option value="Registration">Registration Report</option>
+          <option value="Carbon">Carbon Credits Report</option>
+          <option value="Users">User Accounts Report</option>
+          <option value="Revenue">Revenue & Market Value Report</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Format</label>
+        <select class="form-select" [(ngModel)]="reportFilter.format">
+          <option value="PDF">PDF Document</option>
+          <option value="Excel">Excel (.xlsx)</option>
+          <option value="CSV">CSV File</option>
+        </select>
+      </div>
+      <div class="d-flex justify-content-end gap-2">
+        <button class="btn btn-light border" (click)="closeModal('generateReport')">Cancel</button>
+        <button class="btn btn-purple-solid" (click)="downloadReport()">Download Report</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit User Modal -->
+  <div *ngIf="editingUser" class="modal-overlay">
+    <div class="modal-card">
+      <h4 class="fw-bold mb-3"><i class="bi bi-pencil-square text-teal"></i> Edit User Account</h4>
+      <div class="mb-3">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-control" [(ngModel)]="editingUser.email">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Mobile Number</label>
+        <input type="text" class="form-control" [(ngModel)]="editingUser.mobile_number">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">System Role</label>
+        <app-custom-select [options]="roleOptions" [(ngModel)]="editingUser.role_name" placeholder="Select Role"></app-custom-select>
+      </div>
+      <div class="mb-4">
+        <label class="form-check-label d-flex align-items-center gap-2">
+          <input type="checkbox" class="form-check-input" [(ngModel)]="editingUser.is_active">
+          Account Active Status
+        </label>
+      </div>
+      <div class="d-flex justify-content-end gap-2">
+        <button class="btn btn-light border" (click)="cancelEditUser()">Cancel</button>
+        <button class="btn btn-teal-solid" (click)="saveUser()">Save Updates</button>
+      </div>
+    </div>
+  </div>
+
+</div>

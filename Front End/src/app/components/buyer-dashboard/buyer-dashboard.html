@@ -1,0 +1,1364 @@
+<div class="buyer-dashboard-wrapper">
+  <!-- Sidebar Navigation -->
+  <aside class="buyer-sidebar" [class.collapsed]="isSidebarCollapsed">
+    <div class="buyer-brand-section" style="display: flex; justify-content: space-between; align-items: center;">
+      <div class="d-flex align-items-center gap-2">
+        <div class="buyer-brand-icon" style="width: 32px; height: 32px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background-color: var(--primary-teal); flex-shrink: 0;">
+          <img *ngIf="profilePhoto" [src]="profilePhoto" style="width: 100%; height: 100%; object-fit: cover;" />
+          <div *ngIf="!profilePhoto" class="d-flex align-items-center justify-content-center w-100 h-100" style="color: #ffffff; font-weight: 700; font-size: 14px;">
+            {{ avatarInitial }}
+          </div>
+        </div>
+        <div class="buyer-brand-details" *ngIf="!isSidebarCollapsed">
+          <span class="buyer-brand-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; color: #ffffff;">{{ displayBuyerName }}</span>
+          <span class="buyer-brand-branch" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;">{{ displayBuyerType }}</span>
+        </div>
+      </div>
+      <button type="button" class="btn-buyer-sidebar-toggle border-0 bg-transparent text-white opacity-75" *ngIf="!isSidebarCollapsed" (click)="toggleSidebar()" title="Collapse Sidebar" style="cursor: pointer;">
+        <i class="bi bi-chevron-left"></i>
+      </button>
+    </div>
+
+    <nav class="buyer-sidebar-nav">
+      <ul>
+        <li [class.active]="activeTab === 'Live Terminal'" (click)="selectTab('Live Terminal')" title="Live Terminal">
+          <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-cpu-fill"></i>
+            <span *ngIf="!isSidebarCollapsed" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;">Live Terminal</span>
+          </div>
+        </li>
+
+        <li [class.active]="activeTab === 'Order History'" (click)="selectTab('Order History')" title="Order History">
+          <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-journal-check"></i>
+            <span *ngIf="!isSidebarCollapsed" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;">Order History</span>
+          </div>
+        </li>
+        <li [class.active]="activeTab === 'Offsets/Retirement'" (click)="selectTab('Offsets/Retirement')" title="Offsets/Retirement">
+          <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-tree-fill"></i>
+            <span *ngIf="!isSidebarCollapsed" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;">Offsets/Retirement</span>
+          </div>
+        </li>
+        <li [class.active]="activeTab === 'Compliance'" (click)="selectTab('Compliance')" title="Compliance">
+          <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-shield-check"></i>
+            <span *ngIf="!isSidebarCollapsed" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;">Compliance</span>
+          </div>
+        </li>
+        <li [class.active]="activeTab === 'Certificate'" (click)="selectTab('Certificate')" title="Certificate">
+          <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-file-earmark-pdf"></i>
+            <span *ngIf="!isSidebarCollapsed" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;">Certificate</span>
+          </div>
+        </li>
+        <li [class.active]="activeTab === 'Wallet'" (click)="selectTab('Wallet')" title="Wallet">
+          <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-wallet2"></i>
+            <span *ngIf="!isSidebarCollapsed" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;">Wallet</span>
+          </div>
+        </li>
+        <li [class.active]="activeTab === 'Support'" (click)="selectTab('Support')" title="Support">
+          <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-chat-dots"></i>
+            <span *ngIf="!isSidebarCollapsed" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;">Support</span>
+          </div>
+        </li>
+        <li [class.active]="activeTab === 'Profile'" (click)="selectTab('Profile')" title="Profile">
+          <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-person-circle"></i>
+            <span *ngIf="!isSidebarCollapsed" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;">Profile</span>
+          </div>
+        </li>
+      </ul>
+    </nav>
+
+    @if (!isSidebarCollapsed) {
+      <div class="buyer-sidebar-footer">
+        <button class="btn btn-buyer-logout" (click)="logout()">
+          <i class="bi bi-box-arrow-right"></i>
+          <span>Sign Out</span>
+        </button>
+      </div>
+    } @else {
+      <div class="buyer-sidebar-footer text-center" style="padding: 16px 0 0 0;">
+        <button class="border-0 bg-transparent text-white opacity-75" (click)="logout()" title="Sign Out" style="cursor: pointer;">
+          <i class="bi bi-box-arrow-right fs-5"></i>
+        </button>
+      </div>
+    }
+  </aside>
+
+  <!-- Main Trading Area -->
+  <main class="buyer-main-content">
+    <!-- Top Header Bar -->
+    <header class="buyer-top-bar">
+      <div class="buyer-header-title d-flex align-items-center">
+        <button type="button" class="btn-buyer-sidebar-expand me-3 border border-secondary rounded-3 bg-white text-dark d-flex align-items-center justify-content-center" *ngIf="isSidebarCollapsed" (click)="toggleSidebar()" title="Expand Sidebar" style="width: 38px; height: 38px; cursor: pointer; transition: all 0.2s ease;">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+        <div>
+          <h1 class="mb-0">{{ activeTab === 'Live Terminal' ? 'Live Carbon Trading Terminal' : activeTab }}</h1>
+          <div class="buyer-live-status-pill mt-1" *ngIf="activeTab === 'Live Terminal'">
+            <span class="pulse-dot"></span>
+            <span>Market Live</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Side Actions (Search and Refresh) -->
+      <div class="buyer-header-actions d-flex align-items-center gap-3">
+        <div class="buyer-search-container">
+          <i class="bi bi-search buyer-search-icon"></i>
+          <input 
+            type="text" 
+            [(ngModel)]="searchQuery" 
+            (input)="onSearch()"
+            (focus)="onSearchFocus()"
+            (blur)="onSearchBlur()"
+            placeholder="Search people, assets..." 
+            class="buyer-search-input"
+          />
+          <!-- Search Results Dropdown -->
+          <div class="buyer-search-dropdown" *ngIf="showSearchDropdown && searchResults.length > 0">
+            <div class="buyer-search-dropdown-item" *ngFor="let result of searchResults" (mousedown)="selectSearchResult(result)">
+              <i class="bi" [ngClass]="result.icon"></i>
+              <div class="result-info">
+                <span class="result-title">{{ result.title }}</span>
+                <span class="result-subtitle">{{ result.subtitle }}</span>
+              </div>
+              <span class="result-badge">{{ result.type }}</span>
+            </div>
+          </div>
+        </div>
+        <button 
+          class="btn btn-buyer-sync" 
+          [class.syncing]="isSyncing"
+          [disabled]="isSyncing"
+          (click)="syncData()"
+        >
+          <i class="bi" [ngClass]="isSyncing ? 'bi-arrow-repeat spin' : 'bi-arrow-clockwise'"></i>
+          <span>{{ isSyncing ? 'Refreshing...' : 'Refresh' }}</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- KPI Grid -->
+    <section class="buyer-kpi-grid" *ngIf="activeTab === 'Live Terminal'">
+      <!-- Carbon Credits Value Card -->
+      <div class="buyer-kpi-card">
+        <span class="buyer-kpi-label">Carbon Credits Value</span>
+        <span class="buyer-kpi-value">{{ getCurrencySymbol() }}{{ convertAmount(portfolioValue) | number:'1.2-2' }}</span>
+        <div class="buyer-kpi-subtext">
+          <span>Total value of active holdings</span>
+        </div>
+      </div>
+
+      <!-- Money Deposited Card -->
+      <div class="buyer-kpi-card">
+        <span class="buyer-kpi-label">Money Deposited</span>
+        <span class="buyer-kpi-value text-teal-accent">{{ getCurrencySymbol() }}{{ convertAmount(cashBalance) | number:'1.2-2' }}</span>
+        <div class="buyer-kpi-subtext">Available for buying</div>
+      </div>
+
+      <!-- Active Credits Card -->
+      <div class="buyer-kpi-card">
+        <span class="buyer-kpi-label">Active Carbon Holdings</span>
+        <span class="buyer-kpi-value">{{ totalHoldingsQty | number }} tCO2e</span>
+        <div class="buyer-kpi-subtext">Tradable assets</div>
+      </div>
+
+      <!-- Retired Credits Card -->
+      <div class="buyer-kpi-card">
+        <span class="buyer-kpi-label">Retired Credits (Offset)</span>
+        <span class="buyer-kpi-value text-success">{{ retiredCredits | number }} tCO2e</span>
+        <div class="buyer-kpi-subtext">Green compliance impact</div>
+      </div>
+    </section>
+
+    <!-- Main Grid: Charts & Order Book vs Quick Order Panel -->
+    <div class="buyer-dashboard-row" *ngIf="activeTab === 'Live Terminal'">
+      <!-- Left side: Chart and Order Book -->
+      <div class="buyer-col-left">
+        <!-- Live Price Chart -->
+        <div class="trading-card chart-card mb-4">
+          <div class="card-header-row">
+            <h5>Market Pricing ({{ getProjectAbbreviation(selectedProject) }} Credits)</h5>
+            <div class="timeframe-buttons">
+              <button [class.active]="activeTimeframe === '1D'" (click)="selectTimeframe('1D')">1D</button>
+              <button [class.active]="activeTimeframe === '1W'" (click)="selectTimeframe('1W')">1W</button>
+              <button [class.active]="activeTimeframe === '1M'" (click)="selectTimeframe('1M')">1M</button>
+              <button [class.active]="activeTimeframe === '1Y'" (click)="selectTimeframe('1Y')">1Y</button>
+            </div>
+          </div>
+          <div class="chart-container">
+            <!-- Simulated Premium Chart -->
+            <svg class="sparkline-chart" viewBox="0 0 120 100" preserveAspectRatio="none">
+              <!-- Grid Lines -->
+              <line x1="0" y1="25" x2="120" y2="25" class="grid-line" />
+              <line x1="0" y1="50" x2="120" y2="50" class="grid-line" />
+              <line x1="0" y1="75" x2="120" y2="75" class="grid-line" />
+              
+              <!-- Gradient Area under sparkline -->
+              <defs>
+                <linearGradient id="chart-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="var(--primary-teal)" stop-opacity="0.25"/>
+                  <stop offset="100%" stop-color="var(--primary-teal)" stop-opacity="0.0"/>
+                </linearGradient>
+              </defs>
+              <path [attr.d]="'M 10 100 L ' + chartPoints + ' L 110 100 Z'" fill="url(#chart-grad)" />
+              
+              <!-- Sparkline path -->
+              <polyline fill="none" stroke="var(--primary-teal)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                        [attr.points]="chartPoints" />
+            </svg>
+            <div class="chart-labels">
+              <span>09:00 AM</span>
+              <span>12:00 PM</span>
+              <span>03:00 PM</span>
+              <span>06:00 PM</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Order Book -->
+        <div class="trading-card orderbook-card">
+          <h5>Live Order Book (tCO2e)</h5>
+          <div class="orderbook-table-wrapper">
+            <div class="row g-0">
+              <!-- Bids (Buy Orders) -->
+              <div class="col-12">
+                <div class="orderbook-header text-success">BIDS</div>
+                <div class="orderbook-row-header">
+                  <span>Price ({{ getCurrencySymbol() }})</span>
+                  <span>Qty</span>
+                  <span>Total ({{ getCurrencySymbol() }})</span>
+                </div>
+                <div class="orderbook-list">
+                  <div class="orderbook-item bid-item" *ngFor="let bid of bids">
+                    <span class="text-success">{{ getCurrencySymbol() }}{{ convertAmount(bid.price) | number:'1.2-4' }}</span>
+                    <span>{{ bid.quantity }}</span>
+                    <span>{{ getCurrencySymbol() }}{{ convertAmount(bid.total) | number:'1.0-2' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right side: Quick Order Panel -->
+      <div class="buyer-col-right">
+        <style>
+          .buyer-trade-desk-card {
+            background: #ffffff;
+            border: 1px solid rgba(226, 236, 233, 0.7);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 12px 40px rgba(0, 50, 48, 0.02);
+            position: relative;
+            width: 100%;
+            margin: 0 auto;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          }
+          .buyer-trade-desk-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 16px;
+          }
+          .buyer-trade-tab-pill {
+            background: #f1f5f9;
+            border-radius: 10px;
+            padding: 3px;
+            display: flex;
+            gap: 2px;
+          }
+          .buyer-trade-tab-btn {
+            border: none;
+            padding: 6px 14px;
+            font-size: 11px;
+            font-weight: 700;
+            border-radius: 8px;
+            cursor: pointer;
+            background: transparent;
+            color: #94a3b8;
+            transition: all 0.2s;
+          }
+          .buyer-trade-tab-btn.active-buy {
+            background: #10b981;
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+          }
+          .buyer-swap-panels-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 20px;
+          }
+          .buyer-swap-input-panel {
+            background: #f8fafc;
+            border: 1.5px solid #f1f5f9;
+            border-radius: 16px;
+            padding: 14px 16px;
+            transition: all 0.2s ease;
+          }
+          .buyer-swap-input-panel:focus-within {
+            border-color: #10b981;
+            background: #ffffff;
+          }
+          .buyer-swap-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10.5px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+          }
+          .buyer-swap-amount-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            height: 38px;
+          }
+          .buyer-swap-amount-input {
+            border: none;
+            background: transparent;
+            font-size: 28px;
+            font-weight: 700;
+            color: #0f172a;
+            outline: none;
+            width: 55%;
+            padding: 0;
+            margin: 0;
+            height: 38px;
+            line-height: 38px;
+          }
+          .buyer-swap-amount-input::placeholder {
+            color: #cbd5e1;
+          }
+          .buyer-swap-asset-select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 8px 30px 8px 12px;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #1e293b;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: all 0.2s;
+            outline: none;
+            max-width: 170px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+            height: 38px;
+          }
+          .buyer-swap-asset-select:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+          }
+          .buyer-swap-divider-arrow {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 32px;
+            height: 32px;
+            background: #ffffff;
+            border: 1.5px solid #edf2f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+            color: #64748b;
+          }
+          .buyer-swap-panel-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 6px;
+            font-size: 11px;
+            color: #64748b;
+          }
+          .buyer-order-type-toggle {
+            display: flex;
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 2px;
+            gap: 2px;
+            margin-bottom: 12px;
+          }
+          .buyer-order-type-btn {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 4px;
+            font-size: 10.5px;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #64748b;
+          }
+          .buyer-order-type-btn.active {
+            background: #ffffff;
+            color: #10b981;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+          }
+          .buyer-project-select-container {
+            margin-bottom: 20px;
+          }
+          .buyer-project-select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background: #ffffff;
+            border: 1.5px solid #f1f5f9;
+            border-radius: 16px;
+            padding: 12px 40px 12px 16px;
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #0f172a;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 14px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: all 0.2s;
+            outline: none;
+            width: 100%;
+            height: 48px;
+          }
+          .buyer-project-select:hover {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+          }
+          .buyer-select-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+          }
+        </style>
+
+        <div class="buyer-trade-desk-card">
+          <!-- Top Header & Tabs -->
+          <div class="buyer-trade-desk-header">
+            <h3 class="fw-bold m-0 d-flex align-items-center text-dark" style="font-size: 15px; font-weight: 700; gap: 8px;">
+              <i class="bi bi-arrow-left-right text-teal" style="color: var(--primary-teal); font-size: 17px;"></i> Trade Desk
+            </h3>
+            
+            <div class="buyer-trade-tab-pill">
+              <button type="button" class="buyer-trade-tab-btn active-buy">
+                Buy
+              </button>
+              <button type="button" class="buyer-trade-tab-btn" disabled style="cursor: not-allowed; display: flex; align-items: center; gap: 4px;">
+                Sell <i class="bi bi-lock-fill" style="font-size: 9px;"></i>
+              </button>
+            </div>
+          </div>
+
+          <form (ngSubmit)="onSubmitOrder()" #tradeForm="ngForm">
+            <!-- Alerts -->
+            <div *ngIf="errorMessage" class="alert alert-danger py-2 px-3 small mb-3" style="border-radius: 8px; font-size: 12.5px;" role="alert">
+              {{ errorMessage }}
+            </div>
+            <div *ngIf="successMessage" class="alert alert-success py-2 px-3 small mb-3" style="border-radius: 8px; font-size: 12.5px;" role="alert">
+              {{ successMessage }}
+            </div>
+
+            <!-- Order Type Toggle -->
+            <div class="buyer-order-type-toggle">
+              <button type="button" class="buyer-order-type-btn" [class.active]="orderMode === 'MARKET'" (click)="orderMode = 'MARKET'; orderPrice = livePrice">Market Rate</button>
+              <button type="button" class="buyer-order-type-btn" [class.active]="orderMode === 'LIMIT'" (click)="orderMode = 'LIMIT'">Limit Price</button>
+            </div>
+
+            <!-- Project Selection Dropdown -->
+            <div class="buyer-project-select-container">
+              <label for="selectedProject" class="buyer-select-label">Select Carbon Project</label>
+              <app-custom-select
+                [options]="projectOptions"
+                [(ngModel)]="selectedProject"
+                (change)="onProjectChange()"
+                name="selectedProject"
+                placeholder="Select Carbon Project">
+              </app-custom-select>
+            </div>
+
+            <div class="buyer-swap-panels-container">
+              <!-- You Buy Panel -->
+              <div class="buyer-swap-input-panel">
+                <div class="buyer-swap-panel-header">
+                  <span>You Buy</span>
+                  <span>Available: <strong style="color: #334155;">{{ getCurrencySymbol() }}{{ convertAmount(cashBalance) | number:'1.2-2' }} Cash</strong></span>
+                </div>
+                <div class="buyer-swap-amount-row">
+                  <input type="number" id="orderQty" name="orderQty" [(ngModel)]="orderQuantity" placeholder="0" class="buyer-swap-amount-input" required />
+                  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 6px 14px; font-size: 12.5px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); height: 38px; white-space: nowrap;">
+                    <span style="display: inline-block; width: 18px; height: 18px; border-radius: 50%; background: #10b981; color: white; text-align: center; line-height: 18px; font-size: 10px; font-weight: 800;">
+                      <i class="bi bi-tree-fill" style="font-size: 10px; line-height: 18px;"></i>
+                    </span>
+                    tCO2e
+                  </div>
+                </div>
+                <div class="buyer-swap-panel-footer">
+                  <span style="font-size: 11px; color: #94a3b8;">Volume in tCO2e</span>
+                </div>
+              </div>
+
+              <!-- Limit Price Panel (Visible if LIMIT) -->
+              <div class="buyer-swap-input-panel" style="margin-top: 8px;" *ngIf="orderMode === 'LIMIT'">
+                <div class="buyer-swap-panel-header">
+                  <span>Limit Rate per tCO2e</span>
+                </div>
+                <div class="buyer-swap-amount-row">
+                  <div style="display: flex; align-items: center; width: 100%;">
+                    <span style="color: #64748b; font-weight: 700; font-size: 20px; margin-right: 8px;">{{ getCurrencySymbol() }}</span>
+                    <input type="number" id="orderPrice" name="orderPrice" [(ngModel)]="displayOrderPrice" (ngModelChange)="orderPrice = convertAmountToINR(displayOrderPrice)" placeholder="0.00" step="0.05" required style="border: none; background: transparent; font-size: 24px; font-weight: 700; color: #0f172a; outline: none; width: 100%; padding: 0;" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Direction Arrow -->
+              <div class="buyer-swap-divider-arrow">
+                <i class="bi bi-arrow-down" style="font-size: 14px;"></i>
+              </div>
+
+              <!-- You Pay Panel -->
+              <div class="buyer-swap-input-panel">
+                <div class="buyer-swap-panel-header">
+                  <span>You Pay (Estimated)</span>
+                  <span>1 tCO2e = <strong style="color: #334155;">{{ getCurrencySymbol() }}{{ convertAmount(orderMode === 'MARKET' ? livePrice : orderPrice) | number:'1.2-4' }}</strong></span>
+                </div>
+                <div class="buyer-swap-amount-row">
+                  <div style="font-size: 28px; font-weight: 700; color: #0f172a; line-height: 1.2;">
+                    {{ getCurrencySymbol() }}{{ convertAmount((orderQuantity || 0) * (orderMode === 'MARKET' ? livePrice : orderPrice)) | number:'1.0-2' }}
+                  </div>
+                  <div style="position: relative; display: inline-block;">
+                    <!-- Dropdown Trigger Button -->
+                    <div (click)="isCurrencyDropdownOpen = !isCurrencyDropdownOpen" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 6px 12px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); height: 38px; min-width: 100px; cursor: pointer; justify-content: space-between; user-select: none;">
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="display: flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; border-radius: 9px; padding: 0 4px; color: white; text-align: center; font-size: 10px; font-weight: 800; transition: background-color 0.2s;" [style.background-color]="getCurrencyColor()">
+                          {{ getCurrencySymbol() }}
+                        </span>
+                        <span style="font-size: 12.5px; font-weight: 700; color: #1e293b;">{{ selectedCurrency }}</span>
+                      </div>
+                      <i class="bi bi-chevron-down" style="font-size: 10px; color: #64748b; margin-left: 4px;"></i>
+                    </div>
+
+                    <!-- Dropdown Menu Options -->
+                    <div *ngIf="isCurrencyDropdownOpen" style="position: absolute; top: 42px; right: 0; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); padding: 6px; z-index: 1000; min-width: 120px; display: flex; flex-direction: column; gap: 4px;">
+                      <div *ngFor="let cur of ['INR', 'USD', 'BTC', 'EUR', 'GBP', 'JPY', 'AUD']" (click)="selectCurrency(cur)" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; cursor: pointer; transition: background 0.15s ease;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                        <span style="display: flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; border-radius: 9px; padding: 0 4px; color: white; text-align: center; font-size: 10px; font-weight: 800;" [style.background-color]="getCurrencyColor(cur)">
+                          {{ currencies[cur].symbol }}
+                        </span>
+                        <span style="font-size: 12.5px; font-weight: 700; color: #1e293b;">{{ cur }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="buyer-swap-panel-footer">
+                  <span style="color: #94a3b8;">Est. Network Fee: <strong style="color: #10b981;">Free</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Button -->
+            <button type="submit" class="btn w-100 py-3 text-white fw-bold" style="border-radius: 14px; font-size: 14.5px; border: none; cursor: pointer; display: block; width: 100%; font-weight: 700; transition: all 0.2s ease; background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 14px rgba(16, 185, 129, 0.2);" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 18px rgba(16, 185, 129, 0.3)'" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 14px rgba(16, 185, 129, 0.2)'">
+              Place Buy Order
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Holdings Section -->
+    <section class="trading-card holdings-section mb-4" *ngIf="activeTab === 'Live Terminal'">
+      <div class="card-header-row mb-3">
+        <h5>Current Carbon Asset Portfolio</h5>
+      </div>
+      <div class="table-responsive">
+        <table class="table holdings-table align-middle">
+          <thead>
+            <tr>
+              <th>Project Name</th>
+              <th>Category</th>
+              <th class="text-end">Balance (tCO2e)</th>
+              <th class="text-end">Avg Buy Price</th>
+              <th class="text-end">Current Price</th>
+              <th class="text-end">Portfolio Valuation</th>
+              <th class="text-end">P&L (Unrealized)</th>
+              <th class="text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let h of holdings">
+              <td>
+                <div class="fw-semibold text-dark">{{ h.projectName }}</div>
+                <div class="d-flex align-items-center gap-2 mt-1 small text-muted" style="font-size: 11px;">
+                  <span class="badge bg-success-soft text-success">{{ h.registry }}</span>
+                  <span class="d-flex align-items-center gap-1">
+                    <i class="bi bi-geo-alt-fill text-danger" style="font-size: 10px;"></i> {{ h.origin }}
+                  </span>
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-light text-muted">{{ h.projectType }}</span>
+              </td>
+              <td class="text-end fw-semibold">{{ h.quantity | number }}</td>
+              <td class="text-end">{{ getCurrencySymbol() }}{{ convertAmount(h.avgBuyPrice) | number:'1.2-4' }}</td>
+              <td class="text-end">{{ getCurrencySymbol() }}{{ convertAmount(h.currentPrice) | number:'1.2-4' }}</td>
+              <td class="text-end">{{ getCurrencySymbol() }}{{ convertAmount(h.quantity * h.currentPrice) | number:'1.2-2' }}</td>
+              <td class="text-end" [ngClass]="(h.currentPrice - h.avgBuyPrice) >= 0 ? 'text-success' : 'text-danger'">
+                {{ getCurrencySymbol() }}{{ convertAmount(h.quantity * (h.currentPrice - h.avgBuyPrice)) | number:'1.2-2' }}
+                <span class="small">({{ (((h.currentPrice - h.avgBuyPrice) / h.avgBuyPrice) * 100) | number:'1.1-1' }}%)</span>
+              </td>
+              <td class="text-center">
+                <button class="btn btn-sm btn-outline-success" (click)="retireHoldings(h.projectName, h.quantity)" title="Offset (retire) carbon emissions permanently">
+                  <i class="bi bi-tree"></i> Retire
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="holdings.length === 0">
+              <td colspan="8" class="text-center py-4 text-muted">
+                No active carbon credit holdings. Execute a buy order to acquire assets.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+
+    <!-- Recent Order History -->
+    <section class="trading-card history-section" *ngIf="activeTab === 'Order History'">
+      <h5>Terminal Transaction Log</h5>
+      <div class="table-responsive">
+        <table class="table history-table align-middle">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Timestamp</th>
+              <th>Action</th>
+              <th>Project Asset</th>
+              <th class="text-end">Quantity (tCO2e)</th>
+              <th class="text-end">Price</th>
+              <th class="text-end">Total Amount</th>
+              <th class="text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let t of transactions">
+              <td class="text-muted">{{ t.id }}</td>
+              <td>{{ t.timestamp }}</td>
+              <td>
+                <span class="badge" [ngClass]="{'bg-success-soft text-success': t.type === 'BUY', 'bg-danger-soft text-danger': t.type === 'SELL', 'bg-teal-soft text-teal': t.type === 'RETIRE'}">
+                  {{ t.type }}
+                </span>
+              </td>
+              <td>{{ t.projectName }}</td>
+              <td class="text-end fw-semibold">{{ t.quantity | number }}</td>
+              <td class="text-end">{{ getCurrencySymbol() }}{{ convertAmount(t.price) | number:'1.2-4' }}</td>
+              <td class="text-end fw-semibold">{{ getCurrencySymbol() }}{{ convertAmount(t.total) | number:'1.2-2' }}</td>
+              <td class="text-center">
+                <span class="badge bg-success-solid"><i class="bi bi-check-circle-fill me-1"></i> {{ t.status }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Offsets/Retirement View -->
+    <section class="trading-card offsets-section text-dark" *ngIf="activeTab === 'Offsets/Retirement'">
+      <h5 class="mb-4 fw-bold">Environmental Impact & Offsets Overview</h5>
+      <div class="row g-4 mb-4">
+        <div class="col-md-4">
+          <div class="p-4 rounded border text-center bg-light-soft">
+            <div class="text-success mb-3 fs-1"><i class="bi bi-tree-fill"></i></div>
+            <h6 class="fw-bold text-dark mb-2">Equivalent Trees Planted</h6>
+            <p class="fs-4 fw-bold text-success mb-1">{{ (retiredCredits * 15) | number }}</p>
+            <span class="text-muted small">Based on carbon absorbency rates</span>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="p-4 rounded border text-center bg-light-soft">
+            <div class="text-success mb-3 fs-1"><i class="bi bi-car-front-fill"></i></div>
+            <h6 class="fw-bold text-dark mb-2">Cars Taken Off Road</h6>
+            <p class="fs-4 fw-bold text-success mb-1">{{ (retiredCredits * 0.22) | number:'1.0-0' }}</p>
+            <span class="text-muted small">Annual passenger vehicle equivalent</span>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="p-4 rounded border text-center bg-light-soft">
+            <div class="text-success mb-3 fs-1"><i class="bi bi-house-door-fill"></i></div>
+            <h6 class="fw-bold text-dark mb-2">Homes Powered by Green Energy</h6>
+            <p class="fs-4 fw-bold text-success mb-1">{{ (retiredCredits * 0.12) | number:'1.0-0' }}</p>
+            <span class="text-muted small">Annual household energy offset</span>
+          </div>
+        </div>
+      </div>
+
+      <h6 class="fw-bold text-dark mb-3">Retired Credits Breakdown</h6>
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr>
+              <th>Retired Asset</th>
+              <th>Offset Quantity</th>
+              <th>Status</th>
+              <th>Certificate Code</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Nellore Solar Farm</td>
+              <td class="fw-bold text-success">1,200 tCO2e</td>
+              <td><span class="badge bg-success">Permanently Retired</span></td>
+              <td class="text-monospace text-muted">CERT-NSF-9988102</td>
+            </tr>
+            <tr>
+              <td>Godavari Mangrove Restoration</td>
+              <td class="fw-bold text-success">700 tCO2e</td>
+              <td><span class="badge bg-success">Permanently Retired</span></td>
+              <td class="text-monospace text-muted">CERT-GMR-5520199</td>
+            </tr>
+            <tr>
+              <td>Satara Agroforestry</td>
+              <td class="fw-bold text-success">250 tCO2e</td>
+              <td><span class="badge bg-success">Permanently Retired</span></td>
+              <td class="text-monospace text-muted">CERT-SAF-3304410</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Compliance View -->
+    <section class="trading-card compliance-section text-dark" *ngIf="activeTab === 'Compliance'">
+      <h5 class="mb-4 fw-bold">Regulatory Audit Logs</h5>
+      <ul class="list-group list-group-flush border rounded p-2">
+        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+          <div>
+            <span class="fw-semibold text-dark d-block">Q2 Carbon Ledger Audit</span>
+            <span class="text-muted small">Validated by UNFCCC auditor</span>
+          </div>
+          <span class="badge bg-success-soft text-success"><i class="bi bi-shield-check me-1"></i> Audited & Approved</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+          <div>
+            <span class="fw-semibold text-dark d-block">Nellore Solar Farm Credit Issuance</span>
+            <span class="text-muted small">Verified net carbon reduction registry</span>
+          </div>
+          <span class="badge bg-success-soft text-success"><i class="bi bi-shield-check me-1"></i> Verified Registry</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+          <div>
+            <span class="fw-semibold text-dark d-block">Godavari Mangrove Blue Carbon Audit</span>
+            <span class="text-muted small">Wetlands preservation credit check</span>
+          </div>
+          <span class="badge bg-success-soft text-success"><i class="bi bi-shield-check me-1"></i> Verified Registry</span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Uploaded Verification Documents Card -->
+    <section class="trading-card compliance-section text-dark mt-4" *ngIf="activeTab === 'Compliance'">
+      <h5 class="fw-bold mb-4">Uploaded Verification Documents</h5>
+      <ul class="list-group list-group-flush border rounded p-2">
+        <li class="list-group-item d-flex justify-content-between align-items-center py-3" *ngFor="let doc of uploadedDocuments">
+          <div>
+            <span class="fw-semibold text-dark d-block">{{ doc.name }}</span>
+            <span class="text-muted small">File: <span class="text-primary font-monospace">{{ doc.fileName }}</span> • Uploaded: {{ doc.uploadDate }}</span>
+          </div>
+          <span class="badge" [ngClass]="doc.status === 'Verified' ? 'bg-success-soft text-success' : 'bg-warning-soft text-warning'" style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 11px;">
+            <i class="bi" [ngClass]="doc.status === 'Verified' ? 'bi-shield-check-fill' : 'bi-clock-fill'"></i>
+            {{ doc.status }}
+          </span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Wallet View -->
+    <section class="trading-card wallet-section text-dark mb-4" *ngIf="activeTab === 'Wallet'">
+      <h5 class="mb-4 fw-bold">Buyer Capital & Wallet Balance</h5>
+      <div class="row g-4 mb-4">
+        <!-- Balance Card -->
+        <div class="col-md-6">
+          <div class="p-4 rounded border bg-light-soft text-dark" style="background: linear-gradient(135deg, #f7faf9 0%, #edf4f2 100%);">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="fw-bold mb-0">Total Cash Balance</h6>
+              <i class="bi bi-wallet2 fs-4 text-success"></i>
+            </div>
+            <h2 class="fw-bold mb-3 text-success">{{ getCurrencySymbol() }}{{ convertAmount(cashBalance) | number:'1.2-2' }}</h2>
+            <div class="d-flex gap-2">
+              <input type="number" #depositAmt [placeholder]="getCurrencySymbol() + ' Amount'" class="form-control" style="max-width: 150px;" />
+              <button class="btn btn-success" (click)="depositCapital(depositAmt.value); depositAmt.value = ''">Deposit</button>
+              <button class="btn btn-outline-success" (click)="withdrawCapital(depositAmt.value); depositAmt.value = ''">Withdraw</button>
+            </div>
+          </div>
+        </div>
+        <!-- Portfolio Value Card -->
+        <div class="col-md-6">
+          <div class="p-4 rounded border bg-light-soft text-dark" style="background: linear-gradient(135deg, #f7faf9 0%, #edf4f2 100%);">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="fw-bold mb-0">Total Portfolio Value</h6>
+              <i class="bi bi-graph-up fs-4 text-primary"></i>
+            </div>
+            <h2 class="fw-bold mb-3 text-primary">{{ getCurrencySymbol() }}{{ convertAmount(portfolioValue) | number:'1.2-2' }}</h2>
+            <p class="text-muted small mb-0">
+              Active carbon asset valuation based on current market rates.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <h6 class="fw-bold text-dark mb-3">Capital Deposit & Withdrawal Log</h6>
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr>
+              <th>Transaction ID</th>
+              <th>Date</th>
+              <th>Action</th>
+              <th class="text-end">Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let wt of walletLedger">
+              <td>{{ wt.id }}</td>
+              <td>{{ wt.timestamp }}</td>
+              <td>
+                <span class="badge" [ngClass]="wt.type === 'DEPOSIT' ? 'bg-success' : 'bg-danger'">{{ wt.type }}</span>
+              </td>
+              <td class="text-end fw-bold" [ngClass]="wt.type === 'DEPOSIT' ? 'text-success' : 'text-danger'">
+                {{ getCurrencySymbol() }}{{ convertAmount(wt.amount) | number:'1.2-2' }}
+              </td>
+              <td><span class="badge bg-success-soft text-success">SUCCESS</span></td>
+            </tr>
+            <tr *ngIf="walletLedger.length === 0">
+              <td colspan="5" class="text-center text-muted py-3">No deposit or withdrawal transactions found.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Certificate View Tab -->
+    <div class="certificate-view-wrapper" *ngIf="activeTab === 'Certificate'" style="padding-top: 10px;">
+      <!-- Certificate Preview Container -->
+      <div class="trading-card p-4" style="background-color: #ffffff; border: 1px solid #d8e6e2; border-radius: 12px; box-shadow: 0 4px 16px rgba(0, 50, 48, 0.03); padding: 24px;">
+        <div class="d-flex justify-content-between align-items-center mb-4" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <div>
+            <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--dark-text);">Compliance Registry Certificate</h3>
+            <p class="text-muted" style="margin: 4px 0 0 0; font-size: 13px;">Generate and download your official carbon compliance and validation credential.</p>
+          </div>
+          <button type="button" class="btn btn-sync" (click)="downloadCertificate()" style="background-color: var(--primary-teal); color: white; border: none; border-radius: 8px; padding: 10px 18px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-file-earmark-pdf-fill"></i>
+            <span>Download Certificate</span>
+          </button>
+        </div>
+
+        <!-- Visual Certificate Mockup Frame -->
+        <div id="compliance-certificate" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-sizing: border-box; overflow: hidden; position: relative; box-shadow: inset 0 2px 8px rgba(0,0,0,0.02);">
+          
+          <!-- Inner Styles block (Automatically passes to print preview windows) -->
+          <style>
+            .cert-body-wrapper {
+              background-color: #ffffff;
+              font-family: 'Georgia', 'Times New Roman', Times, serif;
+              color: #1e293b;
+              position: relative;
+              border: 8px double #c5a850;
+              padding: 40px;
+              box-sizing: border-box;
+              max-width: 820px;
+              margin: 0 auto;
+              border-radius: 4px;
+              box-shadow: 0 12px 36px rgba(0, 76, 73, 0.04);
+              background-image: radial-gradient(circle, rgba(197, 168, 80, 0.02) 1px, transparent 1px);
+              background-size: 20px 20px;
+            }
+            .cert-inner-line {
+              border: 1.5px solid #004c49;
+              padding: 24px;
+              position: relative;
+            }
+            .cert-watermark {
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              opacity: 0.035;
+              z-index: 0;
+              pointer-events: none;
+            }
+            .cert-heading-area {
+              text-align: center;
+              margin-bottom: 20px;
+              position: relative;
+              z-index: 1;
+            }
+            .cert-top-sub {
+              font-size: 10.5px;
+              text-transform: uppercase;
+              letter-spacing: 3px;
+              color: #c5a850;
+              font-weight: 700;
+              margin-top: 4px;
+              display: block;
+            }
+            .cert-main-title {
+              font-size: 22px;
+              font-weight: 900;
+              color: #004c49;
+              margin: 12px 0;
+              letter-spacing: 1px;
+              text-transform: uppercase;
+            }
+            .cert-verified-pill {
+              background: linear-gradient(135deg, #004c49 0%, #002d2b 100%);
+              color: #ffffff;
+              padding: 6px 16px;
+              border-radius: 50px;
+              font-weight: 700;
+              font-size: 11.5px;
+              letter-spacing: 1px;
+              display: inline-flex;
+              align-items: center;
+              gap: 6px;
+              border: 1px solid #c5a850;
+              box-shadow: 0 4px 12px rgba(0, 76, 73, 0.12);
+            }
+            .cert-intro-text {
+              font-size: 13.5px;
+              color: #64748b;
+              margin-bottom: 6px;
+              text-align: center;
+              font-style: italic;
+              position: relative;
+              z-index: 1;
+            }
+            .cert-name {
+              font-size: 26px;
+              font-weight: 700;
+              color: #0f172a;
+              text-align: center;
+              margin: 10px 0;
+              font-family: 'Playfair Display', 'Georgia', serif;
+              text-decoration: underline;
+              text-underline-offset: 5px;
+              text-decoration-color: #cbd5e1;
+              position: relative;
+              z-index: 1;
+            }
+            .cert-standard-desc {
+              font-size: 13px;
+              color: #475569;
+              line-height: 1.5;
+              text-align: center;
+              max-width: 640px;
+              margin: 0 auto 20px auto;
+              position: relative;
+              z-index: 1;
+            }
+            .cert-data-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 16px;
+              border-top: 1.5px solid rgba(197, 168, 80, 0.25);
+              border-bottom: 1.5px solid rgba(197, 168, 80, 0.25);
+              padding: 16px 0;
+              margin-bottom: 20px;
+              text-align: left;
+              position: relative;
+              z-index: 1;
+            }
+            .cert-grid-item {
+              display: flex;
+              flex-direction: column;
+              gap: 3px;
+            }
+            .cert-grid-label {
+              font-size: 9.5px;
+              text-transform: uppercase;
+              color: #64748b;
+              font-weight: 700;
+              letter-spacing: 0.5px;
+            }
+            .cert-grid-value {
+              font-size: 13.5px;
+              font-weight: 700;
+              color: #004c49;
+            }
+            .cert-bottom-layout {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-end;
+              margin-top: 24px;
+              position: relative;
+              z-index: 1;
+            }
+            .cert-sign-wrapper {
+              text-align: center;
+              width: 170px;
+            }
+            .cert-sign-line {
+              border-bottom: 1px solid #cbd5e1;
+              height: 36px;
+              margin-bottom: 6px;
+              font-family: 'Courier New', Courier, monospace;
+              font-style: italic;
+              font-size: 16px;
+              color: #004c49;
+              line-height: 36px;
+            }
+            .cert-sign-label {
+              font-size: 10px;
+              color: #64748b;
+              font-weight: 600;
+              text-transform: uppercase;
+            }
+          </style>
+
+          <div class="cert-body-wrapper">
+            <!-- Background Leaf Watermark -->
+            <div class="cert-watermark">
+              <svg width="340" height="340" viewBox="0 0 100 100">
+                <path d="M50,15 C65,35 80,45 80,65 C80,80 68,90 50,90 C32,90 20,80 20,65 C20,45 35,35 50,15 Z" fill="#004c49"/>
+                <path d="M50,15 L50,90" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                <path d="M50,45 C58,48 68,48 68,45" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M50,55 C58,58 68,58 68,55" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M50,65 C58,68 68,68 68,65" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M50,45 C42,48 32,48 32,45" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M50,55 C42,58 32,58 32,55" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M50,65 C42,68 32,68 32,65" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+
+            <div class="cert-inner-line">
+              
+              <!-- Top Header Area -->
+              <div class="cert-heading-area">
+                <!-- Gold Star Ribbon Badge SVG -->
+                <svg width="54" height="54" viewBox="0 0 100 100" style="margin-bottom: 6px;">
+                  <polygon points="35,60 25,95 50,75 75,95 65,60" fill="#d4af37" opacity="0.9"/>
+                  <polygon points="40,60 30,95 50,75 70,95 60,60" fill="#aa7c11" opacity="0.9"/>
+                  <circle cx="50" cy="50" r="30" fill="#d4af37" stroke="#aa7c11" stroke-width="2"/>
+                  <circle cx="50" cy="50" r="26" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="3,3"/>
+                  <polygon points="50,28 55,42 70,42 58,51 62,65 50,56 38,65 42,51 30,42 45,42" fill="#ffffff"/>
+                </svg>
+                <span class="cert-top-sub">C-PAY Registry Offset Verification</span>
+                <h2 class="cert-main-title">Certificate of Carbon Compliance</h2>
+                <div style="margin-top: 8px;">
+                  <div class="cert-verified-pill">
+                    <i class="bi bi-patch-check-fill" style="color: #c5a850;"></i>
+                    <span>REGISTRY SECURED</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Main Certification Text -->
+              <p class="cert-intro-text">This certifies that the carbon offset compliance portfolio registered by</p>
+              <h3 class="cert-name">{{ profileDetails.companyName || 'Buyer' }}</h3>
+              
+              <p class="cert-standard-desc">
+                is authorized to acquire carbon credits, deposit green capital, execute buy orders, and permanently retire (offset) credits for environmental compliance. The portfolio holdings have been verified under cooperative protocols. The active compliance parameters are registered as follows:
+              </p>
+
+              <!-- Audit Parameters Grid -->
+              <div class="cert-data-grid">
+                <div class="cert-grid-item">
+                  <span class="cert-grid-label">Registered Company Name</span>
+                  <span class="cert-grid-value">{{ profileDetails.companyName }}</span>
+                </div>
+                <div class="cert-grid-item">
+                  <span class="cert-grid-label">Certificate Serial ID</span>
+                  <span class="cert-grid-value" style="font-family: monospace;">{{ certificateId }}</span>
+                </div>
+                
+                <div class="cert-grid-item">
+                  <span class="cert-grid-label">Official Registry Email</span>
+                  <span class="cert-grid-value">{{ profileDetails.emailAddress }}</span>
+                </div>
+                <div class="cert-grid-item">
+                  <span class="cert-grid-label">Official Registry ID</span>
+                  <span class="cert-grid-value" style="font-family: monospace;">{{ profileDetails.registrationId || 'REG-AP-2026-0982' }}</span>
+                </div>
+                
+                <div class="cert-grid-item">
+                  <span class="cert-grid-label">Active Carbon Holdings</span>
+                  <span class="cert-grid-value">{{ totalHoldingsQty | number }} tCO2e</span>
+                </div>
+                <div class="cert-grid-item">
+                  <span class="cert-grid-label">Retired Credits (Offset)</span>
+                  <span class="cert-grid-value">{{ retiredCredits | number }} tCO2e</span>
+                </div>
+                
+                <div class="cert-grid-item" style="grid-column: span 2;">
+                  <span class="cert-grid-label">Financial Compliance Valuation</span>
+                  <span class="cert-grid-value">{{ getCurrencySymbol() }}{{ convertAmount(cashBalance + portfolioValue) | number:'1.2-2' }} {{ selectedCurrency }} (Based on registry assets)</span>
+                </div>
+
+                <div class="cert-grid-item" style="grid-column: span 2; border-top: 1px dashed rgba(197,168,80,0.2); padding-top: 8px; margin-top: 4px;">
+                  <span class="cert-grid-label">Blockchain Transaction Hash</span>
+                  <span class="cert-grid-value" style="font-family: monospace; font-size: 11.5px; color: #64748b; word-break: break-all;">{{ blockchainHash }}</span>
+                </div>
+              </div>
+
+              <!-- Footer with Signatures & QR Verification -->
+              <div class="cert-bottom-layout">
+                <div class="cert-sign-wrapper">
+                  <div class="cert-sign-line">{{ profileDetails.companyName || 'Buyer' }}</div>
+                  <span class="cert-sign-label">Representative</span>
+                </div>
+
+                <!-- Center QR Code Simulation SVG -->
+                <div class="cert-qr-container">
+                  <svg width="60" height="60" viewBox="0 0 100 100" style="background: #ffffff; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                    <rect x="10" y="10" width="25" height="25" fill="#004c49" />
+                    <rect x="15" y="15" width="15" height="15" fill="#ffffff" />
+                    <rect x="18" y="18" width="9" height="9" fill="#004c49" />
+                    
+                    <rect x="65" y="10" width="25" height="25" fill="#004c49" />
+                    <rect x="70" y="15" width="15" height="15" fill="#ffffff" />
+                    <rect x="73" y="18" width="9" height="9" fill="#004c49" />
+                    
+                    <rect x="10" y="65" width="25" height="25" fill="#004c49" />
+                    <rect x="15" y="70" width="15" height="15" fill="#ffffff" />
+                    <rect x="18" y="73" width="9" height="9" fill="#004c49" />
+                    
+                    <rect x="42" y="10" width="5" height="10" fill="#004c49" />
+                    <rect x="52" y="15" width="8" height="5" fill="#004c49" />
+                    <rect x="42" y="25" width="15" height="5" fill="#004c49" />
+                    
+                    <rect x="10" y="42" width="10" height="5" fill="#004c49" />
+                    <rect x="25" y="48" width="5" height="10" fill="#004c49" />
+                    
+                    <rect x="42" y="42" width="8" height="8" fill="#004c49" />
+                    <rect x="55" y="45" width="5" height="15" fill="#004c49" />
+                    <rect x="48" y="55" width="12" height="5" fill="#004c49" />
+                    
+                    <rect x="65" y="42" width="10" height="5" fill="#004c49" />
+                    <rect x="80" y="48" width="5" height="12" fill="#004c49" />
+                    <rect x="70" y="55" width="12" height="5" fill="#004c49" />
+                    
+                    <rect x="42" y="65" width="5" height="15" fill="#004c49" />
+                    <rect x="52" y="72" width="10" height="8" fill="#004c49" />
+                    <rect x="42" y="85" width="18" height="5" fill="#004c49" />
+                    
+                    <rect x="65" y="70" width="15" height="5" fill="#004c49" />
+                    <rect x="72" y="80" width="5" height="10" fill="#004c49" />
+                    <rect x="82" y="82" width="8" height="8" fill="#004c49" />
+                  </svg>
+                  <span style="font-size: 8px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Blockchain Verify</span>
+                </div>
+
+                <div class="cert-sign-wrapper">
+                  <div class="cert-sign-line" style="font-family: 'Georgia', serif; font-size: 14px;">Audit Board</div>
+                  <span class="cert-sign-label">UNFCCC Auth</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+        </div>
+      </div>
+
+    <!-- Connect View -->
+    <div class="trading-card p-4 text-dark mb-4" *ngIf="activeTab === 'Support'">
+      <h3 class="fw-bold mb-3 text-dark d-flex align-items-center" style="margin: 0 0 8px 0; font-size: 18px; font-weight: 700;">
+        <i class="bi bi-chat-dots-fill text-teal me-2" style="color: var(--primary-teal); margin-right: 6px;"></i> Report Buyer Issue / Support
+      </h3>
+      <p class="text-muted small mb-4">Report any issues you face while trading, depositing/withdrawing funds, or managing your carbon credit holdings.</p>
+      
+      <div style="max-width: 800px; margin-top: 24px;">
+        <form style="display: flex; flex-direction: column; gap: 16px;">
+          <div>
+            <label class="form-label small fw-bold text-muted mb-1.5" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px;">Subject Category</label>
+            <app-custom-select
+              [options]="['Select Issue Category', 'Payment & Wallet Issues', 'Order Placement & Execution Errors', 'Portfolio Balance Discrepancy', 'Compliance & Verification Queries', 'General Technical Support']"
+              [(ngModel)]="supportSubject"
+              name="supportSubject"
+              placeholder="Select Issue Category">
+            </app-custom-select>
+          </div>
+          <div>
+            <label class="form-label small fw-bold text-muted mb-1.5" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px;">Inquiry Subject</label>
+            <input type="text" class="form-control" placeholder="e.g., Wallet deposit failed but amount deducted" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13.5px; width: 100%; box-sizing: border-box; outline: none;" />
+          </div>
+          <div>
+            <label class="form-label small fw-bold text-muted mb-1.5" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px;">Message Description</label>
+            <textarea class="form-control" rows="5" placeholder="Provide detailed information regarding the issue you are facing, including any transaction ID and screenshots..." style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13.5px; width: 100%; box-sizing: border-box; outline: none; resize: vertical; min-height: 120px;"></textarea>
+          </div>
+          <div style="display: flex; justify-content: flex-end;">
+            <button type="button" class="btn text-white fw-bold" style="background-color: var(--primary-teal); color: white; border: none; border-radius: 10px; padding: 12px 28px; font-size: 13.5px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-1px)';" onmouseout="this.style.transform='none';">
+              Send Secure Message
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Profile View -->
+    <div class="profile-tab-wrapper text-dark" *ngIf="activeTab === 'Profile'" style="padding-top: 10px;">
+      <div style="display: flex; flex-direction: column; gap: 24px; width: 100%;">
+        
+        <!-- Profile Header Card (Avatar & Quick Info) -->
+        <div class="trading-card p-4" style="display: flex; align-items: center; justify-content: space-between; gap: 24px; background-color: #ffffff; border: 1px solid rgba(226, 236, 233, 0.8); border-radius: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01);">
+          <div style="display: flex; align-items: center; gap: 24px;">
+            <div class="avatar-container" style="position: relative; display: inline-block; width: 100px; height: 100px; border-radius: 50%; border: 4px solid var(--primary-teal); box-shadow: 0 4px 12px rgba(0,108,104,0.15); overflow: hidden; background-color: #fafdfc; flex-shrink: 0;">
+              <img *ngIf="profilePhoto" [src]="profilePhoto" style="width: 100%; height: 100%; object-fit: cover;" />
+              <div *ngIf="!profilePhoto" class="d-flex align-items-center justify-content-center w-100 h-100 bg-teal-soft" style="background-color: rgba(0, 164, 153, 0.08); color: var(--primary-teal); font-size: 32px; font-weight: 800; width: 92px; height: 92px; display: flex; align-items: center; justify-content: center;">
+                {{ avatarInitial }}
+              </div>
+            </div>
+            <div>
+              <h4 class="fw-bold mb-1 text-dark" style="margin: 0 0 4px 0; font-size: 22px;">{{ displayBuyerName }}</h4>
+              <span class="badge bg-success-soft text-success px-3 py-1 rounded-pill" style="background-color: rgba(16, 185, 129, 0.08); font-size: 11px; font-weight: 600; color: var(--dark-teal); display: inline-block;">{{ displayBuyerType }}</span>
+              <p class="text-muted" style="font-size: 11px; line-height: 1.4; margin: 4px 0 0 0;">Accepts JPG, PNG, GIF. Max file size 5MB.</p>
+            </div>
+          </div>
+          
+          <div style="flex-shrink: 0;">
+            <label for="profilePhotoUpload" class="btn btn-teal py-2.5 px-4 d-flex align-items-center justify-content-center gap-2" style="background-color: var(--primary-teal); color: white; border: none; border-radius: 10px; font-size: 13.5px; cursor: pointer; padding: 10px 20px; font-weight: 600; display: flex;">
+              <i class="bi bi-camera-fill"></i> Upload Photo
+            </label>
+            <input type="file" id="profilePhotoUpload" (change)="onPhotoSelected($event)" accept="image/*" style="display: none;" />
+          </div>
+        </div>
+
+        <!-- Personal Details Card -->
+        <div class="trading-card p-4">
+          <h3 class="fw-bold mb-4 text-dark border-bottom pb-2" style="font-size: 18px; font-weight: 700; margin: 0 0 24px 0; border-bottom: 1px solid #f0f6f4; padding-bottom: 8px;"><i class="bi bi-person me-2"></i> Personal Details</h3>
+          
+          <form (ngSubmit)="savePersonalDetails()">
+            <div class="row g-3" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div>
+                <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; font-weight: 700; display: block; margin-bottom: 4px;">Buyer Name</label>
+                <input type="text" class="form-control" [(ngModel)]="profileDetails.buyerName" name="buyerName" style="border-radius: 8px; border: 1px solid #d8e6e2; padding: 8px; width: 100%; box-sizing: border-box;" required />
+              </div>
+              <div>
+                <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; font-weight: 700; display: block; margin-bottom: 4px;">Company / Organization Name</label>
+                <input type="text" class="form-control" [(ngModel)]="profileDetails.companyName" name="companyName" style="border-radius: 8px; border: 1px solid #d8e6e2; padding: 8px; width: 100%; box-sizing: border-box;" />
+              </div>
+              <div>
+                <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; font-weight: 700; display: block; margin-bottom: 4px;">Type of Registration</label>
+                <input type="text" class="form-control" [(ngModel)]="profileDetails.selectedBuyerType" name="selectedBuyerType" style="border-radius: 8px; border: 1px solid #d8e6e2; padding: 8px; width: 100%; box-sizing: border-box; background-color: #f8faf9;" readonly />
+              </div>
+              <div>
+                <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; font-weight: 700; display: block; margin-bottom: 4px;">Email Address</label>
+                <input type="email" class="form-control" [(ngModel)]="profileDetails.emailAddress" name="emailAddress" style="border-radius: 8px; border: 1px solid #d8e6e2; padding: 8px; width: 100%; box-sizing: border-box;" required />
+              </div>
+              <div>
+                <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; font-weight: 700; display: block; margin-bottom: 4px;">Mobile Number</label>
+                <input type="text" class="form-control" [(ngModel)]="profileDetails.mobileNumber" name="mobileNumber" style="border-radius: 8px; border: 1px solid #d8e6e2; padding: 8px; width: 100%; box-sizing: border-box;" required />
+              </div>
+              <div>
+                <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; font-weight: 700; display: block; margin-bottom: 4px;">PAN Card Number</label>
+                <div style="position: relative;">
+                  <input [type]="hidePanNumber ? 'password' : 'text'" class="form-control" [(ngModel)]="profileDetails.panNumber" name="panNumber" style="border-radius: 8px; border: 1px solid #d8e6e2; padding: 8px 36px 8px 8px; width: 100%; box-sizing: border-box; background-color: #f8faf9; cursor: not-allowed;" disabled required />
+                  <button type="button" (click)="hidePanNumber = !hidePanNumber" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: none; cursor: pointer; color: #64748b; padding: 4px;">
+                    <i class="bi" [ngClass]="hidePanNumber ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; font-weight: 700; display: block; margin-bottom: 4px;">GST Number</label>
+                <input type="text" class="form-control" [(ngModel)]="profileDetails.gstNumber" name="gstNumber" style="border-radius: 8px; border: 1px solid #d8e6e2; padding: 8px; width: 100%; box-sizing: border-box;" />
+              </div>
+              <div>
+                <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; font-weight: 700; display: block; margin-bottom: 4px;">Company Registration ID</label>
+                <input type="text" class="form-control" [(ngModel)]="profileDetails.registrationId" name="registrationId" style="border-radius: 8px; border: 1px solid #d8e6e2; padding: 8px; width: 100%; box-sizing: border-box;" />
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-end mt-4" style="display: flex; justify-content: flex-end; margin-top: 24px;">
+              <button type="submit" class="btn btn-teal px-4 py-2 fw-bold text-white" style="background-color: var(--primary-teal); color: white; border: none; border-radius: 10px; font-weight: 700; padding: 10px 20px; cursor: pointer;">
+                Save Personal Details
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Bank Details Card -->
+        <div class="trading-card p-4">
+          <h3 class="fw-bold mb-4 text-dark border-bottom pb-2" style="font-size: 18px; font-weight: 700; margin: 0 0 24px 0; border-bottom: 1px solid #f0f6f4; padding-bottom: 8px;"><i class="bi bi-bank me-2"></i> Bank Details</h3>
+          
+          <form (ngSubmit)="saveBankDetails()">
+            <div class="row g-3" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div>
+                <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; font-weight: 700; display: block; margin-bottom: 4px;">Account Holder Name</label>
+                <input type="text" class="form-control" [(ngModel)]="bankDetails.accountHolderName" name="accountHolderName" style="border-radius: 8px; border: 1px solid #d8e6e2; padding: 8px; width: 100%; box-sizing: border-box;" required />
+              </div>
+              <div>
+                <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; font-weight: 700; display: block; margin-bottom: 4px;">Bank Name</label>
+                <input type="text" class="form-control" [(ngModel)]="bankDetails.bankName" name="bankName" style="border-radius: 8px; border: 1px solid #d8e6e2; padding: 8px; width: 100%; box-sizing: border-box;" required />
+              </div>
+              <div>
+                <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; font-weight: 700; display: block; margin-bottom: 4px;">Account Number</label>
+                <div style="position: relative;">
+                  <input [type]="hideAccountNumber ? 'password' : 'text'" class="form-control" [(ngModel)]="bankDetails.accountNumber" name="accountNumber" style="border-radius: 8px; border: 1px solid #d8e6e2; padding: 8px 36px 8px 8px; width: 100%; box-sizing: border-box;" required />
+                  <button type="button" (click)="hideAccountNumber = !hideAccountNumber" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: none; cursor: pointer; color: #64748b; padding: 4px;">
+                    <i class="bi" [ngClass]="hideAccountNumber ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; font-weight: 700; display: block; margin-bottom: 4px;">IFSC Code</label>
+                <div style="position: relative;">
+                  <input [type]="hideIfscCode ? 'password' : 'text'" class="form-control" [(ngModel)]="bankDetails.ifscCode" name="ifscCode" style="border-radius: 8px; border: 1px solid #d8e6e2; padding: 8px 36px 8px 8px; width: 100%; box-sizing: border-box;" required />
+                  <button type="button" (click)="hideIfscCode = !hideIfscCode" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: none; cursor: pointer; color: #64748b; padding: 4px;">
+                    <i class="bi" [ngClass]="hideIfscCode ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; font-weight: 700; display: block; margin-bottom: 4px;">Account Type</label>
+                <app-custom-select [options]="accountTypeOptions" [(ngModel)]="bankDetails.accountType" name="accountType" placeholder="Select Account Type"></app-custom-select>
+              </div>
+              <div>
+                <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; font-weight: 700; display: block; margin-bottom: 4px;">UPI ID (Optional)</label>
+                <input type="text" class="form-control" [(ngModel)]="bankDetails.upiId" name="upiId" style="border-radius: 8px; border: 1px solid #d8e6e2; padding: 8px; width: 100%; box-sizing: border-box;" />
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-end mt-4" style="display: flex; justify-content: flex-end; margin-top: 24px;">
+              <button type="submit" class="btn btn-teal px-4 py-2 fw-bold text-white" style="background-color: var(--primary-teal); color: white; border: none; border-radius: 10px; font-weight: 700; padding: 10px 20px; cursor: pointer;">
+                Save Bank Details
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+
+
+

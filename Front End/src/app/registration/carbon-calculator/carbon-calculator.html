@@ -1,0 +1,215 @@
+<!-- ================= APCCB / C-PAY HEADER ================= -->
+<header class="app-header">
+    <div class="header-left">
+        <img src="/logo.jpg" alt="C-PAY Logo">
+        <div>
+            <h1><span style="color: var(--primary-teal);">C-</span><span style="color: #000000;">PAY</span></h1>
+            <p>Carbon Credit Registration & Verification System</p>
+        </div>
+    </div>
+    <div class="portal-badge">C-PAY Portal</div>
+</header>
+
+<!-- ================= SINGLE WIZARD CARD ================= -->
+<div class="wizard-card">
+
+    <!-- ================= HEADER ================= -->
+    <div class="wizard-header">
+        <h2 class="section-title center-title">CARBON CALCULATOR</h2>
+        <div class="progress-badge">Step 6 of 8</div>
+    </div>
+
+    <!-- ================= STEPPER ================= -->
+    <div class="stepper-container">
+        <div class="step completed" (click)="goToStep(1)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>User Type</span>
+        </div>
+        <div class="line active-line"></div>
+
+        <div class="step completed" (click)="goToStep(2)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>Personal Details</span>
+        </div>
+        <div class="line active-line"></div>
+
+        <div class="step completed" (click)="goToStep(3)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>Address Details</span>
+        </div>
+        <div class="line active-line"></div>
+
+        <div class="step completed" (click)="goToStep(4)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>Land Details</span>
+        </div>
+        <div class="line active-line"></div>
+
+        <div class="step completed" (click)="goToStep(5)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>Plantation</span>
+        </div>
+        <div class="line active-line"></div>
+
+        <div class="step active">
+            <div class="circle">6</div>
+            <span>Calculator</span>
+        </div>
+
+        <div class="line"></div>
+        <div class="step">
+            <div class="circle">7</div>
+            <span>Consent</span>
+        </div>
+
+        <div class="line"></div>
+        <div class="step">
+            <div class="circle">8</div>
+            <span>Preview</span>
+        </div>
+    </div>
+
+    <!-- ================= BODY ================= -->
+    <div class="wizard-body p-4 position-relative">
+
+        <!-- Floating Toast Alert for Recalculation -->
+        <div *ngIf="showRecalcFloatingAlert" 
+             (click)="showRecalcFloatingAlert = false"
+             class="floating-alert shadow-lg rounded-pill px-4 py-2 text-center position-fixed start-50 translate-middle-x d-flex align-items-center gap-2" 
+             style="top: 85px; z-index: 99999; background: linear-gradient(90deg, var(--primary-teal, #00a499) 0%, var(--dark-teal, #007a72) 100%); color: #ffffff; font-size: 13.5px; font-weight: 600; box-shadow: 0 8px 25px rgba(0, 164, 153, 0.35) !important; cursor: pointer;">
+            <span style="font-size: 16px;">✨</span> {{ recalculateSuccessMessage }}
+        </div>
+
+        <!-- ================= DYNAMICALLY GENERATED POND CARDS ================= -->
+        <div class="section-title text-start mb-3">
+            <h4 class="fw-bold text-dark mb-1" style="font-size: 18px;"><i class="bi bi-grid-fill text-teal me-2"></i> Individual Pond Carbon KPI Cards</h4>
+            <span class="text-muted" style="font-size: 13.5px;">Detailed species-specific emission reductions and potential carbon credits per pond</span>
+        </div>
+
+        <div class="row g-4 mb-4 text-start">
+            <div class="col-md-6 col-lg-4" *ngFor="let pRes of pondResults; let idx = index">
+                <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden position-relative" style="border: 2px solid #e2e8f0; border-top: 5px solid #047857 !important; transition: transform 0.2s ease, box-shadow 0.2s ease;">
+                    
+                    <div class="card-header bg-white border-bottom-0 pt-3 px-3 pb-2 d-flex justify-content-between align-items-center">
+                        <span class="badge px-3 py-1 text-white" style="background-color: #047857; font-weight: 700; font-size: 13px; border-radius: 12px;">
+                            {{ pRes.pondName }}
+                        </span>
+                        <span class="badge bg-light text-dark border px-2 py-1" style="font-size: 12px;">
+                            {{ pRes.cultureType }}
+                        </span>
+                    </div>
+
+                    <div class="card-body px-3 py-2">
+                        <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                            <span style="font-size: 24px;">{{ pRes.cultureType === 'Prawns' ? '🦐' : '🐟' }}</span>
+                            <div>
+                                <h6 class="mb-0 fw-bold text-dark" style="font-size: 15px;">{{ pRes.species }}</h6>
+                                <small class="text-muted" style="font-size: 12px;">Pond Area: <strong>{{ pRes.pondArea | number:'1.2-2' }} {{ pRes.pondAreaUnit }}</strong></small>
+                            </div>
+                        </div>
+
+                        <!-- KPI Grid per Pond Card -->
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <div class="p-2 rounded bg-light border">
+                                    <span class="d-block text-muted" style="font-size: 11px; font-weight: 600;">TOTAL PRODUCTION</span>
+                                    <strong class="text-dark" style="font-size: 13.5px;">{{ pRes.totalProduction | number:'1.0-0' }} kg</strong>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 rounded bg-light border">
+                                    <span class="d-block text-muted" style="font-size: 11px; font-weight: 600;">CO₂ REDUCTION</span>
+                                    <strong class="text-primary" style="font-size: 13.5px; color: #0284c7 !important;">{{ pRes.co2Reduction | number:'1.2-2' }} tCO2e</strong>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 rounded bg-light border">
+                                    <span class="d-block text-muted" style="font-size: 11px; font-weight: 600;">% REDUCTION</span>
+                                    <strong class="text-success" style="font-size: 13.5px; color: #16a34a !important;">{{ pRes.percentReduction | number:'1.1-1' }}% vs Baseline</strong>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 rounded bg-light border">
+                                    <span class="d-block text-muted" style="font-size: 11px; font-weight: 600;">POTENTIAL CREDITS</span>
+                                    <strong class="text-success" style="font-size: 13.5px; color: #047857 !important;">{{ pRes.potentialCarbonCredits | number:'1.2-2' }} tCO2e/yr</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Credits per Ha / Year -->
+                        <div class="p-2 rounded mt-2 text-center" style="background-color: #ecfdf5; border: 1px solid #a7f3d0; color: #047857;">
+                            <span style="font-size: 12px; font-weight: 600;">CREDITS / HECTARE / YEAR: </span>
+                            <strong style="font-size: 14px;">{{ pRes.creditsPerHaPerYear | number:'1.2-2' }} tCO2e/ha/yr</strong>
+                        </div>
+                    </div>
+
+                    <div class="card-footer bg-light border-top-0 px-3 py-2 text-end">
+                        <small class="text-muted" style="font-size: 11px;">Valuation: <strong>₹{{ (pRes.potentialCarbonCredits * currentMarketRate) | number:'1.0-0' }}</strong></small>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= OVERALL PORTFOLIO SUMMARY CARD ================= -->
+        <div class="overall-summary-card mb-4 p-4 rounded-3 text-start" style="background: linear-gradient(90deg, var(--primary-teal, #00a499) 0%, var(--dark-teal, #007a72) 100%); color: #ffffff; box-shadow: 0 10px 30px rgba(0, 164, 153, 0.25); border-radius: 20px !important;">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div>
+                    <span class="badge bg-white text-teal px-3 py-1 fw-bold rounded-pill" style="color: var(--primary-teal, #00a499) !important; font-size: 13px;">OVERALL SURVEY SUMMARY</span>
+                    <h3 class="mb-0 mt-2 text-white fw-bold" style="font-size: 22px;">Multi-Pond Carbon Portfolio Assessment</h3>
+                </div>
+                <button type="button" 
+                        class="btn btn-light rounded-pill px-4 py-2 fw-bold d-flex align-items-center gap-2" 
+                        [class.btn-pulse]="isFlashing"
+                        (click)="recalculate(true)" 
+                        style="color: var(--primary-teal, #00a499); font-size: 14px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.15); cursor: pointer; transition: all 0.2s ease;">
+                    <span style="font-size: 16px;">🔄</span> Recalculate Portfolio
+                </button>
+            </div>
+
+            <div class="row g-3 mt-1">
+                <div class="col-md-3 col-6">
+                    <div class="p-3 rounded-3" style="background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(5px);">
+                        <span class="d-block text-white-50" style="font-size: 12px; font-weight: 600;">TOTAL CO₂ REDUCTION</span>
+                        <h4 class="mb-0 text-white fw-bold mt-1" style="font-size: 20px;">{{ overallSummary.totalCO2Reduction | number:'1.2-2' }} <span style="font-size: 13px; font-weight: 500;">tCO2e</span></h4>
+                    </div>
+                </div>
+
+                <div class="col-md-3 col-6">
+                    <div class="p-3 rounded-3" style="background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(5px);">
+                        <span class="d-block text-white-50" style="font-size: 12px; font-weight: 600;">TOTAL CARBON CREDITS</span>
+                        <h4 class="mb-0 text-white fw-bold mt-1" style="font-size: 20px;">{{ overallSummary.totalCarbonCredits | number:'1.2-2' }} <span style="font-size: 13px; font-weight: 500;">tCO2e/yr</span></h4>
+                    </div>
+                </div>
+
+                <div class="col-md-3 col-6">
+                    <div class="p-3 rounded-3" style="background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(5px);">
+                        <span class="d-block text-white-50" style="font-size: 12px; font-weight: 600;">CURRENT MARKET RATE (₹)</span>
+                        <div class="d-flex align-items-center gap-1 mt-1">
+                            <span style="font-size: 18px; font-weight: bold; color: #fff;">₹</span>
+                            <input type="number" 
+                                   [(ngModel)]="currentMarketRate" 
+                                   (ngModelChange)="recalculate(true)" 
+                                   style="width: 85px; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.5); color: #ffffff; border-radius: 6px; font-size: 18px; font-weight: bold; padding: 2px 8px; outline: none;" />
+                            <span style="font-size: 12px; opacity: 0.85; color: #fff;">/ credit</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3 col-6">
+                    <div class="p-3 rounded-3" style="background: rgba(255, 255, 255, 0.22); backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.4);">
+                        <span class="d-block text-white-50" style="font-size: 12px; font-weight: 700; color: #a7f3d0 !important;">PORTFOLIO VALUE</span>
+                        <h4 class="mb-0 text-white fw-bold mt-1" style="font-size: 22px; color: #ffffff;">₹{{ overallSummary.portfolioValue | number:'1.0-0' }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= FOOTER NAVIGATION ================= -->
+        <div class="footer-buttons mt-4">
+            <button type="button" class="back-btn" (click)="back()">← Back</button>
+            <button type="button" class="next-btn" (click)="next()">Continue →</button>
+        </div>
+
+    </div>
+</div>

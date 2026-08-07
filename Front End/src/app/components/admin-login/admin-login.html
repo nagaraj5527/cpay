@@ -1,0 +1,83 @@
+<div class="text-center mb-4">
+  <!-- Centered Logo at the top -->
+  <div class="mb-3">
+    <div class="bg-white rounded-3 p-2 d-inline-block shadow-sm">
+      <img src="/logo.jpg" alt="C-PAY Logo" class="img-fluid" style="height: 64px; width: auto; display: block;">
+    </div>
+  </div>
+  <!-- APCCB Title below the logo -->
+  <h1 class="h2 fw-bold mb-1" style="letter-spacing: -0.5px; font-size: 32px; color: var(--primary-teal);">C-<span style="color: #000000;">PAY</span></h1>
+  <!-- Subtitle below the title -->
+  <p class="small fw-semibold text-muted mb-3 text-center">State Administrator Console</p>
+  <h3 class="fw-bold text-dark mb-4">Admin Login</h3>
+</div>
+
+<form (ngSubmit)="onSubmit()" #loginForm="ngForm">
+  <!-- Alerts for Error/Success -->
+  <div *ngIf="errorMessage" class="alert alert-danger py-2 px-3 small" role="alert">
+    {{ errorMessage }}
+  </div>
+  <div *ngIf="successMessage" class="alert alert-success py-2 px-3 small" role="alert">
+    {{ successMessage }}
+  </div>
+
+  <!-- Username / Email -->
+  <div class="mb-3">
+    <label for="username" class="form-label">Email Address</label>
+    <div class="input-group">
+      <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+      <input type="email" id="username" name="username" class="form-control" 
+             placeholder="Enter admin email" [(ngModel)]="username" required>
+    </div>
+  </div>
+
+  <!-- Password -->
+  <div class="mb-3">
+    <label for="password" class="form-label">Password</label>
+    <div class="input-group">
+      <span class="input-group-text"><i class="bi bi-lock"></i></span>
+      <input [type]="showPassword ? 'text' : 'password'" id="password" name="password" class="form-control" 
+             placeholder="Enter password" [(ngModel)]="password" required>
+      <button class="btn btn-outline-secondary" type="button" (click)="togglePassword()">
+        <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Captcha -->
+  <div class="mb-3">
+    <label for="captcha" class="form-label">Captcha</label>
+    <div class="row g-2 align-items-center">
+      <div class="col-6">
+        <input type="text" id="captcha" name="captcha" class="form-control" 
+               placeholder="Enter captcha" [(ngModel)]="captchaInput" 
+               (input)="captchaInput = captchaInput.toUpperCase()"
+               style="text-transform: uppercase;"
+               autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" required>
+      </div>
+      <div class="col-6">
+        <div class="captcha-container d-flex align-items-center justify-content-between p-1 bg-light rounded" style="border: 1px solid #cbd5e1;">
+          <div class="captcha-box px-3 py-1 fw-bold text-dark letter-spacing-2" style="font-family: monospace; font-size: 18px; letter-spacing: 3px;">{{ generatedCaptcha }}</div>
+          <button type="button" class="btn btn-sm btn-link p-1 text-teal" (click)="generateCaptcha()" title="Refresh Captcha">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Remember Me -->
+  <div class="mb-4">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="rememberMe" name="rememberMe" [(ngModel)]="rememberMe">
+      <label class="form-check-label text-muted small" for="rememberMe">
+        Remember me
+      </label>
+    </div>
+  </div>
+
+  <!-- Login Button -->
+  <button type="submit" class="btn btn-teal w-100 py-3 mb-4">
+    {{ (!username || username.trim().length === 0) ? 'Back' : 'Login' }}
+  </button>
+</form>

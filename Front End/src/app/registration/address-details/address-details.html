@@ -1,0 +1,234 @@
+<!-- ================= C-PAY HEADER ================= -->
+
+<header class="app-header">
+
+    <div class="header-left">
+
+        <img
+            src="/logo.jpg"
+            alt="C-PAY Logo">
+
+        <div>
+
+            <h1><span style="color: var(--primary-teal);">C-</span><span style="color: #000000;">PAY</span></h1>
+
+            <p>
+                Carbon Credit Registration & Verification System
+            </p>
+
+        </div>
+
+    </div>
+
+    <div class="portal-badge">
+
+        C-PAY Portal
+
+    </div>
+
+</header>
+
+<!-- ================= ADDRESS DETAILS CARD ================= -->
+
+<div class="wizard-card">
+
+    <!-- HEADER -->
+
+    <div class="wizard-header">
+
+        <h2>
+            ADDRESS DETAILS
+        </h2>
+
+        <div class="progress-badge">
+
+            Step 3 of 8
+
+        </div>
+
+    </div>
+
+    <!-- STEPPER -->
+
+    <div class="stepper-container">
+
+        <div class="step completed" (click)="goToStep(1)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>User Type</span>
+        </div>
+
+        <div class="line active-line"></div>
+
+        <div class="step completed" (click)="goToStep(2)" style="cursor: pointer;">
+            <div class="circle">✓</div>
+            <span>Personal Details</span>
+        </div>
+
+        <div class="line active-line"></div>
+
+        <div class="step active">
+            <div class="circle">3</div>
+            <span>Address Details</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">4</div>
+            <span>Land Details</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">5</div>
+            <span>Plantation Details</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">6</div>
+            <span>Calculator</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">7</div>
+            <span>Consent</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="step">
+            <div class="circle">8</div>
+            <span>Preview</span>
+        </div>
+
+
+    </div>
+
+    <!-- BODY -->
+
+    <div class="wizard-body">
+
+        <div class="section-title">
+
+            <h3>
+                Location Information
+            </h3>
+
+            <span>
+                Please provide your address details for C-PAY registration
+            </span>
+
+        </div>
+
+        <div class="form-grid">
+
+            <!-- Pincode (MOVED TO TOP) -->
+            <div class="form-group" style="grid-column: span 2;">
+                <label>
+                    Pincode *
+                </label>
+                <div style="position: relative; display: flex; width: 100%;">
+                    <input
+                        type="text"
+                        name="pincode"
+                        [(ngModel)]="pincode"
+                        (input)="onPincodeChange()"
+                        maxlength="6"
+                        placeholder="Enter 6-digit Pincode"
+                        style="width: 100%;">
+                    <span *ngIf="isLoading" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 13px; color: #1aa86c; font-weight: bold;">
+                        Loading...
+                    </span>
+                </div>
+            </div>
+
+            <!-- Error Message alert -->
+            <div *ngIf="errorMessage" class="form-group" style="grid-column: span 2; margin-bottom: 0;">
+                <div style="color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 12px 15px; font-size: 13px; font-weight: 500;">
+                    {{ errorMessage }}
+                </div>
+            </div>
+
+            <!-- State -->
+            <div class="form-group">
+                <label>State *</label>
+                <app-custom-select
+                    [dropUp]="true"
+                    [options]="statesList"
+                    [(ngModel)]="state"
+                    name="state"
+                    placeholder="Select State">
+                </app-custom-select>
+            </div>
+
+            <!-- District -->
+            <div class="form-group">
+                <label>District *</label>
+                <app-custom-select
+                    [dropUp]="true"
+                    [options]="districtsList"
+                    [(ngModel)]="district"
+                    name="district"
+                    placeholder="Select District">
+                </app-custom-select>
+            </div>
+
+            <!-- Mandal / Taluk -->
+            <div class="form-group">
+                <label>Mandal / Taluk *</label>
+                <app-custom-select
+                    [dropUp]="true"
+                    [options]="mandalsList"
+                    [(ngModel)]="mandal"
+                    name="mandal"
+                    placeholder="Select Mandal">
+                </app-custom-select>
+            </div>
+
+            <!-- Village / Town -->
+            <div class="form-group">
+                <label>Village / Town *</label>
+                <app-custom-select
+                    [dropUp]="true"
+                    [options]="villagesList"
+                    [(ngModel)]="village"
+                    name="village"
+                    placeholder="Select Village / Town">
+                </app-custom-select>
+            </div>
+
+        </div>
+
+        <!-- FOOTER BUTTONS -->
+
+        <div class="footer-buttons">
+
+            <button
+                class="back-btn"
+                (click)="back()">
+
+                ← Back
+
+            </button>
+
+            <button
+                class="next-btn"
+                (click)="next()">
+
+                Continue →
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
