@@ -3692,22 +3692,29 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     const unitText = this.newLandSurvey.unit || 'Acre';
     const areaVal = `${areaNum} ${unitText}s`;
 
-    // Check if Survey Number already exists for this user's assets
-    const newSurveyNo = (this.newLandSurvey.surveyNo || '').trim();
-    const newSubDivNo = (this.newLandSurvey.subDivisionNo || '').trim();
-    const isDuplicate = this.landParcels.some(p => {
-      const pSurveyNo = (p.survey?.surveyNo || '').trim();
-      const pSubDivNo = (p.survey?.subDivisionNo || '').trim();
-      return pSurveyNo.toLowerCase() === newSurveyNo.toLowerCase() && 
-             pSubDivNo.toLowerCase() === newSubDivNo.toLowerCase();
-    });
+    const sEntries = (this.newLandSurveyEntries && this.newLandSurveyEntries.length > 0)
+      ? this.newLandSurveyEntries
+      : [{ surveyNo: this.newLandSurvey.surveyNo || 'AP001', subDivisionNo: this.newLandSurvey.subDivisionNo || '1A' }];
 
-    if (isDuplicate) {
-      this.showToast('This Survey Number is already registered. Please use another Survey Number.', 'danger');
-      return;
+    const primarySurveyNo = (this.newLandSurvey.surveyNo || sEntries[0]?.surveyNo || 'AP001').trim();
+    const primarySubDivNo = (this.newLandSurvey.subDivisionNo || sEntries[0]?.subDivisionNo || '1A').trim();
+
+    // Check if Survey Number already exists for this user's assets (only if non-empty)
+    if (primarySurveyNo) {
+      const isDuplicate = this.landParcels.some(p => {
+        const pSurveyNo = (p.surveyNo || p.survey?.surveyNo || '').trim();
+        const pSubDivNo = (p.subDivisionNo || p.survey?.subDivisionNo || '').trim();
+        return pSurveyNo.toLowerCase() === primarySurveyNo.toLowerCase() && 
+               pSubDivNo.toLowerCase() === primarySubDivNo.toLowerCase();
+      });
+
+      if (isDuplicate) {
+        this.showToast(`Survey Number ${primarySurveyNo}/${primarySubDivNo} is already registered. Please use another Survey Number.`, 'danger');
+        return;
+      }
     }
 
-    const nameVal = `Parcel ${this.newLandSurvey.surveyNo}/${this.newLandSurvey.subDivisionNo}`;
+    const nameVal = `Parcel ${primarySurveyNo}${primarySubDivNo ? '/' + primarySubDivNo : ''}`;
     let categoryVal = this.newLandPlantation.plantationType;
     if (this.newLandPlantation.landType === 'Fish Pond') {
       categoryVal = `Fish Pond (${this.newLandPlantation.plantationType} - ${this.newLandPlantation.subCategory})`;
@@ -3715,7 +3722,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       categoryVal = `${this.newLandPlantation.plantationType} (${this.newLandPlantation.subCategory})`;
     }
 
-    const locationVal = `${this.newLandAddress.village}, ${this.newLandAddress.district}`;
+    const locationVal = `${this.newLandAddress.village || 'Pottepalem'}, ${this.newLandAddress.district || 'Nellore'}`;
     const treesCount = this.newLandPlantation.quantity || 120;
     
     let estSeqRate = 0;
@@ -3757,11 +3764,19 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     const totalProdKgVal = totalProdFromPonds > 0 ? totalProdFromPonds : (areaNum > 0 ? Math.round(areaNum * 0.404686 * 7500) : 0);
     const portfolioValINR = Math.round(estSeqRate * 120);
 
+    const generatedRegId = 'asset_tok_' + Date.now();
+    const generatedAppNum = 'CPAY-2026-' + Math.floor(1000 + Math.random() * 9000);
+
     const newParcelItem: any = {
+      id: generatedRegId,
+      registration_id: generatedRegId,
+      application_number: generatedAppNum,
       name: nameVal,
+      surveyNo: primarySurveyNo,
+      subDivisionNo: primarySubDivNo,
       cropCategory: categoryVal,
       area: areaVal,
-      totalPondArea: areaVal,
+      totalPondArea: totalAreaFromPonds > 0 ? `${totalAreaFromPonds.toFixed(2)} ${unitText}s` : areaVal,
       totalProduction: `${Math.round(totalProdKgVal).toLocaleString('en-IN')} Kg`,
       totalCarbonCredits: estSeqRate.toFixed(2),
       portfolioValue: this.getCurrencySymbol() + Math.round(this.convertAmount(portfolioValINR)).toLocaleString('en-IN'),
@@ -3772,11 +3787,16 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       date: 'Pending',
       sequestrationRate: estSeqRate,
       address: { ...this.newLandAddress },
-      survey: { ...this.newLandSurvey },
-      surveyEntries: [...this.newLandSurveyEntries],
+      survey: { 
+        surveyNo: primarySurveyNo, 
+        subDivisionNo: primarySubDivNo,
+        area: this.newLandSurvey.area || (totalAreaFromPonds > 0 ? totalAreaFromPonds.toString() : '1.0'),
+        unit: unitText
+      },
+      surveyEntries: [...sEntries],
       plantation: { ...this.newLandPlantation },
       ponds: childPondsList,
-      showPonds: childPondsList.length > 0,
+      showPonds: true,
       latitude: this.newLandLatitude || (14.4450 + (Math.random() - 0.5) * 0.012),
       longitude: this.newLandLongitude || (79.9860 + (Math.random() - 0.5) * 0.012)
     };
@@ -3784,20 +3804,20 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     const mobile = localStorage.getItem('currentUserMobile') || '+919876543210';
     const payload = {
       addressDetails: {
-        state: this.newLandAddress.state || this.landDetails.state,
-        district: this.newLandAddress.district || this.landDetails.district,
-        mandal: this.newLandAddress.mandal || this.landDetails.mandal,
-        village: this.newLandAddress.village || this.landDetails.village,
-        pincode: this.newLandAddress.pincode || this.landDetails.pincode,
+        state: this.newLandAddress.state || this.landDetails.state || 'Andhra Pradesh',
+        district: this.newLandAddress.district || this.landDetails.district || 'Nellore',
+        mandal: this.newLandAddress.mandal || this.landDetails.mandal || 'Nellore Rural',
+        village: this.newLandAddress.village || this.landDetails.village || 'Pottepalem',
+        pincode: this.newLandAddress.pincode || this.landDetails.pincode || '524004',
         latitude: newParcelItem.latitude,
         longitude: newParcelItem.longitude
       },
       landDetails: {
         landType: this.newLandPlantation.landType,
-        surveyNo: this.newLandSurvey.surveyNo,
-        subDivisionNo: this.newLandSurvey.subDivisionNo,
-        surveyEntries: this.newLandSurveyEntries,
-        area: areaNum,
+        surveyNo: primarySurveyNo,
+        subDivisionNo: primarySubDivNo,
+        surveyEntries: sEntries,
+        area: areaNum || 1.0,
         unit: unitText,
         latitude: newParcelItem.latitude,
         longitude: newParcelItem.longitude
@@ -3820,13 +3840,14 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       }
     };
 
-    // Helper function to save asset locally to UI & Valuator Queue immediately so asset is never lost
+    // Helper function to save asset locally to UI & Valuator Queue immediately
     const saveAssetLocally = (regId?: string, appNumOverride?: string) => {
-      const appNum = appNumOverride || ('CPAY-2026-' + Math.floor(1000 + Math.random() * 9000));
-      const finalRegId = regId || ('asset_tok_' + Date.now());
+      const appNum = appNumOverride || generatedAppNum;
+      const finalRegId = regId || generatedRegId;
 
       newParcelItem.registration_id = finalRegId;
       newParcelItem.id = finalRegId;
+      newParcelItem.application_number = appNum;
 
       const queueStr = localStorage.getItem('cpay_valuator_queue') || '[]';
       let queue: any[] = [];
@@ -3841,20 +3862,17 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
         user_type_name: categoryVal,
         mobile_number: mobile,
         email: this.personalDetails.emailAddress || `seller_${mobile}@cpay.org`,
-        pincode: this.newLandAddress.pincode || this.landDetails.pincode,
+        pincode: this.newLandAddress.pincode || this.landDetails.pincode || '524004',
         submitted_at: new Date().toISOString(),
         parcel_name: nameVal,
         parcel: newParcelItem
       };
 
-      const newSNo = (this.newLandSurvey.surveyNo || '').toString().toLowerCase().trim();
-      const newSubNo = (this.newLandSurvey.subDivisionNo || '').toString().toLowerCase().trim();
-      const newKey = (newSNo && newSubNo) ? `${newSNo}_${newSubNo}` : (newSNo || nameVal.toLowerCase().trim());
-
+      const newKey = `${primarySurveyNo}_${primarySubDivNo}`;
       const qExistsIdx = queue.findIndex(q => {
         if (!q) return false;
-        const qSNo = (q.parcel?.survey?.surveyNo || '').toString().toLowerCase().trim();
-        const qSubNo = (q.parcel?.survey?.subDivisionNo || '').toString().toLowerCase().trim();
+        const qSNo = (q.parcel?.surveyNo || q.parcel?.survey?.surveyNo || '').toString().toLowerCase().trim();
+        const qSubNo = (q.parcel?.subDivisionNo || q.parcel?.survey?.subDivisionNo || '').toString().toLowerCase().trim();
         const qKey = (qSNo && qSubNo) ? `${qSNo}_${qSubNo}` : (qSNo || (q.parcel_name || '').toString().toLowerCase().trim());
         return q.registration_id === finalRegId || (qKey && qKey === newKey);
       });
@@ -3889,15 +3907,17 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     // 1. Immediately save locally to UI and local storage
     saveAssetLocally();
     this.isAddingLand = false;
+    this.addLandStep = 1;
     this.activeTab = 'Asset profiling';
     this.showToast('Land Parcel & Pond Details Added Successfully! Status: Pending Auditor Verification.', 'success');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     this.cdr.detectChanges();
 
     // 2. Synchronize to backend in background
     this.registrationService.addAsset(payload).subscribe({
       next: (res: any) => {
         if (res.data?.registrationId) {
-          const matching = this.landParcels.find(p => p.name === nameVal || p.surveyNo === this.newLandSurvey.surveyNo);
+          const matching = this.landParcels.find(p => p.name === nameVal || p.surveyNo === primarySurveyNo);
           if (matching) {
             matching.registration_id = res.data.registrationId;
             matching.id = res.data.registrationId;
