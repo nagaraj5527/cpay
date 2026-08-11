@@ -108,11 +108,11 @@
         </div>
         <div class="kpi-value-row" style="margin-top: 4px;">
           <span class="kpi-value" style="font-size: 26px; font-weight: 800; color: var(--dark-text);">
-            {{ hasApprovedAsset ? totalCredit.value : '0 tCO2e' }}
+            {{ totalCredit.value }}
           </span>
         </div>
         <span class="kpi-subtext" style="font-size: 12px; color: #94a3b8;">
-          {{ hasApprovedAsset ? totalCredit.subtext : 'Market value: ₹0' }}
+          {{ totalCredit.subtext }}
         </span>
       </div>
 
@@ -124,7 +124,7 @@
         </div>
         <div class="kpi-value-row" style="margin-top: 4px;">
           <span class="kpi-value" style="font-size: 26px; font-weight: 800; color: var(--dark-text);">
-            {{ hasApprovedAsset ? assetValuation.value : '₹0' }}
+            {{ assetValuation.value }}
           </span>
         </div>
         <span class="kpi-subtext" style="font-size: 12px; color: #94a3b8;">Cash balance</span>
@@ -138,7 +138,7 @@
         </div>
         <div class="kpi-value-row" style="margin-top: 4px;">
           <span class="kpi-value" style="font-size: 26px; font-weight: 800; color: var(--dark-text);">
-            {{ hasApprovedAsset ? creditValidation.value : '0 tCO2e' }}
+            {{ creditValidation.value }}
           </span>
         </div>
         <span class="kpi-subtext" style="font-size: 12px; color: #94a3b8;">Approved limits</span>

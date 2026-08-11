@@ -222,6 +222,52 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       this.newLandSurveyEntries.splice(index, 1);
     }
   }
+
+  safeSetItem(key: string, value: string): void {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e: any) {
+      console.warn(`[Storage] localStorage quota exceeded for key "${key}". Auto-cleaning temporary caches...`);
+      try {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && (
+            k.startsWith('pincode_cache_') || 
+            k.includes('profilePhoto_') || 
+            k.includes('docStatus_') || 
+            k.startsWith('SellerCalculation_') || 
+            k.startsWith('SellerCalculatorDetails_') ||
+            k.includes('loginLogs_') ||
+            k.includes('activities_')
+          )) {
+            keysToRemove.push(k);
+          }
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+
+        const queueStr = localStorage.getItem('cpay_valuator_queue');
+        if (queueStr) {
+          try {
+            const q = JSON.parse(queueStr);
+            if (Array.isArray(q) && q.length > 5) {
+              const trimmed = q.slice(0, 5).map((item: any) => {
+                const copy = { ...item };
+                if (copy.docs) delete copy.docs;
+                if (copy.parcel && copy.parcel.imagePreview) delete copy.parcel.imagePreview;
+                return copy;
+              });
+              localStorage.setItem('cpay_valuator_queue', JSON.stringify(trimmed));
+            }
+          } catch (err) {}
+        }
+        
+        localStorage.setItem(key, value);
+      } catch (retryErr) {
+        console.warn(`[Storage] Cleaned storage, but writing key "${key}" still exceeded quota. Memory state maintained.`);
+      }
+    }
+  }
   newLandPlantation = {
     landType: '',
     plantationType: '',
@@ -368,8 +414,8 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
 
     // Persist to local storage
     const mobile = localStorage.getItem('currentUserMobile') || '+919876543210';
-    localStorage.setItem(`userLandParcels_${mobile}`, JSON.stringify(this.landParcels));
-    localStorage.setItem('userLandParcels', JSON.stringify(this.landParcels));
+    this.safeSetItem(`userLandParcels_${mobile}`, JSON.stringify(this.landParcels));
+    this.safeSetItem('userLandParcels', JSON.stringify(this.landParcels));
 
     this.recalculateKPICards();
     this.closeAddPondModal();
@@ -814,8 +860,8 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.landParcels = parsed;
-    localStorage.setItem(`userLandParcels_${mobile}`, JSON.stringify(this.landParcels));
-    localStorage.setItem('userLandParcels', JSON.stringify(this.landParcels));
+    this.safeSetItem(`userLandParcels_${mobile}`, JSON.stringify(this.landParcels));
+    this.safeSetItem('userLandParcels', JSON.stringify(this.landParcels));
     this.recalculateKPICards();
 
     // Check if approved in cpay_valuator_queue as fallback
@@ -1192,12 +1238,10 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
 
                 // Sync all details into local device storage
                 const mob = localStorage.getItem('currentUserMobile') || mobile;
-                try {
-                  localStorage.setItem(`SellerPersonalDetails_${mob}`, JSON.stringify(this.personalDetails));
-                  localStorage.setItem(`SellerLandDetails_${mob}`, JSON.stringify(this.landDetails));
-                  localStorage.setItem('SellerPersonalDetails', JSON.stringify(this.personalDetails));
-                  localStorage.setItem('SellerLandDetails', JSON.stringify(this.landDetails));
-                } catch (e) {}
+                this.safeSetItem(`SellerPersonalDetails_${mob}`, JSON.stringify(this.personalDetails));
+                this.safeSetItem(`SellerLandDetails_${mob}`, JSON.stringify(this.landDetails));
+                this.safeSetItem('SellerPersonalDetails', JSON.stringify(this.personalDetails));
+                this.safeSetItem('SellerLandDetails', JSON.stringify(this.landDetails));
                 this.cdr.detectChanges();
               }
             }
@@ -1230,8 +1274,8 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
           }
           
           const mobile = localStorage.getItem('currentUserMobile') || '+919876543210';
-          localStorage.setItem(`userLandParcels_${mobile}`, JSON.stringify(this.landParcels));
-          localStorage.setItem('userLandParcels', JSON.stringify(this.landParcels));
+          this.safeSetItem(`userLandParcels_${mobile}`, JSON.stringify(this.landParcels));
+          this.safeSetItem('userLandParcels', JSON.stringify(this.landParcels));
         }
         
         // Check and sync fallback statuses from local cpay_valuator_queue individually by registration_id
@@ -2350,8 +2394,8 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
 
   saveParcels() {
     const mobile = localStorage.getItem('currentUserMobile') || '+919876543210';
-    localStorage.setItem(`userLandParcels_${mobile}`, JSON.stringify(this.landParcels));
-    localStorage.setItem('userLandParcels', JSON.stringify(this.landParcels));
+    this.safeSetItem(`userLandParcels_${mobile}`, JSON.stringify(this.landParcels));
+    this.safeSetItem('userLandParcels', JSON.stringify(this.landParcels));
     this.recalculateKPICards();
 
     if (this.isSyncingWithDB) {
@@ -2371,7 +2415,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
                   this.isSyncingWithDB = false;
                   if (parcelsRes.success && Array.isArray(parcelsRes.data) && parcelsRes.data.length > 0) {
                     this.landParcels = parcelsRes.data;
-                    localStorage.setItem(`userLandParcels_${mobile}`, JSON.stringify(this.landParcels));
+                    this.safeSetItem(`userLandParcels_${mobile}`, JSON.stringify(this.landParcels));
                     this.recalculateKPICards();
                   }
                 },
@@ -2420,29 +2464,31 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
 
   saveWalletData(): void {
     const mobile = localStorage.getItem('currentUserMobile') || '+919876543210';
-    localStorage.setItem(`creditWalletBalance_${mobile}`, this.creditWalletBalance.toString());
-    localStorage.setItem(`cashWalletBalance_${mobile}`, this.cashWalletBalance.toString());
-    localStorage.setItem(`walletTransactions_${mobile}`, JSON.stringify(this.walletTransactions));
-    localStorage.setItem(`tradeHistory_${mobile}`, JSON.stringify(this.tradeHistory));
-    localStorage.setItem(`activities_${mobile}`, JSON.stringify(this.activities));
-    localStorage.setItem(`loginLogs_${mobile}`, JSON.stringify(this.loginLogs));
+    this.safeSetItem(`creditWalletBalance_${mobile}`, this.creditWalletBalance.toString());
+    this.safeSetItem(`cashWalletBalance_${mobile}`, this.cashWalletBalance.toString());
+    this.safeSetItem(`walletTransactions_${mobile}`, JSON.stringify(this.walletTransactions));
+    this.safeSetItem(`tradeHistory_${mobile}`, JSON.stringify(this.tradeHistory));
+    this.safeSetItem(`activities_${mobile}`, JSON.stringify(this.activities));
+    this.safeSetItem(`loginLogs_${mobile}`, JSON.stringify(this.loginLogs));
   }
 
   recalculateKPICards() {
     let verifiedCredits = 0;
     let pendingCredits = 0;
+    let totalRegisteredCredits = 0;
     
-    this.landParcels.forEach(p => {
-      p.sequestrationRate = this.calculateParcelCarbonCredits(p);
+    (this.landParcels || []).forEach(p => {
+      const pCredits = this.calculateParcelCarbonCredits(p);
+      p.sequestrationRate = pCredits;
+      totalRegisteredCredits += pCredits;
       if (this.isVerifiedStatus(p.status)) {
-        verifiedCredits += p.sequestrationRate;
+        verifiedCredits += pCredits;
       } else {
-        pendingCredits += p.sequestrationRate;
+        pendingCredits += pCredits;
       }
     });
     
     const pricePerCredit = 120; // Standard credit price in INR
-    const valuation = verifiedCredits * pricePerCredit;
     
     // Calculate total sold credits from trade history
     let totalSoldCredits = 0;
@@ -2460,7 +2506,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     if (this.walletTransactions) {
       this.walletTransactions.forEach(tx => {
         if (tx.status === 'Completed') {
-          const cleanAmt = parseFloat(tx.amount.replace(/[^\d.]/g, ''));
+          const cleanAmt = parseFloat(String(tx.amount || '0').replace(/[^\d.]/g, ''));
           if (!isNaN(cleanAmt)) {
             if (tx.type === 'Cash Deposit') {
               totalCashDeposited += cleanAmt;
@@ -2487,18 +2533,19 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     this.cashWalletBalance = Math.max(0, parseFloat((totalSalesRevenue + totalCashDeposited - totalCashWithdrawn).toFixed(2)));
     this.saveWalletData();
 
+    // Compute Total Credits displayed across all registered lands (or approved wallet)
+    const displayTotalCredits = totalRegisteredCredits > 0 ? totalRegisteredCredits : this.creditWalletBalance;
+
     // Map top display metrics
-    this.totalCredit.value = `${this.creditWalletBalance.toFixed(2)} tCO2e`;
-    this.totalCredit.subtext = `Market value: ₹${Math.round(this.creditWalletBalance * pricePerCredit).toLocaleString()}`;
-    this.creditValidation.value = `${this.creditWalletBalance.toFixed(2)} tCO2e`;
-    this.assetValuation.value = `₹${Math.round(this.cashWalletBalance).toLocaleString()}`;
+    this.totalCredit.value = `${displayTotalCredits.toFixed(2)} tCO2e`;
+    this.totalCredit.subtext = `Market value: ₹${Math.round(displayTotalCredits * pricePerCredit).toLocaleString('en-IN')}`;
+    this.creditValidation.value = `${verifiedCredits.toFixed(2)} tCO2e`;
+    this.creditUnvalidation.value = `${pendingCredits.toFixed(2)} tCO2e`;
+    this.assetValuation.value = `₹${Math.round(this.cashWalletBalance).toLocaleString('en-IN')}`;
+    this.marketPrice.value = `₹${pricePerCredit}`;
     
     // Update chart/history values
     this.updateComplianceStats();
-    this.creditUnvalidation.value = `${pendingCredits.toFixed(2)} tCO2e`;
-    this.marketPrice.value = `₹${pricePerCredit}`;
-    
-    // Update trade projects list based on asset profiling
     this.updateTradeProjects();
     this.updateDisplayValuations();
   }
@@ -2973,8 +3020,29 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
   }
 
   calculateParcelCarbonCredits(parcel: any): number {
-    if (parcel.sequestrationRate !== undefined && parcel.sequestrationRate !== null && parcel.sequestrationRate > 0) {
-      return parcel.sequestrationRate;
+    if (!parcel) return 0;
+    if (parcel.sequestrationRate !== undefined && parcel.sequestrationRate !== null && Number(parcel.sequestrationRate) > 0) {
+      return Number(parcel.sequestrationRate);
+    }
+    if (parcel.totalCarbonCredits !== undefined && parcel.totalCarbonCredits !== null && Number(parcel.totalCarbonCredits) > 0) {
+      return Number(parcel.totalCarbonCredits);
+    }
+    if (parcel.carbonCredits !== undefined && parcel.carbonCredits !== null && Number(parcel.carbonCredits) > 0) {
+      return Number(parcel.carbonCredits);
+    }
+
+    if (Array.isArray(parcel.ponds) && parcel.ponds.length > 0) {
+      let sumPonds = 0;
+      parcel.ponds.forEach((p: any) => {
+        const c = parseFloat(String(p.credits !== undefined ? p.credits : (p.carbonCredits || p.potentialCarbonCredits || 0)));
+        if (!isNaN(c) && c > 0) {
+          sumPonds += c;
+        } else {
+          const pArea = parseFloat(String(p.area || p.pondArea || 1.0).replace(/[^0-9.]/g, '')) || 1.0;
+          sumPonds += (pArea * 6.8);
+        }
+      });
+      if (sumPonds > 0) return parseFloat(sumPonds.toFixed(2));
     }
 
     if (parcel.plantation && parcel.plantation.landType) {
@@ -2986,7 +3054,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       
       if (landType === 'Fish Pond') {
         try {
-          const areaVal = parseFloat(p.area || parcel.area) || 1.0;
+          const areaVal = parseFloat(String(p.area || parcel.area || '1.0').replace(/[^0-9.]/g, '')) || 1.0;
           let pondArea = areaVal;
           if (p.unit === 'Acre' || parcel.unit === 'Acre') {
             pondArea = areaVal * 0.404686;
@@ -3012,9 +3080,9 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
             measuredN2OBaseline: p.measuredN2OBaseline || null
           };
           const calcRes = this.calculatorService.calculateOnFrontend(payload);
-          return parseFloat((calcRes.summary?.creditsPerYear || calcRes.summary?.creditsPerCrop || 0).toFixed(2));
+          return parseFloat((calcRes.summary?.creditsPerYear || calcRes.summary?.creditsPerCrop || (areaVal * 6.8)).toFixed(2));
         } catch (e) {
-          const areaVal = parseFloat(p.area || parcel.area) || 1.0;
+          const areaVal = parseFloat(String(p.area || parcel.area || '1.0').replace(/[^0-9.]/g, '')) || 1.0;
           return parseFloat((areaVal * 6.8).toFixed(2));
         }
       } else {
@@ -3028,8 +3096,8 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       }
     }
     
-    const areaNum = parseFloat(parcel.area) || 0;
-    return parseFloat((areaNum * 20).toFixed(2));
+    const areaNum = parseFloat(String(parcel.area || parcel.totalPondArea || '1.0').replace(/[^0-9.]/g, '')) || 1.0;
+    return parseFloat((areaNum * 6.8).toFixed(2));
   }
 
   verifyParcel(parcel: any) {
@@ -3882,7 +3950,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       } else {
         queue.unshift(tokenItem);
       }
-      localStorage.setItem('cpay_valuator_queue', JSON.stringify(queue));
+      this.safeSetItem('cpay_valuator_queue', JSON.stringify(queue));
 
       const pExistsIdx = this.landParcels.findIndex(p => {
         if (!p) return false;
