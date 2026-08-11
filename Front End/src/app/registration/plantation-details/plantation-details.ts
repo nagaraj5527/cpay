@@ -146,6 +146,8 @@ export function createDefaultPond(pondIndex: number, aquaType: string = 'Fish', 
   };
 }
 
+import { RegistrationService } from '../../services/registration.service';
+
 @Component({
   selector: 'app-plantation-details',
   standalone: true,
@@ -189,7 +191,8 @@ export class PlantationDetailsComponent implements OnInit, OnDestroy {
 
   constructor(
     private router: Router,
-    private calculatorService: CalculatorService
+    private calculatorService: CalculatorService,
+    private registrationService: RegistrationService
   ) {
     const currentStep = 5;
     const storedFurthest = localStorage.getItem('SellerFurthestStep');
@@ -200,24 +203,19 @@ export class PlantationDetailsComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    const savedDetails = localStorage.getItem('SellerPlantationDetails');
-    if (savedDetails) {
-      try {
-        const details = JSON.parse(savedDetails);
-        this.selectedLandType = details.landType || '';
-        this.selectedPlantationType = details.plantationType || '';
-        this.selectedSubCategory = details.subCategory || '';
-        this.quantity = details.quantity || 6250;
-        this.age = details.age || null;
-        this.area = details.area || 1.0;
-        this.unit = details.unit || 'Hectare';
+    const details = this.registrationService.getDraftData('SellerPlantationDetails');
+    if (details) {
+      this.selectedLandType = details.landType || '';
+      this.selectedPlantationType = details.plantationType || '';
+      this.selectedSubCategory = details.subCategory || '';
+      this.quantity = details.quantity || 6250;
+      this.age = details.age || null;
+      this.area = details.area || 1.0;
+      this.unit = details.unit || 'Hectare';
 
-        if (details.ponds && Array.isArray(details.ponds) && details.ponds.length > 0) {
-          this.ponds = details.ponds;
-          this.activePondIndex = 0;
-        }
-      } catch (e) {
-        console.error('Error parsing plantation details', e);
+      if (details.ponds && Array.isArray(details.ponds) && details.ponds.length > 0) {
+        this.ponds = details.ponds;
+        this.activePondIndex = 0;
       }
     }
 
@@ -449,7 +447,7 @@ export class PlantationDetailsComponent implements OnInit, OnDestroy {
       const multiCalcResults = this.calculatorService.calculateMultiPond(this.ponds);
 
       // Save selected data to local storage for subsequent steps
-      localStorage.setItem('SellerPlantationDetails', JSON.stringify({
+      const aquaPayload = {
         landType: this.selectedLandType,
         plantationType: this.selectedPlantationType,
         subCategory: p1.selectedSpecies,
@@ -515,7 +513,8 @@ export class PlantationDetailsComponent implements OnInit, OnDestroy {
         salePrice: p1.salePrice,
         biomassCarbonPct: p1.biomassCarbonPct,
         interventions: p1.interventions
-      }));
+      };
+      this.registrationService.setDraftData('SellerPlantationDetails', aquaPayload);
     } else {
       if (!this.quantity || this.quantity <= 0) {
         alert('Please enter a valid quantity');
@@ -537,15 +536,7 @@ export class PlantationDetailsComponent implements OnInit, OnDestroy {
         return;
       }
 
-      const safeSave = (key: string, data: any) => {
-        try {
-          localStorage.setItem(key, typeof data === 'string' ? data : JSON.stringify(data));
-        } catch (e) {
-          console.warn(`[Storage] Quota exceeded for ${key}, proceeding safely:`, e);
-        }
-      };
-
-      safeSave('SellerPlantationDetails', {
+      this.registrationService.setDraftData('SellerPlantationDetails', {
         landType: this.selectedLandType,
         plantationType: this.selectedPlantationType,
         subCategory: this.selectedSubCategory,

@@ -1272,7 +1272,44 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     this.http.get<any>(`${environment.apiUrl}/seller/assets/${assetId}/ponds`, { headers }).subscribe({
       next: (res: any) => {
         if (res && res.success && Array.isArray(res.ponds) && res.ponds.length > 0) {
-          parcel.ponds = res.ponds;
+          parcel.ponds = res.ponds.map((p: any, idx: number) => {
+            const pAreaNum = parseFloat(String(p.area || 0).replace(/[^0-9.]/g, '')) || 1.0;
+            const pCreditsNum = parseFloat(String(p.credits !== undefined ? p.credits : (p.co2Reduction || 0))) || parseFloat((pAreaNum * 6.8).toFixed(2));
+            const pProdKg = parseFloat(String(p.production || 0).replace(/[^0-9.]/g, '')) || Math.round(pAreaNum * 7500);
+
+            return {
+              id: p.pondId || p.id || `${parcel.surveyNo}_pond_${idx + 1}`,
+              name: p.pondName || p.name || `Pond ${idx + 1}`,
+              species: p.species || 'IMC',
+              area: `${pAreaNum.toFixed(2)} Hectares`,
+              credits: pCreditsNum.toFixed(2),
+              production: `${Math.round(pProdKg).toLocaleString('en-IN')} Kg`,
+              productionKg: Math.round(pProdKg),
+              status: parcel.status
+            };
+          });
+
+          let sumProd = 0;
+          let sumCred = 0;
+          let sumArea = 0;
+          parcel.ponds.forEach((p: any) => {
+            sumProd += p.productionKg || 0;
+            sumCred += parseFloat(p.credits) || 0;
+            sumArea += parseFloat(p.area) || 0;
+          });
+
+          if (sumProd > 0) {
+            parcel.totalProduction = `${Math.round(sumProd).toLocaleString('en-IN')} Kg`;
+          }
+          if (sumCred > 0) {
+            parcel.totalCarbonCredits = sumCred.toFixed(2);
+            parcel.portfolioValue = this.getCurrencySymbol() + Math.round(this.convertAmount(sumCred * 120)).toLocaleString('en-IN');
+          }
+          if (sumArea > 0) {
+            parcel.totalPondArea = `${sumArea.toFixed(2)} Hectares`;
+            parcel.area = `${sumArea.toFixed(2)} Hectares`;
+          }
+
           this.cdr.detectChanges();
         }
       },
@@ -1346,9 +1383,9 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     const actualAreaVal = parseFloat(rawAreaStr) || 0;
     let totCredVal = parseFloat(String(rawAsset.totalCarbonCredits || rawAsset.sequestrationRate || rawAsset.carbon_credits || 0)) || (actualAreaVal > 0 ? parseFloat((actualAreaVal * 6.8).toFixed(2)) : 0);
     const rawProdVal = parseFloat(String(rawAsset.totalProduction || rawAsset.total_production_kg || rawAsset.annual_production || rawAsset.totalBiomassHarvestedKg || '0').replace(/[^0-9.]/g, ''));
-    let totalProdKg = rawProdVal > 0 ? rawProdVal : (actualAreaVal > 0 ? Math.round(actualAreaVal * 0.404686 * 7500) : 0);
+    let totalProdKg = rawProdVal > 0 ? rawProdVal : (actualAreaVal > 0 ? Math.round(actualAreaVal * 7500) : 0);
 
-    const unitStr = String(rawAsset.area || rawAsset.totalPondArea || '').includes('Hectare') ? 'Hectares' : 'Acres';
+    const unitStr = 'Hectares';
 
     // Retrieve ponds array from rawAsset or nested objects or localStorage
     const mobile = localStorage.getItem('currentUserMobile') || '';
@@ -1384,24 +1421,25 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     let pondsList: any[] = [];
     if (rawPondsArray && rawPondsArray.length > 0) {
       pondsList = rawPondsArray.map((p: any, idx: number) => {
-        let pSpec = p.species || p.selectedSpecies || p.subCategory || p.cultureType || (idx === 0 ? 'IMC' : (idx === 1 ? 'Pangasius' : 'Tilapia'));
+        let pSpec = p.species || p.selectedSpecies || p.subCategory || p.cultureType || 'IMC';
         if (pSpec.toLowerCase() === 'neem') pSpec = 'IMC';
 
         let pAreaNum = parseFloat(String(p.area || p.pondArea || p.pondAreaHa || p.pondAreaAcres || 0).replace(/[^0-9.]/g, ''));
         if (!pAreaNum || isNaN(pAreaNum) || pAreaNum === 0) {
-          pAreaNum = idx === 0 ? 4.50 : (idx === 1 ? 3.00 : 2.50);
+          pAreaNum = 1.0;
         }
 
-        const pondUnit = String(p.area || '').includes('Hectare') ? 'Hectares' : unitStr;
+        const pondUnit = 'Hectares';
 
         let pCreditsNum = parseFloat(String(p.credits !== undefined ? p.credits : (p.potentialCarbonCredits || p.carbonCredits || p.co2Reduction || 0)));
-        if ((!pCreditsNum || isNaN(pCreditsNum) || pCreditsNum === 0)) {
-          pCreditsNum = idx === 0 ? 106.20 : (idx === 1 ? 112.39 : 100.00);
+        if (!pCreditsNum || isNaN(pCreditsNum) || pCreditsNum === 0) {
+          pCreditsNum = parseFloat((pAreaNum * 6.8).toFixed(2));
         }
 
         let pProdKg = parseFloat(String(p.production || p.totalProduction || p.totalProductionKg || p.biomassProductionKg || p.annualProductionKg || 0).replace(/[^0-9.]/g, ''));
         if (!pProdKg || isNaN(pProdKg) || pProdKg === 0) {
-          pProdKg = idx === 0 ? 10250 : (idx === 1 ? 12100 : 8001);
+          const stock = Number(p.stockingDensity || p.stockQuantity || p.quantity || 0);
+          pProdKg = stock > 0 ? Math.round(stock * 0.8 * 1.5) : Math.round(pAreaNum * 7500);
         }
 
         return {
@@ -1415,39 +1453,6 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
           status: assetStatus
         };
       });
-    } else {
-      pondsList = [
-        {
-          id: `${sNo}_p1`,
-          name: 'Pond 1',
-          species: 'IMC',
-          area: `4.50 ${unitStr}`,
-          credits: '106.20',
-          production: '10,250 Kg',
-          productionKg: 10250,
-          status: assetStatus
-        },
-        {
-          id: `${sNo}_p2`,
-          name: 'Pond 2',
-          species: 'Pangasius',
-          area: `3.00 ${unitStr}`,
-          credits: '112.39',
-          production: '12,100 Kg',
-          productionKg: 12100,
-          status: assetStatus
-        },
-        {
-          id: `${sNo}_p3`,
-          name: 'Pond 3',
-          species: 'Tilapia',
-          area: `2.50 ${unitStr}`,
-          credits: '100.00',
-          production: '8,001 Kg',
-          productionKg: 8001,
-          status: assetStatus
-        }
-      ];
     }
 
     let totalAreaNum = 0;
@@ -1469,7 +1474,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       totCredVal = totalCreditsNum;
     }
 
-    const totAreaStr = `${totalAreaNum > 0 ? totalAreaNum.toFixed(2) : (actualAreaVal > 0 ? actualAreaVal.toFixed(2) : '10.00')} ${unitStr}`;
+    const totAreaStr = `${totalAreaNum > 0 ? totalAreaNum.toFixed(2) : (actualAreaVal > 0 ? actualAreaVal.toFixed(2) : '10.00')} Hectares`;
     const totProdStr = `${Math.round(totalProdKg).toLocaleString('en-IN')} Kg`;
     const totCredStr = totCredVal.toFixed(2);
     
@@ -4716,8 +4721,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       const isSurvey308_4R = surveyNo.includes('308/4R');
 
       const rawArea = parseFloat(parcel.area || parcel.totalPondArea || '10.0') || 10.0;
-      const isAcres = parcel.unit === 'Acre' || (parcel.area && parcel.area.toString().toLowerCase().includes('acre')) || !parcel.area.toString().toLowerCase().includes('ha');
-      const parcelAreaHa = isAcres ? parseFloat((rawArea * 0.404686).toFixed(2)) : rawArea;
+      const parcelUnitStr = String(parcel.unit || parcel.area || parcel.totalPondArea || '').toLowerCase();
       const speciesCode = parcel.plantation?.subCategory || parcel.plantation?.plantationType || parcel.cropCategory || 'IMC';
 
       let speciesDesc = 'Indian Major Carp';
@@ -4733,7 +4737,24 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
 
       pondsList.forEach((pond: any, pondIdx: number) => {
         const pRawArea = parseFloat(pond.area || pond.pondArea || rawArea) || rawArea;
-        const pondAreaHa = isAcres ? parseFloat((pRawArea * 0.404686).toFixed(2)) : pRawArea;
+        const pUnitStr = String(pond.unit || pond.area || parcelUnitStr).toLowerCase();
+
+        // Convert ONLY if explicitly an Acre or non-Hectare unit selection. IF ALREADY HECTARES, KEEP AS-IS!
+        let pondAreaHa = pRawArea;
+        if (pUnitStr.includes('acre')) {
+          pondAreaHa = parseFloat((pRawArea * 0.404686).toFixed(2));
+        } else if (pUnitStr.includes('guntha') || pUnitStr.includes('gunta')) {
+          pondAreaHa = parseFloat((pRawArea * 0.010117).toFixed(2));
+        } else if (pUnitStr.includes('bigha')) {
+          pondAreaHa = parseFloat((pRawArea * 0.252929).toFixed(2));
+        } else if (pUnitStr.includes('cent')) {
+          pondAreaHa = parseFloat((pRawArea * 0.00404686).toFixed(2));
+        } else if (pUnitStr.includes('sq.m') || pUnitStr.includes('sqm')) {
+          pondAreaHa = parseFloat((pRawArea * 0.0001).toFixed(2));
+        } else if (pUnitStr.includes('sq.ft') || pUnitStr.includes('feet')) {
+          pondAreaHa = parseFloat((pRawArea * 0.000092903).toFixed(2));
+        }
+
         const pondSpecies = pond.species || speciesCode;
 
         let pondSpeciesDesc = speciesDesc;

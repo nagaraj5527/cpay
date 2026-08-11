@@ -1915,32 +1915,33 @@
               <div class="mb-3">
                 <span class="badge fw-bold" 
                       [ngClass]="panStatus === 'Verified' ? 'bg-success-soft text-success' : 'bg-warning-soft text-warning'" 
+                      [ngClass]="panFile ? (panStatus === 'Verified' ? 'bg-success-soft text-success' : 'bg-warning-soft text-warning') : 'bg-secondary text-white'" 
                       style="padding: 5px 12px; border-radius: 8px; font-size: 11.5px;">
-                  <i class="bi me-1" [ngClass]="panStatus === 'Verified' ? 'bi-shield-check-fill' : 'bi-clock-history'"></i>
-                  {{ panStatus === 'Verified' ? 'Verified' : 'Pending' }}
+                  <i class="bi me-1" [ngClass]="panFile ? (panStatus === 'Verified' ? 'bi-shield-check-fill' : 'bi-clock-history') : 'bi-dash-circle'"></i>
+                  {{ panFile ? (panStatus === 'Verified' ? 'Verified' : 'Pending') : 'Not Uploaded' }}
                 </span>
                 <span class="d-block text-muted" style="font-size: 10px; margin-top: 4px;">
-                  {{ panStatus === 'Verified' ? '(Verified by Auditor / Valuator)' : '(Pending Auditor Approval)' }}
+                  {{ panFile ? (panStatus === 'Verified' ? '(Verified by Auditor / Valuator)' : '(Pending Auditor Approval)') : '(No document submitted)' }}
                 </span>
               </div>
 
               <!-- Preview Frame -->
-              <div (click)="openDocumentModal('PAN Card Document', 'Identity Proof', panFile || 'PAN_Card.png', panPhotoPreview || 'assets/images/C-PAY_Logo.png', panStatus, 'Official tax identity proof registered for C-PAY portfolio valuation.')" style="cursor: pointer; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+              <div (click)="panFile ? openDocumentModal('PAN Card Document', 'Identity Proof', panFile, panPhotoPreview, panStatus, 'Official tax identity proof registered for C-PAY portfolio valuation.') : null" [style.cursor]="panFile ? 'pointer' : 'default'" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;">
                 <img *ngIf="panPhotoPreview" [src]="panPhotoPreview" (error)="onPanPhotoError()" alt="PAN Card" style="max-height: 110px; max-width: 100%; object-fit: contain; border-radius: 6px;" />
                 <div *ngIf="!panPhotoPreview" style="padding: 12px; text-align: center;">
-                  <i class="bi bi-file-earmark-person-fill text-teal" style="font-size: 36px; color: var(--primary-teal);"></i>
-                  <span class="d-block text-dark fw-bold micro-text mt-1" style="font-size: 11px;">{{ panFile || 'PAN_Card.png' }}</span>
+                  <i class="bi bi-file-earmark-person-fill text-muted" style="font-size: 36px;"></i>
+                  <span class="d-block text-muted fw-bold micro-text mt-1" style="font-size: 11px;">{{ panFile || 'No Document Uploaded' }}</span>
                 </div>
-                <div style="position: absolute; inset: 0; background: rgba(0, 164, 153, 0.08); opacity: 0; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
+                <div *ngIf="panFile" style="position: absolute; inset: 0; background: rgba(0, 164, 153, 0.08); opacity: 0; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
                   <span class="badge bg-dark text-white fw-bold" style="font-size: 10px; padding: 4px 8px;"><i class="bi bi-eye-fill me-1"></i> Click to View</span>
                 </div>
               </div>
             </div>
 
             <div style="font-size: 12px; font-weight: 700; margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 4px; background: #ffffff; padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0;"
-                 [ngClass]="panStatus === 'Verified' ? 'text-success' : 'text-warning'">
-              <i class="bi" [ngClass]="panStatus === 'Verified' ? 'bi-check-circle-fill text-success' : 'bi-clock-history text-warning'"></i>
-              <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;">{{ panFile || 'PAN_Card.png' }}</span>
+                 [ngClass]="panFile ? (panStatus === 'Verified' ? 'text-success' : 'text-warning') : 'text-muted'">
+              <i class="bi" [ngClass]="panFile ? (panStatus === 'Verified' ? 'bi-check-circle-fill text-success' : 'bi-clock-history text-warning') : 'bi-dash-circle text-muted'"></i>
+              <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;">{{ panFile || 'No Document Uploaded' }}</span>
             </div>
           </div>
 
@@ -1953,33 +1954,33 @@
               
               <div class="mb-3">
                 <span class="badge fw-bold" 
-                      [ngClass]="aadhaarStatus === 'Verified' ? 'bg-success-soft text-success' : 'bg-warning-soft text-warning'" 
+                      [ngClass]="aadhaarFile ? (aadhaarStatus === 'Verified' ? 'bg-success-soft text-success' : 'bg-warning-soft text-warning') : 'bg-secondary text-white'" 
                       style="padding: 5px 12px; border-radius: 8px; font-size: 11.5px;">
-                  <i class="bi me-1" [ngClass]="aadhaarStatus === 'Verified' ? 'bi-shield-check-fill' : 'bi-clock-history'"></i>
-                  {{ aadhaarStatus === 'Verified' ? 'Verified' : 'Pending' }}
+                  <i class="bi me-1" [ngClass]="aadhaarFile ? (aadhaarStatus === 'Verified' ? 'bi-shield-check-fill' : 'bi-clock-history') : 'bi-dash-circle'"></i>
+                  {{ aadhaarFile ? (aadhaarStatus === 'Verified' ? 'Verified' : 'Pending') : 'Not Uploaded' }}
                 </span>
                 <span class="d-block text-muted" style="font-size: 10px; margin-top: 4px;">
-                  {{ aadhaarStatus === 'Verified' ? '(Verified by Auditor / Valuator)' : '(Pending Auditor Approval)' }}
+                  {{ aadhaarFile ? (aadhaarStatus === 'Verified' ? '(Verified by Auditor / Valuator)' : '(Pending Auditor Approval)') : '(No document submitted)' }}
                 </span>
               </div>
 
               <!-- Preview Frame -->
-              <div (click)="openDocumentModal('Aadhaar Card Document', 'National Identity Proof', aadhaarFile || 'Aadhaar_Card.png', aadhaarPhotoPreview || 'assets/images/C-PAY_Logo.png', aadhaarStatus, 'Official national identity proof verified for carbon credit registry enrollment.')" style="cursor: pointer; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+              <div (click)="aadhaarFile ? openDocumentModal('Aadhaar Card Document', 'National Identity Proof', aadhaarFile, aadhaarPhotoPreview, aadhaarStatus, 'Official national identity proof verified for carbon credit registry enrollment.') : null" [style.cursor]="aadhaarFile ? 'pointer' : 'default'" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;">
                 <img *ngIf="aadhaarPhotoPreview" [src]="aadhaarPhotoPreview" (error)="onAadhaarPhotoError()" alt="Aadhaar Card" style="max-height: 110px; max-width: 100%; object-fit: contain; border-radius: 6px;" />
                 <div *ngIf="!aadhaarPhotoPreview" style="padding: 12px; text-align: center;">
-                  <i class="bi bi-card-heading text-teal" style="font-size: 36px; color: var(--primary-teal);"></i>
-                  <span class="d-block text-dark fw-bold micro-text mt-1" style="font-size: 11px;">{{ aadhaarFile || 'Aadhaar_Card.png' }}</span>
+                  <i class="bi bi-card-heading text-muted" style="font-size: 36px;"></i>
+                  <span class="d-block text-muted fw-bold micro-text mt-1" style="font-size: 11px;">{{ aadhaarFile || 'No Document Uploaded' }}</span>
                 </div>
-                <div style="position: absolute; inset: 0; background: rgba(0, 164, 153, 0.08); opacity: 0; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
+                <div *ngIf="aadhaarFile" style="position: absolute; inset: 0; background: rgba(0, 164, 153, 0.08); opacity: 0; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
                   <span class="badge bg-dark text-white fw-bold" style="font-size: 10px; padding: 4px 8px;"><i class="bi bi-eye-fill me-1"></i> Click to View</span>
                 </div>
               </div>
             </div>
 
             <div style="font-size: 12px; font-weight: 700; margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 4px; background: #ffffff; padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0;"
-                 [ngClass]="aadhaarStatus === 'Verified' ? 'text-success' : 'text-warning'">
-              <i class="bi" [ngClass]="aadhaarStatus === 'Verified' ? 'bi-check-circle-fill text-success' : 'bi-clock-history text-warning'"></i>
-              <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;">{{ aadhaarFile || 'Aadhaar_Card.png' }}</span>
+                 [ngClass]="aadhaarFile ? (aadhaarStatus === 'Verified' ? 'text-success' : 'text-warning') : 'text-muted'">
+              <i class="bi" [ngClass]="aadhaarFile ? (aadhaarStatus === 'Verified' ? 'bi-check-circle-fill text-success' : 'bi-clock-history text-warning') : 'bi-dash-circle text-muted'"></i>
+              <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;">{{ aadhaarFile || 'No Document Uploaded' }}</span>
             </div>
           </div>
 
@@ -1992,33 +1993,33 @@
               
               <div class="mb-3">
                 <span class="badge fw-bold" 
-                      [ngClass]="landStatus === 'Verified' ? 'bg-success-soft text-success' : 'bg-warning-soft text-warning'" 
+                      [ngClass]="pattadarFile ? (landStatus === 'Verified' ? 'bg-success-soft text-success' : 'bg-warning-soft text-warning') : 'bg-secondary text-white'" 
                       style="padding: 5px 12px; border-radius: 8px; font-size: 11.5px;">
-                  <i class="bi me-1" [ngClass]="landStatus === 'Verified' ? 'bi-shield-check-fill' : 'bi-clock-history'"></i>
-                  {{ landStatus === 'Verified' ? 'Verified' : 'Pending' }}
+                  <i class="bi me-1" [ngClass]="pattadarFile ? (landStatus === 'Verified' ? 'bi-shield-check-fill' : 'bi-clock-history') : 'bi-dash-circle'"></i>
+                  {{ pattadarFile ? (landStatus === 'Verified' ? 'Verified' : 'Pending') : 'Not Uploaded' }}
                 </span>
                 <span class="d-block text-muted" style="font-size: 10px; margin-top: 4px;">
-                  {{ landStatus === 'Verified' ? '(Verified by Revenue & GIS Audit)' : '(Pending Auditor Approval)' }}
+                  {{ pattadarFile ? (landStatus === 'Verified' ? '(Verified by Revenue & GIS Audit)' : '(Pending Auditor Approval)') : '(No document submitted)' }}
                 </span>
               </div>
 
               <!-- Preview Frame -->
-              <div (click)="openDocumentModal('Pattadar Passbook / Land LPC', 'Land Possession Proof', pattadarFile || 'Pattadar_Passbook_LPC.pdf', pattadarDocPreview || 'assets/images/C-PAY_Logo.png', landStatus, 'Official Revenue Land Possession Certificate registered for Survey No: ' + (landDetails.surveyNo || '342/1A'))" style="cursor: pointer; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+              <div (click)="pattadarFile ? openDocumentModal('Pattadar Passbook / Land LPC', 'Land Possession Proof', pattadarFile, pattadarDocPreview, landStatus, 'Official Revenue Land Possession Certificate registered for Survey No: ' + (landDetails.surveyNo || '342/1A')) : null" [style.cursor]="pattadarFile ? 'pointer' : 'default'" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;">
                 <img *ngIf="pattadarDocPreview" [src]="pattadarDocPreview" (error)="onPattadarDocError()" alt="Pattadar Passbook" style="max-height: 110px; max-width: 100%; object-fit: contain; border-radius: 6px;" />
                 <div *ngIf="!pattadarDocPreview" style="padding: 12px; text-align: center;">
-                  <i class="bi bi-journal-check text-teal" style="font-size: 36px; color: var(--primary-teal);"></i>
-                  <span class="d-block text-dark fw-bold micro-text mt-1" style="font-size: 11px;">{{ pattadarFile || 'Pattadar_Passbook_LPC.pdf' }}</span>
+                  <i class="bi bi-journal-check text-muted" style="font-size: 36px;"></i>
+                  <span class="d-block text-muted fw-bold micro-text mt-1" style="font-size: 11px;">{{ pattadarFile || 'No Document Uploaded' }}</span>
                 </div>
-                <div style="position: absolute; inset: 0; background: rgba(0, 164, 153, 0.08); opacity: 0; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
+                <div *ngIf="pattadarFile" style="position: absolute; inset: 0; background: rgba(0, 164, 153, 0.08); opacity: 0; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
                   <span class="badge bg-dark text-white fw-bold" style="font-size: 10px; padding: 4px 8px;"><i class="bi bi-eye-fill me-1"></i> Click to View</span>
                 </div>
               </div>
             </div>
 
             <div style="font-size: 12px; font-weight: 700; margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 4px; background: #ffffff; padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0;"
-                 [ngClass]="landStatus === 'Verified' ? 'text-success' : 'text-warning'">
-              <i class="bi" [ngClass]="landStatus === 'Verified' ? 'bi-check-circle-fill text-success' : 'bi-clock-history text-warning'"></i>
-              <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;">{{ pattadarFile || 'Pattadar_Passbook_LPC.pdf' }}</span>
+                 [ngClass]="pattadarFile ? (landStatus === 'Verified' ? 'text-success' : 'text-warning') : 'text-muted'">
+              <i class="bi" [ngClass]="pattadarFile ? (landStatus === 'Verified' ? 'bi-check-circle-fill text-success' : 'bi-clock-history text-warning') : 'bi-dash-circle text-muted'"></i>
+              <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;">{{ pattadarFile || 'No Document Uploaded' }}</span>
             </div>
           </div>
 
@@ -2031,36 +2032,18 @@
               
               <div class="mb-3">
                 <span class="badge fw-bold" 
-                      [ngClass]="(landStatus === 'Verified' || hasApprovedAsset) ? 'bg-info text-white' : 'bg-warning-soft text-warning'" 
+                      [ngClass]="landPhotoFile ? ((landStatus === 'Verified' || hasApprovedAsset) ? 'bg-info text-white' : 'bg-warning-soft text-warning') : 'bg-secondary text-white'" 
                       style="padding: 5px 12px; border-radius: 8px; font-size: 11.5px;">
-                  <i class="bi me-1" [ngClass]="(landStatus === 'Verified' || hasApprovedAsset) ? 'bi-geo-alt-fill' : 'bi-clock-history'"></i>
-                  {{ (landStatus === 'Verified' || hasApprovedAsset) ? 'Geo-Verified' : 'Pending' }}
+                  <i class="bi me-1" [ngClass]="landPhotoFile ? ((landStatus === 'Verified' || hasApprovedAsset) ? 'bi-geo-alt-fill' : 'bi-clock-history') : 'bi-dash-circle'"></i>
+                  {{ landPhotoFile ? ((landStatus === 'Verified' || hasApprovedAsset) ? 'Geo-Verified' : 'Pending') : 'Not Uploaded' }}
                 </span>
                 <span class="d-block text-muted" style="font-size: 10px; margin-top: 4px;">Lat: {{ landDetails.latitude || 14.4426 }}° N, Lon: {{ landDetails.longitude || 79.9865 }}° E</span>
               </div>
 
               <!-- Preview Frame -->
-              <div (click)="openDocumentModal('Geo-Tagged Land Photography', 'Site Photo Capture', landPhotoFile || 'Geo_Land_Site_Photo.jpg', landPhotoPreview || 'assets/images/C-PAY_Logo.png', (landStatus === 'Verified' || hasApprovedAsset) ? 'Geo-Verified' : 'Pending', 'Captured site photo of aquaculture pond / canopy area for Survey No: ' + (landDetails.surveyNo || '342/1A') + ' at GPS Coordinates (' + (landDetails.latitude || 14.4426) + ', ' + (landDetails.longitude || 79.9865) + ')')" style="cursor: pointer; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+              <div (click)="landPhotoFile ? openDocumentModal('Geo-Tagged Land Photography', 'Site Photo Capture', landPhotoFile, landPhotoPreview, (landStatus === 'Verified' || hasApprovedAsset) ? 'Geo-Verified' : 'Pending', 'Captured site photo of aquaculture pond / canopy area for Survey No: ' + (landDetails.surveyNo || '342/1A') + ' at GPS Coordinates (' + (landDetails.latitude || 14.4426) + ', ' + (landDetails.longitude || 79.9865) + ')') : null" [style.cursor]="landPhotoFile ? 'pointer' : 'default'" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;">
                 <img *ngIf="landPhotoPreview" [src]="landPhotoPreview" (error)="onLandPhotoError()" alt="Land Photography" style="max-height: 110px; max-width: 100%; object-fit: contain; border-radius: 6px;" />
                 <div *ngIf="!landPhotoPreview" style="padding: 12px; text-align: center;">
-                  <i class="bi bi-camera-fill text-teal" style="font-size: 36px; color: var(--primary-teal);"></i>
-                  <span class="d-block text-dark fw-bold micro-text mt-1" style="font-size: 11px;">{{ landPhotoFile || 'Geo_Land_Site_Photo.jpg' }}</span>
-                </div>
-                <div style="position: absolute; inset: 0; background: rgba(0, 164, 153, 0.08); opacity: 0; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
-                  <span class="badge bg-dark text-white fw-bold" style="font-size: 10px; padding: 4px 8px;"><i class="bi bi-eye-fill me-1"></i> Click to View</span>
-                </div>
-              </div>
-            </div>
-
-            <div style="font-size: 12px; font-weight: 700; margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 4px; background: #ffffff; padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0;"
-                 [ngClass]="(landStatus === 'Verified' || hasApprovedAsset) ? 'text-info' : 'text-warning'">
-              <i class="bi" [ngClass]="(landStatus === 'Verified' || hasApprovedAsset) ? 'bi-camera-fill text-info' : 'bi-clock-history text-warning'"></i>
-              <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;">{{ landPhotoFile || 'Geo_Land_Site_Photo.jpg' }}</span>
-            </div>
-          </div>
-
-        </div>
-
         <!-- Read Only Info Banner -->
         <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; display: flex; align-items: center; gap: 16px;">
           <i class="bi bi-shield-lock-fill text-teal" style="font-size: 24px; color: var(--primary-teal); flex-shrink: 0;"></i>
@@ -2072,6 +2055,9 @@
       </div>
     </div>
 
+      </div>
+    </div>
+  </div>
     <!-- Full Screen Document Lightbox Modal -->
     <div *ngIf="selectedDocModal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(6px); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;" (click)="closeDocumentModal()">
       <div style="background: #ffffff; border-radius: 20px; max-width: 720px; width: 100%; max-height: 90vh; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; position: relative;" (click)="$event.stopPropagation()">
@@ -2096,6 +2082,8 @@
         <div *ngIf="selectedDocModal.details" style="padding: 16px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 12.5px; color: #475569;">
           <i class="bi bi-info-circle-fill text-teal me-1"></i> {{ selectedDocModal.details }}
         </div>
+      </div>
+    </div>
       </div>
     </div>
 
@@ -2487,200 +2475,6 @@
                 </div>
               </div>
 
-    <div class="certificate-view-wrapper" *ngIf="activeTab === 'Certificate'">
-      <!-- Certificate Preview Container -->
-      <div class="analytics-card" style="background-color: #ffffff; border: 1px solid #d8e6e2; border-radius: 12px; box-shadow: 0 4px 16px rgba(0, 50, 48, 0.03); padding: 24px;">
-        <div class="d-flex justify-content-between align-items-center mb-4" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-          <div>
-            <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--dark-text);">Compliance Registry Certificate</h3>
-            <p class="text-muted" style="margin: 4px 0 0 0; font-size: 13px;">Generate and download your official carbon compliance and validation credential.</p>
-          </div>
-          <button type="button" class="btn btn-sync" (click)="downloadCertificate()" style="background-color: var(--primary-teal); color: white; border: none; border-radius: 8px; padding: 10px 18px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px;">
-            <i class="bi bi-file-earmark-pdf-fill"></i>
-            <span>Download Certificate</span>
-          </button>
-        </div>
-
-        <!-- Inner Styles block for Certificate -->
-        <style>
-          .cert-body-wrapper {
-            background-color: #ffffff;
-            font-family: 'Georgia', 'Times New Roman', Times, serif;
-            color: #1e293b;
-            position: relative;
-            border: 8px double #c5a850;
-            padding: 40px;
-            box-sizing: border-box;
-            max-width: 820px;
-            margin: 0 auto;
-            background-color: #ffffff;
-          }
-          .cert-inner-line {
-            border: 1.5px solid #004c49;
-            padding: 24px;
-            position: relative;
-          }
-          .cert-watermark {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            opacity: 0.035;
-            z-index: 0;
-            pointer-events: none;
-          }
-          .cert-heading-area {
-            text-align: center;
-            margin-bottom: 20px;
-            position: relative;
-            z-index: 1;
-          }
-          .cert-top-sub {
-            font-size: 10.5px;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            color: #c5a850;
-            font-weight: 700;
-            margin-top: 4px;
-            display: block;
-          }
-          .cert-main-title {
-            font-size: 22px;
-            font-weight: 900;
-            color: #004c49;
-            margin: 12px 0;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-          }
-          .cert-verified-pill {
-            background: linear-gradient(135deg, #004c49 0%, #002d2b 100%);
-            color: #ffffff;
-            padding: 6px 16px;
-            border-radius: 50px;
-            font-weight: 700;
-            font-size: 11.5px;
-            letter-spacing: 1px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            border: 1px solid #c5a850;
-            box-shadow: 0 4px 12px rgba(0, 76, 73, 0.12);
-          }
-          .cert-intro-text {
-            font-size: 13.5px;
-            color: #64748b;
-            margin-bottom: 6px;
-            text-align: center;
-            font-style: italic;
-            position: relative;
-            z-index: 1;
-          }
-          .cert-name {
-            font-size: 26px;
-            font-weight: 700;
-            color: #0f172a;
-            text-align: center;
-            margin: 10px 0;
-            font-family: 'Playfair Display', 'Georgia', serif;
-            text-decoration: underline;
-            text-underline-offset: 5px;
-            text-decoration-color: #cbd5e1;
-            position: relative;
-            z-index: 1;
-          }
-          .cert-standard-desc {
-            font-size: 13px;
-            color: #475569;
-            line-height: 1.5;
-            text-align: center;
-            max-width: 640px;
-            margin: 0 auto 20px auto;
-            position: relative;
-            z-index: 1;
-          }
-          .cert-data-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            border-top: 1.5px solid rgba(197, 168, 80, 0.25);
-            border-bottom: 1.5px solid rgba(197, 168, 80, 0.25);
-            padding: 16px 0;
-            margin-bottom: 20px;
-            text-align: left;
-            position: relative;
-            z-index: 1;
-          }
-          .cert-grid-item {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-          }
-          .cert-grid-label {
-            font-size: 9.5px;
-            text-transform: uppercase;
-            color: #64748b;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-          }
-          .cert-grid-value {
-            font-size: 13.5px;
-            font-weight: 700;
-            color: #004c49;
-          }
-          .cert-bottom-layout {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            margin-top: 24px;
-            position: relative;
-            z-index: 1;
-          }
-          .cert-sign-wrapper {
-            text-align: center;
-            width: 170px;
-          }
-          .cert-sign-line {
-            border-bottom: 1px solid #cbd5e1;
-            height: 36px;
-            margin-bottom: 6px;
-            font-family: 'Courier New', Courier, monospace;
-            font-style: italic;
-            font-size: 16px;
-            color: #004c49;
-            line-height: 36px;
-          }
-          .cert-sign-label {
-            font-size: 10px;
-            color: #64748b;
-            font-weight: 600;
-            text-transform: uppercase;
-          }
-        </style>
-
-        <!-- Visual Certificate Mockup Frame -->
-        <div id="compliance-certificate" style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-sizing: border-box; position: relative;">
-          <div class="cert-body-wrapper">
-            <div class="cert-inner-line">
-              
-              <!-- Top Header Area -->
-              <div class="cert-heading-area">
-                <!-- Gold Star Ribbon Badge SVG -->
-                <svg width="54" height="54" viewBox="0 0 100 100" style="margin-bottom: 6px;">
-                  <polygon points="35,60 25,95 50,75 75,95 65,60" fill="#d4af37" opacity="0.9"/>
-                  <polygon points="40,60 30,95 50,75 70,95 60,60" fill="#aa7c11" opacity="0.9"/>
-                  <circle cx="50" cy="50" r="30" fill="#d4af37" stroke="#aa7c11" stroke-width="2"/>
-                  <circle cx="50" cy="50" r="26" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="3,3"/>
-                  <polygon points="50,28 55,42 70,42 58,51 62,65 50,56 38,65 42,51 30,42 45,42" fill="#ffffff"/>
-                </svg>
-                <span class="cert-top-sub">C-PAY Registry Offset Verification</span>
-                <h2 class="cert-main-title">Certificate of Carbon Compliance</h2>
-                <div style="margin-top: 8px;">
-                  <div class="cert-verified-pill">
-                    <i class="bi bi-patch-check-fill" style="color: #c5a850;"></i>
-                    <span>REGISTRY SECURED</span>
-                  </div>
-                </div>
-              </div>
 
               <!-- Main Certification Text -->
               <p class="cert-intro-text">This certifies that the ecosystem carbon offset assets registered by</p>

@@ -25,8 +25,10 @@ const pool = new Pool({
     rejectUnauthorized: false,
   },
 
-  connectionTimeoutMillis: 5000,
+  connectionTimeoutMillis: 15000,
 });
+
+export const query = (text, params) => pool.query(text, params);
 
 // ==========================================
 // 1. VERIFY DATABASE HEALTH & SCHEMA STATUS

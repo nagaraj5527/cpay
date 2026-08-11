@@ -12,6 +12,9 @@ import valuatorRoutes from './routes/valuator.routes.js';
 import aquacultureRoutes from './routes/aquaculture.routes.js';
 import sellerAssetRoutes from './routes/seller_asset.routes.js';
 import walletRoutes from './routes/wallet.routes.js';
+import pondRoutes from './routes/pond.routes.js';
+import notificationRoutes from './routes/notification.routes.js';
+import supportRoutes from './routes/support.routes.js';
 
 const app = express();
 
@@ -86,6 +89,7 @@ Authentication APIs
 */
 
 app.use('/api/auth', authRoutes);
+app.use('/api/v1/auth', authRoutes);
 
 /*
 ====================================================
@@ -94,6 +98,7 @@ Registration APIs
 */
 
 app.use('/api/registration', registrationRoutes);
+app.use('/api/v1/registration', registrationRoutes);
 
 /*
 ====================================================
@@ -102,6 +107,7 @@ Carbon Calculator APIs
 */
 
 app.use('/api/calculator', calculatorRoutes);
+app.use('/api/v1/calculator', calculatorRoutes);
 
 /*
 ====================================================
@@ -110,6 +116,7 @@ Document & File Upload APIs
 */
 
 app.use('/api/documents', documentRoutes);
+app.use('/api/v1/documents', documentRoutes);
 
 /*
 ====================================================
@@ -117,6 +124,7 @@ Super Admin APIs
 ====================================================
 */
 app.use('/api/admin', adminRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 /*
 ====================================================
@@ -124,6 +132,7 @@ Valuator/Auditor APIs
 ====================================================
 */
 app.use('/api/valuator', valuatorRoutes);
+app.use('/api/v1/valuator', valuatorRoutes);
 
 /*
 ====================================================
@@ -131,6 +140,7 @@ Aquaculture Enterprise APIs
 ====================================================
 */
 app.use('/api/aquaculture', aquacultureRoutes);
+app.use('/api/v1/aquaculture', aquacultureRoutes);
 
 /*
 ====================================================
@@ -138,6 +148,7 @@ Seller Dashboard Asset Management APIs
 ====================================================
 */
 app.use('/api/seller', sellerAssetRoutes);
+app.use('/api/v1/seller', sellerAssetRoutes);
 
 /*
 ====================================================
@@ -145,6 +156,19 @@ Wallet & Carbon Credit Trading APIs
 ====================================================
 */
 app.use('/api/wallet', walletRoutes);
+app.use('/api/v1/wallet', walletRoutes);
+
+/*
+====================================================
+Multi-Pond, Notification & Support Enterprise APIs
+====================================================
+*/
+app.use('/api/ponds', pondRoutes);
+app.use('/api/v1/ponds', pondRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/support', supportRoutes);
+app.use('/api/v1/support', supportRoutes);
 
 
 /*

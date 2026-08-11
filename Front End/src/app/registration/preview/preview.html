@@ -137,30 +137,30 @@
             <div class="review-grid text-start">
 
                 @if (selectedUserType !== 'NGO' && selectedUserType !== 'Community' && selectedUserType !== 'Government') {
-                    <div><label> FULL NAME</label><strong>{{ fullName }}</strong></div>
-                    <div><label> GENDER</label><strong>{{ gender }}</strong></div>
-                    <div><label>MOBILE NUMBER</label><strong>{{ mobileNumber }}</strong></div>
+                    <div><label> FULL NAME</label><strong>{{ fullName || '-' }}</strong></div>
+                    <div><label> GENDER</label><strong>{{ gender || '-' }}</strong></div>
+                    <div><label>MOBILE NUMBER</label><strong>{{ mobileNumber || '-' }}</strong></div>
                     <div>
                         <label>AADHAAR NUMBER</label>
-                        <strong>{{ aadhaarNumber }}</strong>
-                        @if (aadhaarPhotoName) {
-                            <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
-                                @if (aadhaarPhoto) {
-                                    <img [src]="aadhaarPhoto" alt="Aadhaar Photo" style="height: 32px; max-width: 48px; border-radius: 4px; border: 1px solid #cbd5e1; object-fit: cover;" />
+                        <strong>{{ aadhaarNumber || '-' }}</strong>
+                        @if (aadhaarPhotoName || aadhaarPhoto) {
+                            <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+                                @if (aadhaarPhoto && aadhaarPhoto.startsWith('data:')) {
+                                    <img [src]="aadhaarPhoto" alt="Aadhaar Photo" style="height: 38px; max-width: 54px; border-radius: 4px; border: 1px solid #cbd5e1; object-fit: cover;" />
                                 }
-                                <span style="font-size: 11px; color: var(--primary-teal); font-weight: 600;">📷 {{ aadhaarPhotoName }}</span>
+                                <span style="font-size: 11px; color: var(--primary-teal); font-weight: 600;">📷 {{ aadhaarPhotoName || 'Aadhaar Photo Uploaded' }}</span>
                             </div>
                         }
                     </div>
                     <div>
                         <label>PAN NUMBER</label>
-                        <strong>{{ panNumber }}</strong>
-                        @if (panPhotoName) {
-                            <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
-                                @if (panPhoto) {
-                                    <img [src]="panPhoto" alt="PAN Photo" style="height: 32px; max-width: 48px; border-radius: 4px; border: 1px solid #cbd5e1; object-fit: cover;" />
+                        <strong>{{ panNumber || '-' }}</strong>
+                        @if (panPhotoName || panPhoto) {
+                            <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+                                @if (panPhoto && panPhoto.startsWith('data:')) {
+                                    <img [src]="panPhoto" alt="PAN Photo" style="height: 38px; max-width: 54px; border-radius: 4px; border: 1px solid #cbd5e1; object-fit: cover;" />
                                 }
-                                <span style="font-size: 11px; color: var(--primary-teal); font-weight: 600;">📷 {{ panPhotoName }}</span>
+                                <span style="font-size: 11px; color: var(--primary-teal); font-weight: 600;">📷 {{ panPhotoName || 'PAN Photo Uploaded' }}</span>
                             </div>
                         }
                     </div>
@@ -170,46 +170,46 @@
                             @if (selectedUserType === 'NGO') { NGO NAME }
                             @else if (selectedUserType === 'Community') { COMMUNITY NAME }
                         </label>
-                        <strong>{{ fullName }}</strong>
+                        <strong>{{ fullName || '-' }}</strong>
                     </div>
-                    <div><label>REGISTRATION ID / LICENSE NUMBER</label><strong>{{ registrationId }}</strong></div>
-                    <div><label>MOBILE NUMBER</label><strong>{{ mobileNumber }}</strong></div>
-                    <div><label>GST NUMBER</label><strong>{{ gstNumber }}</strong></div>
+                    <div><label>REGISTRATION ID / LICENSE NUMBER</label><strong>{{ registrationId || '-' }}</strong></div>
+                    <div><label>MOBILE NUMBER</label><strong>{{ mobileNumber || '-' }}</strong></div>
+                    <div><label>GST NUMBER</label><strong>{{ gstNumber || '-' }}</strong></div>
                     <div>
                         <label>PAN NUMBER</label>
-                        <strong>{{ panNumber }}</strong>
-                        @if (panPhotoName) {
-                            <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
-                                @if (panPhoto) {
-                                    <img [src]="panPhoto" alt="PAN Photo" style="height: 32px; max-width: 48px; border-radius: 4px; border: 1px solid #cbd5e1; object-fit: cover;" />
+                        <strong>{{ panNumber || '-' }}</strong>
+                        @if (panPhotoName || panPhoto) {
+                            <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+                                @if (panPhoto && panPhoto.startsWith('data:')) {
+                                    <img [src]="panPhoto" alt="PAN Photo" style="height: 38px; max-width: 54px; border-radius: 4px; border: 1px solid #cbd5e1; object-fit: cover;" />
                                 }
-                                <span style="font-size: 11px; color: var(--primary-teal); font-weight: 600;">📷 {{ panPhotoName }}</span>
+                                <span style="font-size: 11px; color: var(--primary-teal); font-weight: 600;">📷 {{ panPhotoName || 'PAN Photo Uploaded' }}</span>
                             </div>
                         }
                     </div>
-                    <div><label>EMAIL ADDRESS</label><strong>{{ emailAddress }}</strong></div>
+                    <div><label>EMAIL ADDRESS</label><strong>{{ emailAddress || '-' }}</strong></div>
                 } @else {
                     <div>
                         <label>GOVERNMENT DEPARTMENT NAME</label>
-                        <strong>{{ fullName }}</strong>
+                        <strong>{{ fullName || '-' }}</strong>
                     </div>
-                    <div><label>DIVISION NAME</label><strong>{{ divisionName }}</strong></div>
-                    <div><label>MOBILE NUMBER</label><strong>{{ mobileNumber }}</strong></div>
-                    <div><label>MANAGER NAME</label><strong>{{ managerName }}</strong></div>
-                    <div><label>MANAGER ID</label><strong>{{ managerId }}</strong></div>
+                    <div><label>DIVISION NAME</label><strong>{{ divisionName || '-' }}</strong></div>
+                    <div><label>MOBILE NUMBER</label><strong>{{ mobileNumber || '-' }}</strong></div>
+                    <div><label>MANAGER NAME</label><strong>{{ managerName || '-' }}</strong></div>
+                    <div><label>MANAGER ID</label><strong>{{ managerId || '-' }}</strong></div>
                     <div>
                         <label>PAN NUMBER</label>
-                        <strong>{{ panNumber }}</strong>
-                        @if (panPhotoName) {
-                            <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
-                                @if (panPhoto) {
-                                    <img [src]="panPhoto" alt="PAN Photo" style="height: 32px; max-width: 48px; border-radius: 4px; border: 1px solid #cbd5e1; object-fit: cover;" />
+                        <strong>{{ panNumber || '-' }}</strong>
+                        @if (panPhotoName || panPhoto) {
+                            <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+                                @if (panPhoto && panPhoto.startsWith('data:')) {
+                                    <img [src]="panPhoto" alt="PAN Photo" style="height: 38px; max-width: 54px; border-radius: 4px; border: 1px solid #cbd5e1; object-fit: cover;" />
                                 }
-                                <span style="font-size: 11px; color: var(--primary-teal); font-weight: 600;">📷 {{ panPhotoName }}</span>
+                                <span style="font-size: 11px; color: var(--primary-teal); font-weight: 600;">📷 {{ panPhotoName || 'PAN Photo Uploaded' }}</span>
                             </div>
                         }
                     </div>
-                    <div><label>EMAIL ADDRESS</label><strong>{{ emailAddress }}</strong></div>
+                    <div><label>EMAIL ADDRESS</label><strong>{{ emailAddress || '-' }}</strong></div>
                 }
 
             </div>
@@ -237,11 +237,11 @@
 
             <div class="review-grid text-start">
 
-                <div><label>STATE</label><strong>{{ state }}</strong></div>
-                <div><label>DISTRICT</label><strong>{{ district }}</strong></div>
-                <div><label>MANDAL</label><strong>{{ mandal }}</strong></div>
-                <div><label>VILLAGE</label><strong>{{ village }}</strong></div>
-                <div><label>PINCODE</label><strong>{{ pincode }}</strong></div>
+                <div><label>STATE</label><strong>{{ state || '-' }}</strong></div>
+                <div><label>DISTRICT</label><strong>{{ district || '-' }}</strong></div>
+                <div><label>MANDAL</label><strong>{{ mandal || '-' }}</strong></div>
+                <div><label>VILLAGE</label><strong>{{ village || '-' }}</strong></div>
+                <div><label>PINCODE</label><strong>{{ pincode || '-' }}</strong></div>
 
             </div>
 
@@ -268,23 +268,37 @@
 
             <div class="review-grid text-start">
 
-                <div><label>SURVEY NO</label><strong>{{ surveyNo }}</strong></div>
-                <div><label>SUB DIVISION</label><strong>{{ subDivisionNo }}</strong></div>
+                <div><label>SURVEY NO</label><strong>{{ surveyNo || '-' }}</strong></div>
+                <div><label>SUB DIVISION</label><strong>{{ subDivisionNo || '-' }}</strong></div>
                 <div><label>AREA</label><strong>{{ landArea | number:'1.2-2' }} {{ landUnit }}</strong></div>
-                <div><label>UNIT</label><strong>{{ landUnit }}</strong></div>
                 <div>
                     <label>PATTADAR PASSBOOK DOCUMENT</label>
-                    @if (pattadarDocName) {
+                    @if (pattadarDocName || pattadarDoc) {
                         <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
-                            @if (pattadarDoc) {
-                                <img [src]="pattadarDoc" alt="Pattadar Document" style="height: 36px; width: 48px; border-radius: 4px; border: 1px solid #cbd5e1; object-fit: cover;" />
+                            @if (pattadarDoc && pattadarDoc.startsWith('data:')) {
+                                <img [src]="pattadarDoc" alt="Pattadar Document" style="height: 38px; width: 54px; border-radius: 4px; border: 1px solid #cbd5e1; object-fit: cover;" />
                             }
-                            <span style="font-size: 11px; color: var(--primary-teal); font-weight: 700;">📄 {{ pattadarDocName }}</span>
+                            <span style="font-size: 11px; color: var(--primary-teal); font-weight: 700;">📄 {{ pattadarDocName || 'Passbook Document Uploaded' }}</span>
                         </div>
                     } @else {
                         <strong>Not Uploaded</strong>
                     }
                 </div>
+
+                @if (imagePreview) {
+                    <div style="grid-column: 1 / -1; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">
+                        <label style="font-weight: 700; color: var(--primary-teal);">📍 GEOTAGGED LAND PHOTOGRAPH</label>
+                        <div style="margin-top: 6px; display: flex; align-items: center; gap: 12px;">
+                            <img [src]="imagePreview" alt="Land Geotagged Photograph" style="max-height: 140px; max-width: 240px; border-radius: 6px; border: 1px solid #cbd5e1; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.06);" />
+                            @if (latitude && longitude) {
+                                <div style="font-size: 12px; color: #475569;">
+                                    <div><strong>Latitude:</strong> {{ latitude | number:'1.6-6' }}</div>
+                                    <div><strong>Longitude:</strong> {{ longitude | number:'1.6-6' }}</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
 
             </div>
 

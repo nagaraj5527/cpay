@@ -16,7 +16,7 @@ export class PreviewComponent implements OnInit {
   // Personal Details
   selectedUserType: string = '';
   fullName: string = '';
-  gender: string = 'Male';
+  gender: string = '';
   divisionName: string = '';
   mobileNumber: string = '';
   aadhaarNumber: string = '';
@@ -85,94 +85,91 @@ export class PreviewComponent implements OnInit {
 
   ngOnInit(): void {
     this.selectedUserType = localStorage.getItem('selectedUserType') || '';
+    const currentMob = localStorage.getItem('currentUserMobile') || localStorage.getItem('loginMobile') || '';
+
     // 1. Personal Details
-    const personalData = localStorage.getItem('SellerPersonalDetails');
-    if (personalData) {
-      try {
-        const pd = JSON.parse(personalData);
-        this.fullName = pd.fullName || this.fullName;
-        this.gender = pd.gender || this.gender;
-        this.mobileNumber = pd.mobileNumber || this.mobileNumber;
-        this.aadhaarNumber = pd.aadhaarNumber || this.aadhaarNumber;
-        this.aadhaarPhoto = pd.aadhaarPhoto || '';
-        this.aadhaarPhotoName = pd.aadhaarPhotoName || '';
-        this.panNumber = pd.panNumber || this.panNumber;
-        this.panPhoto = pd.panPhoto || '';
-        this.panPhotoName = pd.panPhotoName || '';
-        this.emailAddress = pd.emailAddress || this.emailAddress;
-        this.divisionName = pd.divisionName || '';
-        this.managerName = pd.managerName || '';
-        this.managerId = pd.managerId || '';
-        this.registrationId = pd.registrationId || '';
-        this.gstNumber = pd.gstNumber || '';
-      } catch (e) {
-        console.error('Error parsing personal details', e);
+    const pd = this.registrationService.getDraftData('SellerPersonalDetails', currentMob);
+    if (pd) {
+      this.fullName = pd.fullName || this.fullName;
+      this.gender = pd.gender || '';
+      this.mobileNumber = pd.mobileNumber || currentMob || this.mobileNumber;
+      this.aadhaarNumber = pd.aadhaarNumber || this.aadhaarNumber;
+      this.aadhaarPhoto = pd.aadhaarPhoto || pd.aadhaarPhotoPreview || '';
+      this.aadhaarPhotoName = pd.aadhaarPhotoName || (this.aadhaarPhoto ? 'Aadhaar Card Photo' : '');
+      this.panNumber = pd.panNumber || this.panNumber;
+      this.panPhoto = pd.panPhoto || pd.panPhotoPreview || '';
+      this.panPhotoName = pd.panPhotoName || (this.panPhoto ? 'PAN Card Photo' : '');
+      this.emailAddress = pd.emailAddress || this.emailAddress;
+      this.divisionName = pd.divisionName || '';
+      this.managerName = pd.managerName || '';
+      this.managerId = pd.managerId || '';
+      this.registrationId = pd.registrationId || '';
+      this.gstNumber = pd.gstNumber || '';
+    }
+
+    // Fallback if fullName or mobileNumber is missing
+    if (!this.fullName || !this.mobileNumber) {
+      const userStr = localStorage.getItem('currentUser') || localStorage.getItem('user');
+      if (userStr) {
+        try {
+          const userObj = JSON.parse(userStr);
+          this.fullName = this.fullName || userObj.fullName || userObj.name || '';
+          this.mobileNumber = this.mobileNumber || userObj.mobileNumber || userObj.mobile || currentMob;
+          this.gender = this.gender || userObj.gender || '';
+          this.aadhaarNumber = this.aadhaarNumber || userObj.aadhaarNumber || '';
+          this.panNumber = this.panNumber || userObj.panNumber || '';
+        } catch (e) {}
       }
     }
 
     // 2. Address Details
-    const addressData = localStorage.getItem('SellerAddressDetails');
-    if (addressData) {
-      try {
-        const ad = JSON.parse(addressData);
-        this.state = ad.state || this.state;
-        this.district = ad.district || this.district;
-        this.mandal = ad.mandal || this.mandal;
-        this.village = ad.village || this.village;
-        this.pincode = ad.pincode || this.pincode;
-      } catch (e) {
-        console.error('Error parsing address details', e);
-      }
+    const ad = this.registrationService.getDraftData('SellerAddressDetails', currentMob);
+    if (ad) {
+      this.state = ad.state || this.state;
+      this.district = ad.district || this.district;
+      this.mandal = ad.mandal || this.mandal;
+      this.village = ad.village || this.village;
+      this.pincode = ad.pincode || this.pincode;
     }
 
     // 3. Land Details
-    const landData = localStorage.getItem('SellerLandDetails');
-    if (landData) {
-      try {
-        const ld = JSON.parse(landData);
-        this.surveyNo = ld.surveyNo || this.surveyNo;
-        this.subDivisionNo = ld.subDivisionNo || this.subDivisionNo;
-        this.landArea = ld.area || this.landArea;
-        this.landUnit = ld.unit || this.landUnit;
-        this.latitude = ld.latitude || null;
-        this.longitude = ld.longitude || null;
-        this.imagePreview = ld.imagePreview || null;
-        this.pattadarDoc = ld.pattadarDoc || ld.pattadarDocPreview || '';
-        this.pattadarDocName = ld.pattadarDocName || '';
-      } catch (e) {
-        console.error('Error parsing land details', e);
-      }
+    const ld = this.registrationService.getDraftData('SellerLandDetails', currentMob);
+    if (ld) {
+      this.surveyNo = ld.surveyNo || this.surveyNo;
+      this.subDivisionNo = ld.subDivisionNo || this.subDivisionNo;
+      this.landArea = ld.area !== undefined ? Number(ld.area) : this.landArea;
+      this.landUnit = ld.unit || this.landUnit;
+      this.latitude = ld.latitude || null;
+      this.longitude = ld.longitude || null;
+      this.imagePreview = ld.imagePreview || null;
+      this.pattadarDoc = ld.pattadarDoc || ld.pattadarDocPreview || '';
+      this.pattadarDocName = ld.pattadarDocName || (this.pattadarDoc ? 'Pattadar Passbook Document' : '');
     }
 
     // 4. Plantation Details
-    const plantationData = localStorage.getItem('SellerPlantationDetails');
-    if (plantationData) {
-      try {
-        const pld = JSON.parse(plantationData);
-        this.plantationDataRaw = pld;
-        this.ponds = pld.ponds || [];
-        this.landType = pld.landType || this.landType;
-        this.plantationType = pld.plantationType || this.plantationType;
-        this.subCategory = pld.subCategory || this.subCategory;
-        this.quantity = pld.quantity || this.quantity;
-        this.plantationArea = pld.area || this.plantationArea;
-        this.plantationUnit = pld.unit || this.plantationUnit;
-        this.age = pld.age || this.age;
+    const pld = this.registrationService.getDraftData('SellerPlantationDetails', currentMob);
+    if (pld) {
+      this.plantationDataRaw = pld;
+      this.ponds = pld.ponds || [];
+      this.landType = pld.landType || this.landType;
+      this.plantationType = pld.plantationType || this.plantationType;
+      this.subCategory = pld.subCategory || this.subCategory;
+      this.quantity = pld.quantity || this.quantity;
+      this.plantationArea = pld.area || this.plantationArea;
+      this.plantationUnit = pld.unit || this.plantationUnit;
+      this.age = pld.age || this.age;
 
-        this.qtyFeedConsumed = pld.qtyFeedConsumed || 0;
-        this.fcr = pld.fcr || 0;
-        this.daysOfCulture = pld.daysOfCulture || (pld.age ? Math.round(pld.age * 30) : 0);
-        this.remarks = pld.remarks || '';
+      this.qtyFeedConsumed = pld.qtyFeedConsumed || 0;
+      this.fcr = pld.fcr || 0;
+      this.daysOfCulture = pld.daysOfCulture || (pld.age ? Math.round(pld.age * 30) : 0);
+      this.remarks = pld.remarks || '';
 
-        // For Multi-Pond Aquaculture, aggregate total quantity and total area across all ponds
-        if (this.landType === 'Fish Pond' && this.ponds && this.ponds.length > 0) {
-          const totalStock = this.ponds.reduce((sum, p) => sum + Number(p.stockingDensity || p.quantity || p.stockQuantity || 0), 0);
-          const totalArea = this.ponds.reduce((sum, p) => sum + Number(p.pondAreaHa || p.area || p.pondArea || 0), 0);
-          if (totalStock > 0) this.quantity = totalStock;
-          if (totalArea > 0) this.plantationArea = totalArea;
-        }
-      } catch (e) {
-        console.error('Error parsing plantation details', e);
+      // For Multi-Pond Aquaculture, aggregate total quantity and total area across all ponds
+      if (this.landType === 'Fish Pond' && this.ponds && this.ponds.length > 0) {
+        const totalStock = this.ponds.reduce((sum, p) => sum + Number(p.stockingDensity || p.quantity || p.stockQuantity || 0), 0);
+        const totalArea = this.ponds.reduce((sum, p) => sum + Number(p.pondAreaHa || p.area || p.pondArea || 0), 0);
+        if (totalStock > 0) this.quantity = totalStock;
+        if (totalArea > 0) this.plantationArea = totalArea;
       }
     }
 

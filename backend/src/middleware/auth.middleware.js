@@ -147,3 +147,6 @@ export const authorize = (...roles) => {
     };
 
 };
+
+export const authenticateToken = authenticate;
+export const authorizeRoles = authorize;

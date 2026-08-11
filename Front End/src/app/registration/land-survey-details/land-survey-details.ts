@@ -12,6 +12,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select';
 
+import { RegistrationService } from '../../services/registration.service';
+
 @Component({
   selector: 'app-land-survey-details',
   standalone: true,
@@ -43,7 +45,8 @@ export class LandSurveyDetailsComponent implements OnInit, OnDestroy {
 
   constructor(
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private registrationService: RegistrationService
   ) {
     const currentStep = 4;
     const storedFurthest = localStorage.getItem('SellerFurthestStep');
@@ -54,24 +57,19 @@ export class LandSurveyDetailsComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    const savedLand = localStorage.getItem('SellerLandDetails');
-    if (savedLand) {
-      try {
-        const ld = JSON.parse(savedLand);
-        this.surveyNo = ld.surveyNo || '';
-        this.subDivisionNo = ld.subDivisionNo || '';
-        this.area = ld.area || '';
-        this.unit = ld.unit || '';
-        this.latitude = ld.latitude || 17.492677;
-        this.longitude = ld.longitude || 78.402428;
-        this.imagePreview = ld.imagePreview || null;
-        this.capturedTimestamp = ld.capturedTimestamp || '';
-        this.pattadarDoc = ld.pattadarDoc || '';
-        this.pattadarDocName = ld.pattadarDocName || '';
-        this.pattadarDocPreview = ld.pattadarDocPreview || ld.pattadarDoc || null;
-      } catch (e) {
-        console.error('Error parsing land details', e);
-      }
+    const ld = this.registrationService.getDraftData('SellerLandDetails');
+    if (ld) {
+      this.surveyNo = ld.surveyNo || '';
+      this.subDivisionNo = ld.subDivisionNo || '';
+      this.area = ld.area || '';
+      this.unit = ld.unit || '';
+      this.latitude = ld.latitude || 17.492677;
+      this.longitude = ld.longitude || 78.402428;
+      this.imagePreview = ld.imagePreview || null;
+      this.capturedTimestamp = ld.capturedTimestamp || '';
+      this.pattadarDoc = ld.pattadarDoc || '';
+      this.pattadarDocName = ld.pattadarDocName || '';
+      this.pattadarDocPreview = ld.pattadarDocPreview || ld.pattadarDoc || null;
     }
   }
 
@@ -166,28 +164,13 @@ export class LandSurveyDetailsComponent implements OnInit, OnDestroy {
       longitude: this.longitude,
       imagePreview: this.imagePreview,
       capturedTimestamp: this.capturedTimestamp,
-      pattadarDoc: this.pattadarDoc,
+      pattadarDoc: this.pattadarDoc || this.pattadarDocPreview || this.pattadarDocName,
       pattadarDocName: this.pattadarDocName,
-      pattadarDocPreview: this.pattadarDocName
+      pattadarDocPreview: this.pattadarDocPreview || this.pattadarDoc || this.pattadarDocName
     };
 
-    const safeSave = (key: string, data: any) => {
-      try {
-        localStorage.setItem(key, JSON.stringify(data));
-      } catch (e) {
-        console.warn(`[Storage] Quota exceeded for ${key}, proceeding safely:`, e);
-      }
-    };
-
-    safeSave('SellerLandDetails', landPayload);
     const currentMob = localStorage.getItem('currentUserMobile') || '';
-    if (currentMob) {
-      const clean10Land = currentMob.replace(/[^0-9]/g, '').slice(-10);
-      safeSave(`SellerLandDetails_${currentMob}`, landPayload);
-      if (clean10Land) {
-        safeSave(`SellerLandDetails_${clean10Land}`, landPayload);
-      }
-    }
+    this.registrationService.setDraftData('SellerLandDetails', landPayload, currentMob);
 
     this.stopCamera();
     this.router.navigate(['/plantation-details']);

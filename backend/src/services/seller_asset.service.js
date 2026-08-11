@@ -46,7 +46,25 @@ export const getSellerAssets = async (user) => {
         let totalCredits = Number(row.totalCredits || 0);
         let totalProduction = Number(row.totalProduction || 0);
 
-        if (totalArea === 0 || totalCredits === 0 || totalProduction === 0) {
+        // 1. Check if ponds exist in cpay.ponds for this asset
+        const pondsSumRes = await pool.query(
+            `SELECT 
+                SUM(p.pond_area) AS sum_area,
+                SUM(COALESCE(pp.production, 0)) AS sum_production,
+                SUM(COALESCE(pc.carbon_credit, pc.co2_reduction, 0)) AS sum_credits
+             FROM cpay.ponds p
+             LEFT JOIN cpay.aquaculture_surveys s ON p.survey_id = s.survey_id
+             LEFT JOIN cpay.pond_carbon_calculation pc ON p.pond_id = pc.pond_id
+             LEFT JOIN cpay.pond_production pp ON p.pond_id = pp.pond_id
+             WHERE s.registration_id = $1 OR s.asset_id = $1 OR p.land_id = $1 OR p.land_id IN (SELECT land_id FROM cpay.land_details WHERE registration_id = $1);`,
+            [row.assetId]
+        );
+
+        if (pondsSumRes.rows.length > 0 && Number(pondsSumRes.rows[0].sum_production) > 0) {
+            totalArea = Number(pondsSumRes.rows[0].sum_area || totalArea);
+            totalProduction = Number(pondsSumRes.rows[0].sum_production);
+            totalCredits = Number(Number(pondsSumRes.rows[0].sum_credits).toFixed(2));
+        } else if (totalArea === 0 || totalCredits === 0 || totalProduction === 0) {
             const aquaRes = await pool.query(
                 `SELECT aq.*, f.species_name as fish_name, p.species_name as prawn_name
                  FROM cpay.aquaculture_details aq
@@ -64,7 +82,7 @@ export const getSellerAssets = async (user) => {
                     sumArea += pArea;
                     try {
                         const calc = calculateAquacultureCarbon({
-                            pond_area_ha: pArea * 0.404686,
+                            pond_area_ha: pArea,
                             species_name: aqRow.fish_name || aqRow.prawn_name || 'IMC',
                             crops_per_year: aqRow.crops_per_year || 1.5,
                             stocking_density: aqRow.stock_quantity ? Number(aqRow.stock_quantity) : undefined,
@@ -122,7 +140,7 @@ export const getAssetPonds = async (user, assetId) => {
                         masterAsset.status === 'VERIFIED_WRONG' ? 'Rejected' :
                         masterAsset.status === 'RESUBMISSION_REQUIRED' ? 'Under Review' : 'Pending';
 
-    // 2. Fetch Ponds under Survey / Land
+    // 2. Fetch Ponds under Survey / Land / Registration
     const pondsRes = await pool.query(
         `SELECT p.pond_id AS "pondId",
                 p.pond_number AS "pond",
@@ -133,11 +151,11 @@ export const getAssetPonds = async (user, assetId) => {
                 COALESCE(pc.carbon_credit, 0) AS "credits",
                 COALESCE(pc.portfolio_value, 0) AS "portfolioValue",
                 COALESCE(pp.production, 0) AS "production"
-         FROM cpay.aquaculture_surveys s
-         JOIN cpay.ponds p ON s.survey_id = p.survey_id
+         FROM cpay.ponds p
+         LEFT JOIN cpay.aquaculture_surveys s ON p.survey_id = s.survey_id
          LEFT JOIN cpay.pond_carbon_calculation pc ON p.pond_id = pc.pond_id
          LEFT JOIN cpay.pond_production pp ON p.pond_id = pp.pond_id
-         WHERE s.registration_id = $1 OR s.asset_id = $1
+         WHERE s.registration_id = $1 OR s.asset_id = $1 OR p.land_id = $1 OR p.land_id IN (SELECT land_id FROM cpay.land_details WHERE registration_id = $1)
          ORDER BY p.pond_number ASC;`,
         [assetId]
     );
@@ -159,7 +177,7 @@ export const getAssetPonds = async (user, assetId) => {
              FROM cpay.aquaculture_details aq
              LEFT JOIN cpay.fish_species aq_fish ON aq.fish_species_id = aq_fish.fish_species_id
              LEFT JOIN cpay.prawn_species aq_prawn ON aq.prawn_species_id = aq_prawn.prawn_species_id
-             WHERE aq.registration_id = $1 OR aq.land_id = $1;`,
+             WHERE aq.registration_id = $1 OR aq.land_id = $1 OR aq.land_id IN (SELECT land_id FROM cpay.land_details WHERE registration_id = $1);`,
             [assetId]
         );
         if (aquaRes.rows.length > 0) {
@@ -176,7 +194,7 @@ export const getAssetPonds = async (user, assetId) => {
                 let calc = null;
                 try {
                     calc = calculateAquacultureCarbon({
-                        pond_area_ha: pAreaNum * 0.404686,
+                        pond_area_ha: pAreaNum,
                         species_name: pSpecies,
                         crops_per_year: row.crops_per_year || 1.5,
                         stocking_density: row.stock_quantity ? Number(row.stock_quantity) : undefined,
@@ -186,7 +204,7 @@ export const getAssetPonds = async (user, assetId) => {
                 } catch (e) {}
 
                 const credits = calc ? parseFloat(calc.carbon_credit_per_year_t.toFixed(2)) : parseFloat((pAreaNum * 6.8).toFixed(2));
-                const production = calc ? Math.round(calc.total_production_kg) : Math.round(pAreaNum * 0.404686 * 7500);
+                const production = calc ? Math.round(calc.total_production_kg) : Math.round(pAreaNum * 7500);
                 const portfolioValue = Math.round(credits * 120);
 
                 return {
@@ -201,42 +219,6 @@ export const getAssetPonds = async (user, assetId) => {
                     production: production
                 };
             });
-        } else {
-            pondsData = [
-                {
-                    pondId: `pond_1_${assetId}`,
-                    pond: 1,
-                    pondName: 'Pond 1',
-                    species: 'IMC',
-                    area: '3.33 Acres',
-                    co2Reduction: 106.20,
-                    credits: 106.20,
-                    portfolioValue: 12744,
-                    production: '10,250 Kg'
-                },
-                {
-                    pondId: `pond_2_${assetId}`,
-                    pond: 2,
-                    pondName: 'Pond 2',
-                    species: 'Pangasius',
-                    area: '3.33 Acres',
-                    co2Reduction: 112.39,
-                    credits: 112.39,
-                    portfolioValue: 13487,
-                    production: '12,100 Kg'
-                },
-                {
-                    pondId: `pond_3_${assetId}`,
-                    pond: 3,
-                    pondName: 'Pond 3',
-                    species: 'Tilapia',
-                    area: '3.34 Acres',
-                    co2Reduction: 100.00,
-                    credits: 100.00,
-                    portfolioValue: 12000,
-                    production: '8,001 Kg'
-                }
-            ];
         }
     }
 

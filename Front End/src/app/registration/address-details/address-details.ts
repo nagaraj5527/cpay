@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PincodeService } from '../../services/pincode.service';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select';
+import { RegistrationService } from '../../services/registration.service';
 
 @Component({
   selector: 'app-address-details',
@@ -27,7 +28,11 @@ export class AddressDetailsComponent implements OnInit {
   isLoading: boolean = false;
   errorMessage: string = '';
 
-  constructor(private router: Router, private pincodeService: PincodeService) {
+  constructor(
+    private router: Router,
+    private pincodeService: PincodeService,
+    private registrationService: RegistrationService
+  ) {
     const currentStep = 3;
     const storedFurthest = localStorage.getItem('SellerFurthestStep');
     const furthest = storedFurthest ? parseInt(storedFurthest, 10) : 1;
@@ -37,26 +42,19 @@ export class AddressDetailsComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Load existing values from localStorage if available
-    const savedAddress = localStorage.getItem('SellerAddressDetails');
-    if (savedAddress) {
-      try {
-        const address = JSON.parse(savedAddress);
-        this.pincode = address.pincode || '';
-        this.state = address.state || '';
-        this.district = address.district || '';
-        this.mandal = address.mandal || '';
-        this.village = address.village || '';
-        
-        if (this.pincode) {
-          // Pre-populate dropdown list elements if we have saved data
-          if (this.state) this.statesList = [this.state];
-          if (this.district) this.districtsList = [this.district];
-          if (this.mandal) this.mandalsList = [this.mandal];
-          if (this.village) this.villagesList = [this.village];
-        }
-      } catch (e) {
-        console.error('Error parsing address details', e);
+    const address = this.registrationService.getDraftData('SellerAddressDetails');
+    if (address) {
+      this.pincode = address.pincode || '';
+      this.state = address.state || '';
+      this.district = address.district || '';
+      this.mandal = address.mandal || '';
+      this.village = address.village || '';
+      
+      if (this.pincode) {
+        if (this.state) this.statesList = [this.state];
+        if (this.district) this.districtsList = [this.district];
+        if (this.mandal) this.mandalsList = [this.mandal];
+        if (this.village) this.villagesList = [this.village];
       }
     }
   }
@@ -139,17 +137,13 @@ export class AddressDetailsComponent implements OnInit {
   }
 
   next() {
-    try {
-      localStorage.setItem('SellerAddressDetails', JSON.stringify({
-        pincode: this.pincode,
-        state: this.state,
-        district: this.district,
-        mandal: this.mandal,
-        village: this.village
-      }));
-    } catch (e) {
-      console.warn('[Storage] Quota exceeded in address details, proceeding safely:', e);
-    }
+    this.registrationService.setDraftData('SellerAddressDetails', {
+      pincode: this.pincode,
+      state: this.state,
+      district: this.district,
+      mandal: this.mandal,
+      village: this.village
+    });
     this.router.navigate(['/land-survey-details']);
   }
 

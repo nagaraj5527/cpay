@@ -181,11 +181,16 @@ export const getProfilePhoto = async (req, res) => {
 export const getDocumentStatusList = async (req, res) => {
     try {
         const { registrationId } = req.params;
+        const cleanMobile = registrationId.replace(/[^0-9]/g, '').slice(-10);
 
         const docsRes = await pool.query(
             `SELECT document_type, filename, uploaded_at FROM cpay.documents
-             WHERE registration_id = $1 AND document_type != 'PROFILE_PHOTO'`,
-            [registrationId]
+             WHERE (
+               registration_id = $1
+               OR registration_id IN (SELECT registration_id::text FROM cpay.registration r JOIN cpay.users u ON r.user_id = u.user_id WHERE u.mobile_number = $1 OR u.mobile_number = $2 OR u.mobile_number = $3)
+               OR registration_id IN (SELECT user_id::text FROM cpay.users WHERE mobile_number = $1 OR mobile_number = $2 OR mobile_number = $3)
+             ) AND document_type != 'PROFILE_PHOTO'`,
+            [registrationId, cleanMobile, '+91' + cleanMobile]
         );
 
         const statusMap = {};

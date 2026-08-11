@@ -7,6 +7,8 @@ import { MockDatabaseService } from '../../services/mock-db.service';
 import { AuthService } from '../../services/auth.service';
 import { CustomSelectComponent } from '../../components/custom-select/custom-select';
 
+import { RegistrationService } from '../../services/registration.service';
+
 @Component({
   selector: 'app-personal-details',
   imports: [CommonModule, FormsModule, CustomSelectComponent],
@@ -45,7 +47,8 @@ export class PersonalDetailsComponent implements OnInit {
   constructor(
     private router: Router,
     private dbService: MockDatabaseService,
-    private authService: AuthService
+    private authService: AuthService,
+    private registrationService: RegistrationService
   ) {
     this.selectedUserType = localStorage.getItem('selectedUserType') || '';
     const currentStep = 2;
@@ -57,30 +60,25 @@ export class PersonalDetailsComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const savedPersonal = localStorage.getItem('SellerPersonalDetails');
-    if (savedPersonal) {
-      try {
-        const pd = JSON.parse(savedPersonal);
-        this.fullName = pd.fullName || '';
-        this.gender = pd.gender || '';
-        this.divisionName = pd.divisionName || '';
-        this.parseMobileNumber(pd.mobileNumber || '');
-        this.aadhaarNumber = pd.aadhaarNumber || '';
-        this.aadhaarPhoto = pd.aadhaarPhoto || '';
-        this.aadhaarPhotoName = pd.aadhaarPhotoName || '';
-        this.aadhaarPhotoPreview = pd.aadhaarPhotoPreview || pd.aadhaarPhoto || '';
-        this.managerName = pd.managerName || '';
-        this.managerId = pd.managerId || '';
-        this.panNumber = pd.panNumber || '';
-        this.panPhoto = pd.panPhoto || '';
-        this.panPhotoName = pd.panPhotoName || '';
-        this.panPhotoPreview = pd.panPhotoPreview || pd.panPhoto || '';
-        this.emailAddress = pd.emailAddress || '';
-        this.registrationId = pd.registrationId || '';
-        this.gstNumber = pd.gstNumber || '';
-      } catch (e) {
-        console.error('Error parsing personal details', e);
-      }
+    const pd = this.registrationService.getDraftData('SellerPersonalDetails');
+    if (pd) {
+      this.fullName = pd.fullName || '';
+      this.gender = pd.gender || '';
+      this.divisionName = pd.divisionName || '';
+      this.parseMobileNumber(pd.mobileNumber || '');
+      this.aadhaarNumber = pd.aadhaarNumber || '';
+      this.aadhaarPhoto = pd.aadhaarPhoto || '';
+      this.aadhaarPhotoName = pd.aadhaarPhotoName || '';
+      this.aadhaarPhotoPreview = pd.aadhaarPhotoPreview || pd.aadhaarPhoto || '';
+      this.managerName = pd.managerName || '';
+      this.managerId = pd.managerId || '';
+      this.panNumber = pd.panNumber || '';
+      this.panPhoto = pd.panPhoto || '';
+      this.panPhotoName = pd.panPhotoName || '';
+      this.panPhotoPreview = pd.panPhotoPreview || pd.panPhoto || '';
+      this.emailAddress = pd.emailAddress || '';
+      this.registrationId = pd.registrationId || '';
+      this.gstNumber = pd.gstNumber || '';
     }
   }
 
@@ -320,37 +318,22 @@ export class PersonalDetailsComponent implements OnInit {
       divisionName: this.divisionName,
       mobileNumber: fullMobile,
       aadhaarNumber: this.aadhaarNumber,
-      aadhaarPhoto: this.aadhaarPhoto || this.aadhaarPhotoName,
+      aadhaarPhoto: this.aadhaarPhoto || this.aadhaarPhotoPreview || this.aadhaarPhotoName,
       aadhaarPhotoName: this.aadhaarPhotoName,
-      aadhaarPhotoPreview: this.aadhaarPhotoName,
+      aadhaarPhotoPreview: this.aadhaarPhotoPreview || this.aadhaarPhoto || this.aadhaarPhotoName,
       managerName: this.managerName,
       managerId: this.managerId,
       panNumber: this.panNumber,
-      panPhoto: this.panPhoto || this.panPhotoName,
+      panPhoto: this.panPhoto || this.panPhotoPreview || this.panPhotoName,
       panPhotoName: this.panPhotoName,
-      panPhotoPreview: this.panPhotoName,
+      panPhotoPreview: this.panPhotoPreview || this.panPhoto || this.panPhotoName,
       emailAddress: this.emailAddress,
       registrationId: this.registrationId,
       gstNumber: this.gstNumber
     };
 
-    const safeSave = (key: string, data: any) => {
-      try {
-        localStorage.setItem(key, typeof data === 'string' ? data : JSON.stringify(data));
-      } catch (e) {
-        console.warn(`[Storage] Quota exceeded for ${key}, proceeding safely:`, e);
-      }
-    };
-
-    safeSave('SellerPersonalDetails', personalPayload);
-    const clean10Personal = fullMobile.replace(/[^0-9]/g, '').slice(-10);
-    safeSave(`SellerPersonalDetails_${fullMobile}`, personalPayload);
-    if (clean10Personal) {
-      safeSave(`SellerPersonalDetails_${clean10Personal}`, personalPayload);
-    }
-
-    // Save mobile number to localStorage as the registering user
-    safeSave('currentUserMobile', fullMobile);
+    this.registrationService.setDraftData('SellerPersonalDetails', personalPayload, fullMobile);
+    localStorage.setItem('currentUserMobile', fullMobile);
 
     this.router.navigate(['/address-details']);
   }
