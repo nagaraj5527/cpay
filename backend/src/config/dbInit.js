@@ -4,11 +4,13 @@ import { fileURLToPath } from 'url';
 import bcrypt from 'bcrypt';
 import { calculateAquacultureCarbon } from '../services/aquaculture_calculator.service.js';
 import { healAllRegistrations } from '../../database/healAllRegistrations.js';
+import defaultPool from './postgres.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const healAllSellerPonds = async (pool) => {
+const healAllSellerPonds = async (poolParam) => {
+    const pool = poolParam || defaultPool;
     try {
         const regsRes = await pool.query(`
             SELECT r.registration_id, r.user_id, ld.land_id, ld.survey_number
@@ -129,7 +131,8 @@ const healAllSellerPonds = async (pool) => {
  * Keeps schema clean by dropping unused tables.
  * @param {import('pg').Pool} pool - PostgreSQL connection pool
  */
-export const initializeDatabase = async (pool) => {
+export const initializeDatabase = async (poolParam) => {
+    const pool = poolParam || defaultPool;
     try {
         console.log('🔄 Running self-healing database verification...');
 
@@ -164,6 +167,15 @@ export const initializeDatabase = async (pool) => {
             await pool.query("ALTER TABLE cpay.registration ADD COLUMN IF NOT EXISTS total_production NUMERIC(16,4);");
             await pool.query("ALTER TABLE cpay.registration ADD COLUMN IF NOT EXISTS total_carbon_credits NUMERIC(14,4);");
             await pool.query("ALTER TABLE cpay.registration ADD COLUMN IF NOT EXISTS portfolio_value NUMERIC(18,2);");
+        } catch (e) {}
+        try {
+            await pool.query("ALTER TABLE cpay.aquaculture_surveys ADD COLUMN IF NOT EXISTS land_id UUID;");
+            await pool.query("ALTER TABLE cpay.aquaculture_surveys ADD COLUMN IF NOT EXISTS asset_id UUID;");
+            await pool.query("ALTER TABLE cpay.aquaculture_surveys ADD COLUMN IF NOT EXISTS survey_number VARCHAR(100);");
+            await pool.query("ALTER TABLE cpay.aquaculture_surveys ADD COLUMN IF NOT EXISTS user_id UUID;");
+            await pool.query("ALTER TABLE cpay.aquaculture_surveys ADD COLUMN IF NOT EXISTS total_water_area NUMERIC(12,4);");
+            await pool.query("ALTER TABLE cpay.aquaculture_surveys ADD COLUMN IF NOT EXISTS total_ponds INT DEFAULT 1;");
+            await pool.query("ALTER TABLE cpay.aquaculture_surveys ADD COLUMN IF NOT EXISTS culture_type VARCHAR(100);");
         } catch (e) {}
         try {
             await pool.query("ALTER TABLE cpay.ponds ADD COLUMN IF NOT EXISTS land_id UUID;");

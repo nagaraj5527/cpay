@@ -324,7 +324,7 @@ export class PreviewComponent implements OnInit {
         pondArea: this.plantationArea || this.landArea,
         areaUnitId: this.plantationUnit || this.landUnit,
         feedConsumed: this.qtyFeedConsumed || 500,
-        feedUnitId: '349cabe3-8158-418d-b186-998d6bc4cbb5', // default kg
+        feedUnitId: 'Kilogram',
         fcr: this.fcr || 1.2,
         ponds: this.ponds,
         remarks: this.remarks || 'Ponds registered via web wizard'

@@ -1667,13 +1667,9 @@ export const submitFullRegistration = async (user, data) => {
         consentDetails
     } = data;
 
-    if (!registrationTypeId || !userTypeId) {
-        throw new Error("Registration Type and User Type are required");
-    }
-
     let resolvedRegTypeId = registrationTypeId;
-    if (!isUuid(resolvedRegTypeId)) {
-        const rRes = await pool.query("SELECT registration_type_id FROM cpay.registration_types WHERE registration_type_name ILIKE $1 LIMIT 1", [registrationTypeId]);
+    if (!resolvedRegTypeId || !isUuid(resolvedRegTypeId)) {
+        const rRes = await pool.query("SELECT registration_type_id FROM cpay.registration_types WHERE registration_type_name ILIKE $1 LIMIT 1", [registrationTypeId || 'SELLER']);
         if (rRes.rows.length > 0) resolvedRegTypeId = rRes.rows[0].registration_type_id;
         else {
             const fb = await pool.query("SELECT registration_type_id FROM cpay.registration_types LIMIT 1");
@@ -1688,8 +1684,8 @@ export const submitFullRegistration = async (user, data) => {
     }
 
     let resolvedUserTypeId = userTypeId;
-    if (!isUuid(resolvedUserTypeId)) {
-        const uRes = await pool.query("SELECT user_type_id FROM cpay.user_types WHERE user_type_name ILIKE $1 OR category ILIKE $1 LIMIT 1", [userTypeId]);
+    if (!resolvedUserTypeId || !isUuid(resolvedUserTypeId)) {
+        const uRes = await pool.query("SELECT user_type_id FROM cpay.user_types WHERE user_type_name ILIKE $1 OR category ILIKE $1 LIMIT 1", [userTypeId || 'INDIVIDUAL']);
         if (uRes.rows.length > 0) resolvedUserTypeId = uRes.rows[0].user_type_id;
         else {
             const fb = await pool.query("SELECT user_type_id FROM cpay.user_types LIMIT 1");
@@ -1949,41 +1945,59 @@ export const submitFullRegistration = async (user, data) => {
 
         if (isFishPond) {
             let resolvedFishSpeciesId = aquacultureDetails.fishSpeciesId || null;
-            if (resolvedFishSpeciesId && !isUuid(resolvedFishSpeciesId)) {
+            let checkFish = null;
+            if (resolvedFishSpeciesId && isUuid(resolvedFishSpeciesId)) {
+                checkFish = await client.query("SELECT fish_species_id FROM cpay.fish_species WHERE fish_species_id = $1 LIMIT 1", [resolvedFishSpeciesId]);
+            }
+            if (!checkFish || checkFish.rows.length === 0) {
                 let nameMatch = 'IMC';
-                if (resolvedFishSpeciesId.toLowerCase().includes('panga')) nameMatch = 'PANGASIUS';
-                else if (resolvedFishSpeciesId.toLowerCase().includes('roop')) nameMatch = 'ROOPCHAND';
-                else if (resolvedFishSpeciesId.toLowerCase().includes('tilapia')) nameMatch = 'TILAPIA';
+                const str = (resolvedFishSpeciesId || '').toString().toLowerCase();
+                if (str.includes('panga')) nameMatch = 'PANGASIUS';
+                else if (str.includes('roop')) nameMatch = 'ROOPCHAND';
+                else if (str.includes('tilapia')) nameMatch = 'TILAPIA';
 
                 const fResult = await client.query(
-                    "SELECT fish_species_id FROM cpay.fish_species WHERE species_name = $1 LIMIT 1",
-                    [nameMatch]
+                    "SELECT fish_species_id FROM cpay.fish_species WHERE species_name ILIKE $1 OR species_name = $2 LIMIT 1",
+                    [`%${nameMatch}%`, nameMatch]
                 );
-                if (fResult.rows.length > 0) {
-                    resolvedFishSpeciesId = fResult.rows[0].fish_species_id;
+                if (fResult.rows.length > 0) resolvedFishSpeciesId = fResult.rows[0].fish_species_id;
+                else {
+                    const fb = await client.query("SELECT fish_species_id FROM cpay.fish_species LIMIT 1");
+                    if (fb.rows.length > 0) resolvedFishSpeciesId = fb.rows[0].fish_species_id;
                 }
             }
 
             let resolvedPrawnSpeciesId = aquacultureDetails.prawnSpeciesId || null;
-            if (resolvedPrawnSpeciesId && !isUuid(resolvedPrawnSpeciesId)) {
+            let checkPrawn = null;
+            if (resolvedPrawnSpeciesId && isUuid(resolvedPrawnSpeciesId)) {
+                checkPrawn = await client.query("SELECT prawn_species_id FROM cpay.prawn_species WHERE prawn_species_id = $1 LIMIT 1", [resolvedPrawnSpeciesId]);
+            }
+            if (!checkPrawn || checkPrawn.rows.length === 0) {
                 let nameMatch = 'TIGER_PRAWN';
-                if (resolvedPrawnSpeciesId.toLowerCase().includes('vannamei')) nameMatch = 'VANNAMEI';
-                else if (resolvedPrawnSpeciesId.toLowerCase().includes('scampi')) nameMatch = 'SCAMPI';
-                else if (resolvedPrawnSpeciesId.toLowerCase().includes('banana')) nameMatch = 'BANANA_PRAWN';
-                else if (resolvedPrawnSpeciesId.toLowerCase().includes('kuruma')) nameMatch = 'KURUMA_PRAWN';
+                const str = (resolvedPrawnSpeciesId || '').toString().toLowerCase();
+                if (str.includes('vannamei')) nameMatch = 'VANNAMEI';
+                else if (str.includes('scampi')) nameMatch = 'SCAMPI';
+                else if (str.includes('banana')) nameMatch = 'BANANA_PRAWN';
+                else if (str.includes('kuruma')) nameMatch = 'KURUMA_PRAWN';
 
                 const pResult = await client.query(
-                    "SELECT prawn_species_id FROM cpay.prawn_species WHERE species_name = $1 LIMIT 1",
-                    [nameMatch]
+                    "SELECT prawn_species_id FROM cpay.prawn_species WHERE species_name ILIKE $1 OR species_name = $2 LIMIT 1",
+                    [`%${nameMatch}%`, nameMatch]
                 );
-                if (pResult.rows.length > 0) {
-                    resolvedPrawnSpeciesId = pResult.rows[0].prawn_species_id;
+                if (pResult.rows.length > 0) resolvedPrawnSpeciesId = pResult.rows[0].prawn_species_id;
+                else {
+                    const fb = await client.query("SELECT prawn_species_id FROM cpay.prawn_species LIMIT 1");
+                    if (fb.rows.length > 0) resolvedPrawnSpeciesId = fb.rows[0].prawn_species_id;
                 }
             }
 
             let resolvedAreaUnitId = aquacultureDetails.areaUnitId;
-            if (resolvedAreaUnitId && !isUuid(resolvedAreaUnitId)) {
-                let cleanUnit = resolvedAreaUnitId;
+            let checkAreaUnit = null;
+            if (resolvedAreaUnitId && isUuid(resolvedAreaUnitId)) {
+                checkAreaUnit = await client.query("SELECT unit_id FROM cpay.units WHERE unit_id = $1 LIMIT 1", [resolvedAreaUnitId]);
+            }
+            if (!checkAreaUnit || checkAreaUnit.rows.length === 0) {
+                let cleanUnit = (resolvedAreaUnitId || landDetails.unitId || landDetails.unit || 'Hectare').toString();
                 if (cleanUnit.toLowerCase().startsWith('acre')) cleanUnit = 'Acre';
                 else if (cleanUnit.toLowerCase().startsWith('hectare')) cleanUnit = 'Hectare';
 
@@ -1993,12 +2007,19 @@ export const submitFullRegistration = async (user, data) => {
                 );
                 if (uResult.rows.length > 0) {
                     resolvedAreaUnitId = uResult.rows[0].unit_id;
+                } else {
+                    const fb = await client.query("SELECT unit_id FROM cpay.units LIMIT 1");
+                    resolvedAreaUnitId = fb.rows[0].unit_id;
                 }
             }
 
             let resolvedFeedUnitId = aquacultureDetails.feedUnitId;
-            if (resolvedFeedUnitId && !isUuid(resolvedFeedUnitId)) {
-                let cleanUnit = resolvedFeedUnitId;
+            let checkFeedUnit = null;
+            if (resolvedFeedUnitId && isUuid(resolvedFeedUnitId)) {
+                checkFeedUnit = await client.query("SELECT unit_id FROM cpay.units WHERE unit_id = $1 LIMIT 1", [resolvedFeedUnitId]);
+            }
+            if (!checkFeedUnit || checkFeedUnit.rows.length === 0) {
+                let cleanUnit = (resolvedFeedUnitId || 'Kilogram').toString();
                 if (cleanUnit.toLowerCase().startsWith('kg') || cleanUnit.toLowerCase().startsWith('kilo')) cleanUnit = 'Kilogram';
                 else if (cleanUnit.toLowerCase().startsWith('ton')) cleanUnit = 'Ton';
 
@@ -2008,6 +2029,9 @@ export const submitFullRegistration = async (user, data) => {
                 );
                 if (uResult.rows.length > 0) {
                     resolvedFeedUnitId = uResult.rows[0].unit_id;
+                } else {
+                    const fb = await client.query("SELECT unit_id FROM cpay.units LIMIT 1");
+                    resolvedFeedUnitId = fb.rows[0].unit_id;
                 }
             }
 
@@ -2020,7 +2044,7 @@ export const submitFullRegistration = async (user, data) => {
                 [
                     registrationId,
                     landId,
-                    landDetails.surveyNumber || landDetails.surveyNo || '125',
+                    finalSurveyNo,
                     user.userId,
                     Number(landDetails.totalArea || landDetails.landArea || landDetails.area || 1.0)
                 ]
@@ -2100,7 +2124,7 @@ export const submitFullRegistration = async (user, data) => {
                         pArea,
                         resolvedAreaUnitId,
                         pFeed,
-                        resolvedFeedUnitId || '349cabe3-8158-418d-b186-998d6bc4cbb5',
+                        resolvedFeedUnitId,
                         pFcr,
                         `Survey Pond: ${pName} | Species: ${pSpeciesStr}`,
                         aquacultureDetails.cropsPerYear !== undefined ? Number(aquacultureDetails.cropsPerYear) : 1.5,
