@@ -34,6 +34,9 @@ export class LandSurveyDetailsComponent implements OnInit, OnDestroy {
 
   surveyNo: string = '';
   subDivisionNo: string = '';
+  surveyEntries: Array<{ surveyNo: string; subDivisionNo: string }> = [
+    { surveyNo: '', subDivisionNo: '' }
+  ];
   area: string = '';
   unit: string = '';
 
@@ -59,8 +62,22 @@ export class LandSurveyDetailsComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     const ld = this.registrationService.getDraftData('SellerLandDetails');
     if (ld) {
-      this.surveyNo = ld.surveyNo || '';
-      this.subDivisionNo = ld.subDivisionNo || '';
+      if (Array.isArray(ld.surveyEntries) && ld.surveyEntries.length > 0) {
+        this.surveyEntries = ld.surveyEntries.map((e: any) => ({
+          surveyNo: e.surveyNo || '',
+          subDivisionNo: e.subDivisionNo || ''
+        }));
+        this.surveyNo = this.surveyEntries.map(e => e.surveyNo).filter(Boolean).join(', ');
+        this.subDivisionNo = this.surveyEntries.map(e => e.subDivisionNo).filter(Boolean).join(', ');
+      } else {
+        this.surveyNo = ld.surveyNo || '';
+        this.subDivisionNo = ld.subDivisionNo || '';
+        this.surveyEntries = [{
+          surveyNo: this.surveyNo,
+          subDivisionNo: this.subDivisionNo
+        }];
+      }
+
       this.area = ld.area || '';
       this.unit = ld.unit || '';
       this.latitude = ld.latitude || 17.492677;
@@ -70,6 +87,16 @@ export class LandSurveyDetailsComponent implements OnInit, OnDestroy {
       this.pattadarDoc = ld.pattadarDoc || '';
       this.pattadarDocName = ld.pattadarDocName || '';
       this.pattadarDocPreview = ld.pattadarDocPreview || ld.pattadarDoc || null;
+    }
+  }
+
+  addSurveyEntry(): void {
+    this.surveyEntries.push({ surveyNo: '', subDivisionNo: '' });
+  }
+
+  removeSurveyEntry(index: number): void {
+    if (this.surveyEntries.length > 1) {
+      this.surveyEntries.splice(index, 1);
     }
   }
 
@@ -130,14 +157,26 @@ export class LandSurveyDetailsComponent implements OnInit, OnDestroy {
   }
 
   next(): void {
-    if (!this.surveyNo) {
-      alert('Please enter survey number');
+    if (!this.surveyEntries || this.surveyEntries.length === 0) {
+      alert('Please add at least one survey number');
       return;
     }
-    if (!this.subDivisionNo) {
-      alert('Please enter sub division number');
-      return;
+
+    for (let i = 0; i < this.surveyEntries.length; i++) {
+      const entry = this.surveyEntries[i];
+      if (!entry.surveyNo || !entry.surveyNo.trim()) {
+        alert(`Please enter survey number for Survey #${i + 1}`);
+        return;
+      }
+      if (!entry.subDivisionNo || !entry.subDivisionNo.trim()) {
+        alert(`Please enter sub division number for Survey #${i + 1}`);
+        return;
+      }
     }
+
+    this.surveyNo = this.surveyEntries.map(e => e.surveyNo.trim()).join(', ');
+    this.subDivisionNo = this.surveyEntries.map(e => e.subDivisionNo.trim()).join(', ');
+
     if (!this.area) {
       alert('Please enter total area');
       return;
@@ -158,6 +197,7 @@ export class LandSurveyDetailsComponent implements OnInit, OnDestroy {
     const landPayload = {
       surveyNo: this.surveyNo,
       subDivisionNo: this.subDivisionNo,
+      surveyEntries: this.surveyEntries,
       area: this.area,
       unit: this.unit,
       latitude: this.latitude,

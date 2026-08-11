@@ -208,7 +208,20 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
   newLandPattadarDocName: string = '';
   newLandPattadarDoc: string = '';
   newLandPattadarDocPreview: string | ArrayBuffer | null = null;
+  newLandSurveyEntries: Array<{ surveyNo: string; subDivisionNo: string }> = [
+    { surveyNo: '', subDivisionNo: '' }
+  ];
   newLandSurvey = { surveyNo: '', subDivisionNo: '', area: '', unit: 'Acre' };
+
+  addNewLandSurveyEntry(): void {
+    this.newLandSurveyEntries.push({ surveyNo: '', subDivisionNo: '' });
+  }
+
+  removeNewLandSurveyEntry(index: number): void {
+    if (this.newLandSurveyEntries.length > 1) {
+      this.newLandSurveyEntries.splice(index, 1);
+    }
+  }
   newLandPlantation = {
     landType: '',
     plantationType: '',
@@ -1483,12 +1496,22 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     const portfolioValStr = this.getCurrencySymbol() + Math.round(this.convertAmount(valINR)).toLocaleString('en-IN');
     const maxPondsAllowed = rawAsset.maxPondsAllowed || Math.max(3, pondsList.length);
 
+    let parsedSurveyEntries: any[] = [];
+    if (Array.isArray(rawAsset.surveyEntries) && rawAsset.surveyEntries.length > 0) {
+      parsedSurveyEntries = rawAsset.surveyEntries;
+    } else if (rawAsset.survey_numbers) {
+      try {
+        parsedSurveyEntries = typeof rawAsset.survey_numbers === 'string' ? JSON.parse(rawAsset.survey_numbers) : rawAsset.survey_numbers;
+      } catch (e) {}
+    }
+
     return {
       ...rawAsset,
       id: rawAsset.id || rawAsset.registration_id || `asset-${sNo}`,
       registration_id: rawAsset.registration_id || rawAsset.id,
       surveyNo: sNo,
       subDivisionNo: subDiv,
+      surveyEntries: parsedSurveyEntries,
       name: nameVal,
       cropCategory: rawAsset.cropCategory || 'Aquaculture (Fish & Shrimp)',
       area: totAreaStr,
@@ -1503,7 +1526,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       date: rawAsset.date || 'June 15, 2026',
       sequestrationRate: totCredVal,
       rejectionReason: rawAsset.rejectionReason || '',
-      showPonds: rawAsset.showPonds || false,
+      showPonds: rawAsset.showPonds !== undefined ? rawAsset.showPonds : (pondsList.length > 0),
       maxPondsAllowed: maxPondsAllowed,
       ponds: pondsList,
       coords: rawAsset.coords || [
@@ -3095,6 +3118,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     this.newLandLongitude = null;
     this.newLandImagePreview = null;
     this.newLandCameraStream = null;
+    this.newLandSurveyEntries = [{ surveyNo: '', subDivisionNo: '' }];
     this.newLandSurvey = { surveyNo: '', subDivisionNo: '', area: '', unit: 'Acre' };
     this.newLandPlantation = {
       landType: 'Fish Pond',
@@ -3411,14 +3435,25 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       }
       this.addLandStep = 2;
     } else if (this.addLandStep === 2) {
-      if (!this.newLandSurvey.surveyNo) {
-        alert('Please enter Survey Number.');
+      if (!this.newLandSurveyEntries || this.newLandSurveyEntries.length === 0) {
+        alert('Please add at least one survey number.');
         return;
       }
-      if (!this.newLandSurvey.subDivisionNo) {
-        alert('Please enter Sub Division Number.');
-        return;
+      for (let i = 0; i < this.newLandSurveyEntries.length; i++) {
+        const entry = this.newLandSurveyEntries[i];
+        if (!entry.surveyNo || !entry.surveyNo.trim()) {
+          alert(`Please enter Survey Number for Survey #${i + 1}.`);
+          return;
+        }
+        if (!entry.subDivisionNo || !entry.subDivisionNo.trim()) {
+          alert(`Please enter Sub Division Number for Survey #${i + 1}.`);
+          return;
+        }
       }
+
+      this.newLandSurvey.surveyNo = this.newLandSurveyEntries.map(e => e.surveyNo.trim()).join(', ');
+      this.newLandSurvey.subDivisionNo = this.newLandSurveyEntries.map(e => e.subDivisionNo.trim()).join(', ');
+
       if (!this.newLandSurvey.area || Number(this.newLandSurvey.area) <= 0) {
         alert('Please enter valid Total Area.');
         return;
@@ -3726,8 +3761,10 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       sequestrationRate: estSeqRate,
       address: { ...this.newLandAddress },
       survey: { ...this.newLandSurvey },
+      surveyEntries: [...this.newLandSurveyEntries],
       plantation: { ...this.newLandPlantation },
       ponds: childPondsList,
+      showPonds: childPondsList.length > 0,
       latitude: this.newLandLatitude || (14.4450 + (Math.random() - 0.5) * 0.012),
       longitude: this.newLandLongitude || (79.9860 + (Math.random() - 0.5) * 0.012)
     };
@@ -3747,6 +3784,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
         landType: this.newLandPlantation.landType,
         surveyNo: this.newLandSurvey.surveyNo,
         subDivisionNo: this.newLandSurvey.subDivisionNo,
+        surveyEntries: this.newLandSurveyEntries,
         area: areaNum,
         unit: unitText,
         latitude: newParcelItem.latitude,

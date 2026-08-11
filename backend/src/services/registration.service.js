@@ -1913,18 +1913,22 @@ export const submitFullRegistration = async (user, data) => {
         if (landDetails.pattadarDoc) {
             await saveBase64Doc('LAND', landDetails.pattadarDoc, landDetails.pattadarDocName || 'Pattadar_Passbook.pdf');
         }
+        let rawSurveyEntries = Array.isArray(landDetails.surveyEntries) && landDetails.surveyEntries.length > 0 ? landDetails.surveyEntries : null;
+        let finalSurveyNo = rawSurveyEntries ? rawSurveyEntries.map(e => e.surveyNo).filter(Boolean).join(', ') : (landDetails.surveyNumber || landDetails.surveyNo || '125');
+        let finalSubDivNo = rawSurveyEntries ? rawSurveyEntries.map(e => e.subDivisionNo).filter(Boolean).join(', ') : (landDetails.subDivisionNumber || landDetails.subDivisionNo || null);
 
         const landRes = await client.query(
             `INSERT INTO cpay.land_details
-             (registration_id, user_id, land_type_id, survey_number, sub_division_number, total_area, unit_id, latitude, longitude, photo_id, mongo_photo_id, created_at, updated_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+             (registration_id, user_id, land_type_id, survey_number, sub_division_number, survey_numbers, total_area, unit_id, latitude, longitude, photo_id, mongo_photo_id, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
              RETURNING land_id`,
             [
                 registrationId,
                 user.userId,
                 resolvedLandTypeId,
-                landDetails.surveyNumber || landDetails.surveyNo || '125',
-                landDetails.subDivisionNumber || landDetails.subDivisionNo || null,
+                finalSurveyNo,
+                finalSubDivNo,
+                rawSurveyEntries ? JSON.stringify(rawSurveyEntries) : null,
                 Number(landDetails.totalArea || landDetails.landArea || landDetails.area || 50),
                 resolvedUnitId,
                 landDetails.latitude ? Number(landDetails.latitude) : 14.4450,
@@ -1939,7 +1943,9 @@ export const submitFullRegistration = async (user, data) => {
             "SELECT land_type_name FROM cpay.land_types WHERE land_type_id = $1 LIMIT 1",
             [resolvedLandTypeId]
         );
-        const isFishPond = fishPondCheck.rows.length > 0 && fishPondCheck.rows[0].land_type_name === 'FISH_POND';
+        const isFishPond = (fishPondCheck.rows.length > 0 && fishPondCheck.rows[0].land_type_name === 'FISH_POND') ||
+                           (aquacultureDetails && Array.isArray(aquacultureDetails.ponds) && aquacultureDetails.ponds.length > 0) ||
+                           (plantationDetails && String(plantationDetails.plantationCategoryId || '').toLowerCase().includes('fish'));
 
         if (isFishPond) {
             let resolvedFishSpeciesId = aquacultureDetails.fishSpeciesId || null;
@@ -2767,18 +2773,23 @@ export const addAsset = async (user, data) => {
             }
         }
 
+        let rawSurveyEntries = Array.isArray(landDetails.surveyEntries) && landDetails.surveyEntries.length > 0 ? landDetails.surveyEntries : (Array.isArray(data.surveyEntries) && data.surveyEntries.length > 0 ? data.surveyEntries : null);
+        let finalSNo = rawSurveyEntries ? rawSurveyEntries.map(e => e.surveyNo).filter(Boolean).join(', ') : (sNo || '101');
+        let finalSubNo = rawSurveyEntries ? rawSurveyEntries.map(e => e.subDivisionNo).filter(Boolean).join(', ') : (subNo || null);
+
         const landRes = await client.query(
             `INSERT INTO cpay.land_details
-             (registration_id, user_id, land_type_id, survey_number, sub_division_number, total_area, unit_id, latitude, longitude, created_at, updated_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+             (registration_id, user_id, land_type_id, survey_number, sub_division_number, survey_numbers, total_area, unit_id, latitude, longitude, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
              RETURNING land_id`,
             [
                 registrationId,
                 user.userId,
                 resolvedLandTypeId,
-                sNo,
-                subNo,
-                Number(landDetails.area || landDetails.totalArea),
+                finalSNo,
+                finalSubNo,
+                rawSurveyEntries ? JSON.stringify(rawSurveyEntries) : null,
+                Number(landDetails.area || landDetails.totalArea || 1.0),
                 resolvedUnitId,
                 landDetails.latitude ? Number(landDetails.latitude) : 14.4450,
                 landDetails.longitude ? Number(landDetails.longitude) : 79.9860
@@ -2787,7 +2798,7 @@ export const addAsset = async (user, data) => {
         const landId = landRes.rows[0].land_id;
 
         // 7. Save Plantation or Aquaculture details
-        const isFishPond = landDetails.landType === 'Fish Pond';
+        const isFishPond = landDetails.landType === 'Fish Pond' || (aquacultureDetails && Array.isArray(aquacultureDetails.ponds) && aquacultureDetails.ponds.length > 0);
         if (isFishPond) {
             const pondsToSave = (aquacultureDetails && Array.isArray(aquacultureDetails.ponds) && aquacultureDetails.ponds.length > 0)
                 ? aquacultureDetails.ponds
@@ -2801,16 +2812,49 @@ export const addAsset = async (user, data) => {
                     feedConsumed: Number(plantationDetails.qtyFeedConsumed || plantationDetails.feedConsumed || 500)
                 }];
 
+            // Create Master Aquaculture Survey entry
+            const survRes = await client.query(
+                `INSERT INTO cpay.aquaculture_surveys
+                 (registration_id, asset_id, land_id, survey_number, user_id, culture_type, total_water_area, total_ponds, created_at, updated_at)
+                 VALUES ($1, $2, $2, $3, $4, 'FISH', $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                 RETURNING survey_id`,
+                [
+                    registrationId,
+                    landId,
+                    finalSNo,
+                    user.userId,
+                    pondsToSave.reduce((sum, p) => sum + Number(p.pondAreaHa || p.area || p.pondArea || 1.0), 0),
+                    pondsToSave.length
+                ]
+            );
+            const surveyId = survRes.rows[0].survey_id;
+
+            let aggregatedProductionKg = 0;
+            let aggregatedCreditsT = 0;
+            let aggregatedAreaHa = 0;
+
             for (let pIdx = 0; pIdx < pondsToSave.length; pIdx++) {
                 const pond = pondsToSave[pIdx];
-                const pName = pond.name || `POND ${pIdx + 1}`;
+                const pName = pond.name || pond.pondName || `POND ${pIdx + 1}`;
                 const pSpecies = pond.selectedSpecies || pond.subCategory || pond.species || plantationDetails.subCategory || 'IMC';
+                const rawPArea = Number(pond.pondAreaHa || pond.area || pond.pondArea || 1.0);
+                const pUnitName = pond.areaUnitId || pond.unit || landDetails.unit || 'Hectare';
+                const pArea = convertToHectares(rawPArea, pUnitName);
+                const pStock = Number(pond.stockingDensity || pond.stockQuantity || plantationDetails.quantity || 120);
+                const pCultureDays = Number(pond.cultureDurationDays || pond.cultureDays || plantationDetails.daysOfCulture || (plantationDetails.age ? plantationDetails.age * 30 : 120));
+                const pFcr = Number(pond.averageFcr || pond.fcr || plantationDetails.fcr || 1.2);
+                const pFeed = Number(pond.feedConsumed || plantationDetails.qtyFeedConsumed || (pStock * pFcr));
 
                 let resolvedFishSpeciesId = null;
                 if (pSpecies) {
+                    let nameMatch = 'IMC';
+                    if (pSpecies.toLowerCase().includes('panga')) nameMatch = 'PANGASIUS';
+                    else if (pSpecies.toLowerCase().includes('roop')) nameMatch = 'ROOPCHAND';
+                    else if (pSpecies.toLowerCase().includes('tilapia')) nameMatch = 'TILAPIA';
+
                     const fResult = await client.query(
-                        "SELECT fish_species_id FROM cpay.fish_species WHERE species_name ILIKE $1 OR scientific_name ILIKE $1 LIMIT 1",
-                        [pSpecies]
+                        "SELECT fish_species_id FROM cpay.fish_species WHERE species_name = $1 LIMIT 1",
+                        [nameMatch]
                     );
                     if (fResult.rows.length > 0) resolvedFishSpeciesId = fResult.rows[0].fish_species_id;
                 }
@@ -2832,6 +2876,27 @@ export const addAsset = async (user, data) => {
                     if (fbPrawn.rows.length > 0) resolvedPrawnSpeciesId = fbPrawn.rows[0].prawn_species_id;
                 }
 
+                // Compute exact pond carbon & production
+                let pCalc = null;
+                try {
+                    pCalc = calculateAquacultureCarbon({
+                        pond_area_ha: pArea,
+                        species_name: pSpecies,
+                        crops_per_year: pond.cropsPerYear || 1.5,
+                        stocking_density: pStock,
+                        farm_reported_fcr: pFcr,
+                        total_feed_required_kg: pFeed
+                    });
+                } catch (e) {}
+
+                const pProdKg = pCalc ? Math.round(pCalc.total_production_kg) : Math.round(pStock * 0.8 * 1.5);
+                const pCredits = pCalc ? parseFloat(pCalc.carbon_credit_per_year_t.toFixed(2)) : parseFloat((pArea * 6.8).toFixed(2));
+                const pValuation = Math.round(pCredits * 120);
+
+                aggregatedProductionKg += pProdKg;
+                aggregatedCreditsT += pCredits;
+                aggregatedAreaHa += pArea;
+
                 await client.query(
                     `INSERT INTO cpay.aquaculture_details
                      (registration_id, land_id, aquaculture_type, fish_species_id, prawn_species_id, stock_quantity, culture_days, pond_area, area_unit_id, feed_consumed, feed_unit_id, fcr, remarks, created_at, updated_at)
@@ -2842,17 +2907,65 @@ export const addAsset = async (user, data) => {
                         plantationDetails.plantationType || pond.aquacultureType || 'Fish',
                         resolvedFishSpeciesId,
                         resolvedPrawnSpeciesId,
-                        Number(pond.stockingDensity || pond.stockQuantity || plantationDetails.quantity || 120),
-                        Number(pond.cultureDurationDays || pond.cultureDays || plantationDetails.daysOfCulture || (plantationDetails.age ? plantationDetails.age * 30 : 120)),
-                        Number(pond.pondAreaHa || pond.area || landDetails.area || landDetails.totalArea || 1.0),
+                        pStock,
+                        pCultureDays,
+                        pArea,
                         resolvedUnitId,
-                        Number(pond.feedConsumed || plantationDetails.qtyFeedConsumed || 500),
+                        pFeed,
                         resolvedUnitId,
-                        Number(pond.averageFcr || pond.fcr || plantationDetails.fcr || 1.2),
+                        pFcr,
                         `Survey Pond: ${pName} | Species: ${pSpecies}`
                     ]
                 );
+
+                // Insert into cpay.ponds table
+                const pIns = await client.query(
+                    `INSERT INTO cpay.ponds (survey_id, land_id, pond_number, pond_name, species, species_name, pond_area, pond_area_ha, status, created_at, updated_at)
+                     VALUES ($1, $2, $3, $4, $5, $5, $6, $6, 'PENDING', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                     RETURNING pond_id`,
+                    [surveyId, landId, pIdx + 1, pName, pSpecies, pArea]
+                );
+                const insertedPondId = pIns.rows[0].pond_id;
+
+                // Insert into cpay.pond_carbon_calculation & cpay.pond_carbon_calculations
+                await client.query('DELETE FROM cpay.pond_carbon_calculation WHERE pond_id = $1', [insertedPondId]);
+                await client.query(
+                    `INSERT INTO cpay.pond_carbon_calculation (pond_id, co2_reduction, carbon_credit, portfolio_value, calculated_at)
+                     VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)`,
+                    [insertedPondId, pCredits, pCredits, pValuation]
+                );
+
+                try {
+                    await client.query(
+                        `INSERT INTO cpay.pond_carbon_calculations (calculation_id, pond_id, land_id, total_feed_required_kg, total_production_kg, co2e_reduction_per_crop_t, pct_reduction, carbon_credit_per_year_t, carbon_credit_per_ha_per_year_t, portfolio_value, calculated_at)
+                         VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP)`,
+                        [insertedPondId, landId, pFeed, pProdKg, pCredits, 45.0, pCredits, Number((pCredits / (pArea || 1)).toFixed(2)), pValuation]
+                    );
+                } catch (e) {}
+
+                // Insert into cpay.pond_production
+                await client.query('DELETE FROM cpay.pond_production WHERE pond_id = $1', [insertedPondId]);
+                await client.query(
+                    `INSERT INTO cpay.pond_production (pond_id, production)
+                     VALUES ($1, $2)`,
+                    [insertedPondId, pProdKg]
+                );
             }
+
+            // Update land_details & registration aggregate metrics
+            const finalPortfolioVal = Math.round(aggregatedCreditsT * 120);
+            await client.query(
+                `UPDATE cpay.land_details 
+                 SET total_area = $1, total_production = $2, total_carbon_credits = $3, portfolio_value = $4, updated_at = CURRENT_TIMESTAMP
+                 WHERE land_id = $5`,
+                [aggregatedAreaHa > 0 ? aggregatedAreaHa : Number(landDetails.area || 1.0), aggregatedProductionKg, aggregatedCreditsT, finalPortfolioVal, landId]
+            );
+            await client.query(
+                `UPDATE cpay.registration 
+                 SET total_area = $1, total_production = $2, total_carbon_credits = $3, portfolio_value = $4, updated_at = CURRENT_TIMESTAMP
+                 WHERE registration_id = $5`,
+                [aggregatedAreaHa > 0 ? aggregatedAreaHa : Number(landDetails.area || 1.0), aggregatedProductionKg, aggregatedCreditsT, finalPortfolioVal, registrationId]
+            );
         } else {
             let resolvedCategoryId = null;
             const catResult = await client.query(

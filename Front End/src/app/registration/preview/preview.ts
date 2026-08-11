@@ -41,6 +41,7 @@ export class PreviewComponent implements OnInit {
   // Land Details
   surveyNo: string = '';
   subDivisionNo: string = '';
+  surveyEntries: Array<{ surveyNo: string; subDivisionNo: string }> = [];
   landArea: number = 0;
   landUnit: string = 'Acre';
   latitude: number | null = null;
@@ -135,8 +136,18 @@ export class PreviewComponent implements OnInit {
     // 3. Land Details
     const ld = this.registrationService.getDraftData('SellerLandDetails', currentMob);
     if (ld) {
-      this.surveyNo = ld.surveyNo || this.surveyNo;
-      this.subDivisionNo = ld.subDivisionNo || this.subDivisionNo;
+      if (Array.isArray(ld.surveyEntries) && ld.surveyEntries.length > 0) {
+        this.surveyEntries = ld.surveyEntries;
+        this.surveyNo = ld.surveyNo || this.surveyEntries.map(e => e.surveyNo).filter(Boolean).join(', ');
+        this.subDivisionNo = ld.subDivisionNo || this.surveyEntries.map(e => e.subDivisionNo).filter(Boolean).join(', ');
+      } else {
+        this.surveyNo = ld.surveyNo || this.surveyNo;
+        this.subDivisionNo = ld.subDivisionNo || this.subDivisionNo;
+        this.surveyEntries = [{
+          surveyNo: this.surveyNo,
+          subDivisionNo: this.subDivisionNo
+        }];
+      }
       this.landArea = ld.area !== undefined ? Number(ld.area) : this.landArea;
       this.landUnit = ld.unit || this.landUnit;
       this.latitude = ld.latitude || null;
@@ -288,6 +299,7 @@ export class PreviewComponent implements OnInit {
         landTypeId: this.landType,
         surveyNumber: this.surveyNo,
         subDivisionNumber: this.subDivisionNo,
+        surveyEntries: this.surveyEntries,
         totalArea: this.landArea,
         unitId: this.landUnit,
         latitude: this.latitude || 14.4450,

@@ -154,7 +154,25 @@ export const initializeDatabase = async (pool) => {
             await pool.query("ALTER TABLE cpay.carbon_calculation ADD COLUMN IF NOT EXISTS land_id UUID;");
         } catch (e) {}
         try {
+            await pool.query("ALTER TABLE cpay.land_details ADD COLUMN IF NOT EXISTS survey_numbers JSONB;");
+            await pool.query("ALTER TABLE cpay.land_details ADD COLUMN IF NOT EXISTS total_production NUMERIC(16,4);");
+            await pool.query("ALTER TABLE cpay.land_details ADD COLUMN IF NOT EXISTS total_carbon_credits NUMERIC(14,4);");
+            await pool.query("ALTER TABLE cpay.land_details ADD COLUMN IF NOT EXISTS portfolio_value NUMERIC(18,2);");
+        } catch (e) {}
+        try {
+            await pool.query("ALTER TABLE cpay.registration ADD COLUMN IF NOT EXISTS total_area NUMERIC(12,4);");
+            await pool.query("ALTER TABLE cpay.registration ADD COLUMN IF NOT EXISTS total_production NUMERIC(16,4);");
+            await pool.query("ALTER TABLE cpay.registration ADD COLUMN IF NOT EXISTS total_carbon_credits NUMERIC(14,4);");
+            await pool.query("ALTER TABLE cpay.registration ADD COLUMN IF NOT EXISTS portfolio_value NUMERIC(18,2);");
+        } catch (e) {}
+        try {
             await pool.query("ALTER TABLE cpay.ponds ADD COLUMN IF NOT EXISTS land_id UUID;");
+            await pool.query("ALTER TABLE cpay.ponds ADD COLUMN IF NOT EXISTS survey_id UUID;");
+            await pool.query("ALTER TABLE cpay.ponds ADD COLUMN IF NOT EXISTS species VARCHAR(100);");
+            await pool.query("ALTER TABLE cpay.ponds ADD COLUMN IF NOT EXISTS species_name VARCHAR(100);");
+            await pool.query("ALTER TABLE cpay.ponds ADD COLUMN IF NOT EXISTS pond_area NUMERIC(12,4);");
+            await pool.query("ALTER TABLE cpay.ponds ADD COLUMN IF NOT EXISTS pond_area_ha NUMERIC(12,4);");
+            await pool.query("ALTER TABLE cpay.ponds ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'PENDING';");
         } catch (e) {}
         try {
             await pool.query("ALTER TABLE cpay.pond_carbon_calculations ADD COLUMN IF NOT EXISTS land_id UUID;");

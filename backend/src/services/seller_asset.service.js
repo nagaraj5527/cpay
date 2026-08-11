@@ -13,6 +13,7 @@ export const getSellerAssets = async (user) => {
             r.application_number AS "applicationNumber",
             COALESCE(ld.survey_number, 'N/A') AS "surveyNumber",
             COALESCE(ld.sub_division_number, '') AS "subDivisionNumber",
+            ld.survey_numbers AS "surveyEntries",
             CONCAT('Parcel ', COALESCE(ld.survey_number, 'N/A'), '/', COALESCE(ld.sub_division_number, '')) AS "assetName",
             r.application_status AS "status",
             COALESCE(r.remarks, '') AS "remarks",
@@ -46,59 +47,114 @@ export const getSellerAssets = async (user) => {
         let totalCredits = Number(row.totalCredits || 0);
         let totalProduction = Number(row.totalProduction || 0);
 
-        // 1. Check if ponds exist in cpay.ponds for this asset
-        const pondsSumRes = await pool.query(
-            `SELECT 
-                SUM(p.pond_area) AS sum_area,
-                SUM(COALESCE(pp.production, 0)) AS sum_production,
-                SUM(COALESCE(pc.carbon_credit, pc.co2_reduction, 0)) AS sum_credits
+        const assetStatus = row.status === 'VERIFIED_CORRECT' ? 'Verified' :
+                            row.status === 'VERIFIED_WRONG' ? 'Rejected' :
+                            row.status === 'RESUBMISSION_REQUIRED' ? 'Under Review' : 'Pending';
+
+        // 1. Fetch child ponds for this asset
+        const pondsRes = await pool.query(
+            `SELECT p.pond_id AS "pondId",
+                    COALESCE(p.pond_number, 1) AS "pond",
+                    COALESCE(p.pond_name, CONCAT('Pond ', p.pond_number)) AS "pondName",
+                    COALESCE(p.species_name, p.species, 'IMC') AS "species",
+                    COALESCE(p.pond_area_ha, p.pond_area, 1.0) AS "area",
+                    COALESCE(pcalc.co2e_reduction_per_crop_t, pc.co2_reduction, 0) AS "co2Reduction",
+                    COALESCE(pcalc.carbon_credit_per_year_t, pc.carbon_credit, 0) AS "credits",
+                    COALESCE(pcalc.portfolio_value, pc.portfolio_value, 0) AS "portfolioValue",
+                    COALESCE(pcalc.total_production_kg, pp.production, 0) AS "production"
              FROM cpay.ponds p
              LEFT JOIN cpay.aquaculture_surveys s ON p.survey_id = s.survey_id
+             LEFT JOIN cpay.pond_carbon_calculations pcalc ON p.pond_id = pcalc.pond_id
              LEFT JOIN cpay.pond_carbon_calculation pc ON p.pond_id = pc.pond_id
              LEFT JOIN cpay.pond_production pp ON p.pond_id = pp.pond_id
-             WHERE s.registration_id = $1 OR s.asset_id = $1 OR p.land_id = $1 OR p.land_id IN (SELECT land_id FROM cpay.land_details WHERE registration_id = $1);`,
+             WHERE s.registration_id = $1 OR s.asset_id = $1 OR p.land_id = $1 OR p.land_id IN (SELECT land_id FROM cpay.land_details WHERE registration_id = $1)
+             ORDER BY p.pond_number ASC;`,
             [row.assetId]
         );
 
-        if (pondsSumRes.rows.length > 0 && Number(pondsSumRes.rows[0].sum_production) > 0) {
-            totalArea = Number(pondsSumRes.rows[0].sum_area || totalArea);
-            totalProduction = Number(pondsSumRes.rows[0].sum_production);
-            totalCredits = Number(Number(pondsSumRes.rows[0].sum_credits).toFixed(2));
-        } else if (totalArea === 0 || totalCredits === 0 || totalProduction === 0) {
+        let pondsList = pondsRes.rows;
+
+        // Fallback to aquaculture_details if ponds table is not populated yet
+        if (pondsList.length === 0) {
             const aquaRes = await pool.query(
                 `SELECT aq.*, f.species_name as fish_name, p.species_name as prawn_name
                  FROM cpay.aquaculture_details aq
                  LEFT JOIN cpay.fish_species f ON aq.fish_species_id = f.fish_species_id
                  LEFT JOIN cpay.prawn_species p ON aq.prawn_species_id = p.prawn_species_id
-                 WHERE aq.registration_id = $1;`,
+                 WHERE aq.registration_id = $1 OR aq.land_id = $1 OR aq.land_id IN (SELECT land_id FROM cpay.land_details WHERE registration_id = $1);`,
                 [row.assetId]
             );
             if (aquaRes.rows.length > 0) {
-                let sumArea = 0;
-                let sumProd = 0;
-                let sumCredits = 0;
-                aquaRes.rows.forEach(aqRow => {
-                    const pArea = Number(aqRow.pond_area || 0);
-                    sumArea += pArea;
+                pondsList = aquaRes.rows.map((aqRow, idx) => {
+                    let pName = `Pond ${idx + 1}`;
+                    let pSpecies = aqRow.fish_name || aqRow.prawn_name || aqRow.aquaculture_type || 'IMC';
+                    if (aqRow.remarks && aqRow.remarks.includes('Survey Pond:')) {
+                        const match = aqRow.remarks.match(/Survey Pond:\s*([^|]+)/);
+                        if (match && match[1]) pName = match[1].trim();
+                        const specMatch = aqRow.remarks.match(/Species:\s*([^|]+)/);
+                        if (specMatch && specMatch[1] && specMatch[1].trim().toLowerCase() !== 'neem') pSpecies = specMatch[1].trim();
+                    }
+                    const pAreaNum = parseFloat(aqRow.pond_area) || 1.0;
+                    let calc = null;
                     try {
-                        const calc = calculateAquacultureCarbon({
-                            pond_area_ha: pArea,
-                            species_name: aqRow.fish_name || aqRow.prawn_name || 'IMC',
+                        calc = calculateAquacultureCarbon({
+                            pond_area_ha: pAreaNum,
+                            species_name: pSpecies,
                             crops_per_year: aqRow.crops_per_year || 1.5,
                             stocking_density: aqRow.stock_quantity ? Number(aqRow.stock_quantity) : undefined,
                             farm_reported_fcr: aqRow.fcr ? Number(aqRow.fcr) : undefined,
                             total_feed_required_kg: aqRow.feed_consumed ? Number(aqRow.feed_consumed) : undefined
                         });
-                        if (calc) {
-                            sumProd += Math.round(calc.total_production_kg);
-                            sumCredits += Number(calc.carbon_credit_per_year_t.toFixed(2));
-                        }
                     } catch (e) {}
+
+                    const credits = calc ? parseFloat(calc.carbon_credit_per_year_t.toFixed(2)) : parseFloat((pAreaNum * 6.8).toFixed(2));
+                    const production = calc ? Math.round(calc.total_production_kg) : Math.round(pAreaNum * 7500);
+                    const portfolioValue = Math.round(credits * 120);
+
+                    return {
+                        pondId: aqRow.aquaculture_id || `pond_${idx + 1}`,
+                        pond: idx + 1,
+                        pondName: pName,
+                        species: pSpecies,
+                        area: pAreaNum,
+                        co2Reduction: credits,
+                        credits: credits,
+                        portfolioValue: portfolioValue,
+                        production: production,
+                        status: assetStatus
+                    };
                 });
-                if (totalArea === 0) totalArea = sumArea;
-                if (totalProduction === 0) totalProduction = sumProd;
-                if (totalCredits === 0) totalCredits = Number(sumCredits.toFixed(2));
             }
+        }
+
+        if (pondsList.length > 0) {
+            let sumArea = 0;
+            let sumProd = 0;
+            let sumCred = 0;
+            pondsList = pondsList.map((p, idx) => {
+                const areaNum = parseFloat(String(p.area || 1.0).replace(/[^0-9.]/g, '')) || 1.0;
+                const credNum = parseFloat(String(p.credits !== undefined ? p.credits : p.co2Reduction || 0)) || parseFloat((areaNum * 6.8).toFixed(2));
+                const prodKg = parseFloat(String(p.production || 0).replace(/[^0-9.]/g, '')) || Math.round(areaNum * 7500);
+
+                sumArea += areaNum;
+                sumCred += credNum;
+                sumProd += prodKg;
+
+                return {
+                    ...p,
+                    pond: p.pond || (idx + 1),
+                    pondName: p.pondName || `Pond ${idx + 1}`,
+                    species: p.species || 'IMC',
+                    area: areaNum,
+                    credits: credNum,
+                    production: prodKg,
+                    status: assetStatus
+                };
+            });
+
+            if (totalArea === 0) totalArea = sumArea;
+            if (totalProduction === 0) totalProduction = sumProd;
+            if (totalCredits === 0) totalCredits = Number(sumCred.toFixed(2));
         }
 
         const portfolioValue = Math.round(totalCredits * 120);
@@ -108,7 +164,8 @@ export const getSellerAssets = async (user) => {
             totalArea,
             totalProduction,
             totalCredits,
-            portfolioValue
+            portfolioValue,
+            ponds: pondsList
         };
     }));
 
@@ -123,7 +180,7 @@ export const getSellerAssets = async (user) => {
 export const getAssetPonds = async (user, assetId) => {
     // 1. Load Asset Master Status & Summary
     const assetRes = await pool.query(
-        `SELECT r.registration_id AS "assetId", r.application_status AS "status", ld.survey_number
+        `SELECT r.registration_id AS "assetId", r.application_status AS "status", ld.survey_number, ld.sub_division_number, ld.survey_numbers
          FROM cpay.registration r
          LEFT JOIN cpay.land_details ld ON r.registration_id = ld.registration_id
          WHERE (r.registration_id = $1 OR ld.land_id = $1) AND r.user_id = $2
@@ -143,16 +200,17 @@ export const getAssetPonds = async (user, assetId) => {
     // 2. Fetch Ponds under Survey / Land / Registration
     const pondsRes = await pool.query(
         `SELECT p.pond_id AS "pondId",
-                p.pond_number AS "pond",
-                p.pond_name AS "pondName",
-                p.species AS "species",
-                p.pond_area AS "area",
-                COALESCE(pc.co2_reduction, 0) AS "co2Reduction",
-                COALESCE(pc.carbon_credit, 0) AS "credits",
-                COALESCE(pc.portfolio_value, 0) AS "portfolioValue",
-                COALESCE(pp.production, 0) AS "production"
+                COALESCE(p.pond_number, 1) AS "pond",
+                COALESCE(p.pond_name, CONCAT('Pond ', p.pond_number)) AS "pondName",
+                COALESCE(p.species_name, p.species, 'IMC') AS "species",
+                COALESCE(p.pond_area_ha, p.pond_area, 1.0) AS "area",
+                COALESCE(pcalc.co2e_reduction_per_crop_t, pc.co2_reduction, 0) AS "co2Reduction",
+                COALESCE(pcalc.carbon_credit_per_year_t, pc.carbon_credit, 0) AS "credits",
+                COALESCE(pcalc.portfolio_value, pc.portfolio_value, 0) AS "portfolioValue",
+                COALESCE(pcalc.total_production_kg, pp.production, 0) AS "production"
          FROM cpay.ponds p
          LEFT JOIN cpay.aquaculture_surveys s ON p.survey_id = s.survey_id
+         LEFT JOIN cpay.pond_carbon_calculations pcalc ON p.pond_id = pcalc.pond_id
          LEFT JOIN cpay.pond_carbon_calculation pc ON p.pond_id = pc.pond_id
          LEFT JOIN cpay.pond_production pp ON p.pond_id = pp.pond_id
          WHERE s.registration_id = $1 OR s.asset_id = $1 OR p.land_id = $1 OR p.land_id IN (SELECT land_id FROM cpay.land_details WHERE registration_id = $1)

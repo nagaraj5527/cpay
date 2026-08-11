@@ -373,6 +373,11 @@
                   <span class="badge" style="background: rgba(0, 164, 153, 0.1); color: var(--primary-teal); font-weight: 800; font-size: 12.5px; padding: 6px 14px; border-radius: 8px; letter-spacing: 0.5px;">
                     Survey Number : {{ asset.surveyNo || asset.survey?.surveyNo || 'AP001' }}{{ (asset.subDivisionNo || asset.survey?.subDivisionNo) ? '/' + (asset.subDivisionNo || asset.survey?.subDivisionNo) : '' }}
                   </span>
+                  <div *ngIf="asset.surveyEntries && asset.surveyEntries.length > 1" style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <span *ngFor="let s of asset.surveyEntries" class="badge" style="background: #e6f7f5; border: 1px solid var(--primary-teal); color: var(--primary-teal); font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px;">
+                      {{ s.surveyNo }}/{{ s.subDivisionNo }}
+                    </span>
+                  </div>
                   <h4 *ngIf="asset.name && !asset.name.startsWith('Parcel') && !asset.name.startsWith('Cooperative Parcel')" class="fw-bold text-dark mb-0" style="font-size: 18px; font-weight: 800; color: #0f172a;">
                     {{ asset.name }}
                   </h4>
@@ -616,19 +621,40 @@
                 Land Registration Information
               </h5>
               <p class="text-muted small" style="margin: 0; font-size: 12px; line-height: 1.4;">Enter survey details and land dimensions for carbon credit registration.</p>
-              <div style="display: flex; flex-direction: column; gap: 14px;">
-                <!-- 2-Column Grid: Survey Number & Sub Division Number -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
-                  <div>
-                    <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Survey Number *</label>
-                    <input type="text" class="form-control" [(ngModel)]="newLandSurvey.surveyNo" placeholder="Enter survey number" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+              
+              <!-- Dynamic Multi-Survey Inputs Grid -->
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div *ngFor="let entry of newLandSurveyEntries; let idx = index" style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px; position: relative;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-weight: 700; font-size: 12px; color: var(--primary-teal); display: flex; align-items: center; gap: 6px;">
+                      <i class="bi bi-geo-alt-fill"></i> Survey Details #{{ idx + 1 }}
+                    </span>
+                    <button *ngIf="newLandSurveyEntries.length > 1" type="button" (click)="removeNewLandSurveyEntry(idx)" style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); color: #dc2626; border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                      <i class="bi bi-trash3-fill"></i> Remove
+                    </button>
                   </div>
-                  <div>
-                    <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Sub Division Number *</label>
-                    <input type="text" class="form-control" [(ngModel)]="newLandSurvey.subDivisionNo" placeholder="Enter sub division number" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Survey Number *</label>
+                      <input type="text" class="form-control" [(ngModel)]="entry.surveyNo" placeholder="Enter survey number" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none; background: #ffffff;" />
+                    </div>
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Sub Division Number *</label>
+                      <input type="text" class="form-control" [(ngModel)]="entry.subDivisionNo" placeholder="Enter sub division number" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none; background: #ffffff;" />
+                    </div>
                   </div>
                 </div>
 
+                <!-- + Add Survey Button -->
+                <div style="display: flex; justify-content: flex-start;">
+                  <button type="button" (click)="addNewLandSurveyEntry()" style="background: #ffffff; color: var(--primary-teal); border: 1.5px dashed var(--primary-teal); border-radius: 10px; padding: 8px 16px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0, 164, 153, 0.05);">
+                    <i class="bi bi-plus-circle-fill"></i> + Add Survey Number & Sub Division
+                  </button>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 14px;">
                 <!-- 2-Column Grid: Total Area & Dimension / Unit -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
                   <div>

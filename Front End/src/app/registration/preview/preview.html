@@ -268,8 +268,21 @@
 
             <div class="review-grid text-start">
 
-                <div><label>SURVEY NO</label><strong>{{ surveyNo || '-' }}</strong></div>
-                <div><label>SUB DIVISION</label><strong>{{ subDivisionNo || '-' }}</strong></div>
+                @if (surveyEntries && surveyEntries.length > 1) {
+                    <div style="grid-column: 1 / -1; margin-bottom: 6px;">
+                        <label style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">REGISTERED SURVEY & SUB DIVISION NUMBERS ({{ surveyEntries.length }})</label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px;">
+                            @for (s of surveyEntries; track $index; let sIdx = $index) {
+                                <span style="background: rgba(0, 164, 153, 0.08); border: 1px solid var(--primary-teal); color: var(--primary-teal); padding: 5px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="bi bi-geo-alt-fill"></i> #{{ sIdx + 1 }}: Survey <strong>{{ s.surveyNo }}</strong> / Sub-Div <strong>{{ s.subDivisionNo }}</strong>
+                                </span>
+                            }
+                        </div>
+                    </div>
+                } @else {
+                    <div><label>SURVEY NO</label><strong>{{ surveyNo || '-' }}</strong></div>
+                    <div><label>SUB DIVISION</label><strong>{{ subDivisionNo || '-' }}</strong></div>
+                }
                 <div><label>AREA</label><strong>{{ landArea | number:'1.2-2' }} {{ landUnit }}</strong></div>
                 <div>
                     <label>PATTADAR PASSBOOK DOCUMENT</label>

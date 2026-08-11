@@ -135,35 +135,69 @@
 
         <div class="form-grid">
 
-            <div class="form-group">
+        <!-- ================= DYNAMIC MULTI-SURVEY FORM ================= -->
 
-                <label>
-                    Survey Number *
-                </label>
+        <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 16px; margin-bottom: 12px;">
+            @for (entry of surveyEntries; track $index; let i = $index) {
+                <div class="survey-row-card" style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 16px; position: relative; transition: all 0.2s ease;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="font-weight: 700; font-size: 13.5px; color: var(--primary-teal); display: flex; align-items: center; gap: 6px;">
+                            <i class="bi bi-geo-alt-fill"></i> Survey Details #{{ i + 1 }}
+                        </span>
+                        @if (surveyEntries.length > 1) {
+                            <button
+                                type="button"
+                                class="btn-remove-survey"
+                                (click)="removeSurveyEntry(i)"
+                                title="Remove this Survey Number"
+                                style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); color: #dc2626; border-radius: 8px; padding: 5px 12px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+                                <i class="bi bi-trash3-fill"></i> Remove
+                            </button>
+                        }
+                    </div>
 
-                <input
-                    type="text"
-                    [(ngModel)]="surveyNo"
-                    name="surveyNo"
-                    id="surveyNo"
-                    placeholder="Enter survey number">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label [for]="'surveyNo_' + i" style="font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 6px; display: block;">
+                                Survey Number *
+                            </label>
+                            <input
+                                type="text"
+                                [(ngModel)]="entry.surveyNo"
+                                [name]="'surveyNo_' + i"
+                                [id]="'surveyNo_' + i"
+                                placeholder="Enter survey number"
+                                style="width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 14px; font-size: 13.5px; outline: none; background: #ffffff;">
+                        </div>
 
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label [for]="'subDivisionNo_' + i" style="font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 6px; display: block;">
+                                Sub Division Number *
+                            </label>
+                            <input
+                                type="text"
+                                [(ngModel)]="entry.subDivisionNo"
+                                [name]="'subDivisionNo_' + i"
+                                [id]="'subDivisionNo_' + i"
+                                placeholder="Enter sub division number"
+                                style="width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 14px; font-size: 13.5px; outline: none; background: #ffffff;">
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- + Add Survey Button -->
+            <div style="display: flex; justify-content: flex-start; margin-top: 4px;">
+                <button
+                    type="button"
+                    (click)="addSurveyEntry()"
+                    class="btn-add-survey-row"
+                    style="background: #ffffff; color: var(--primary-teal); border: 1.5px dashed var(--primary-teal); border-radius: 10px; padding: 10px 20px; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0, 164, 153, 0.05);">
+                    <i class="bi bi-plus-circle-fill" style="font-size: 15px;"></i>
+                    + Add Survey Number & Sub Division
+                </button>
             </div>
-
-            <div class="form-group">
-
-                <label>
-                    Sub Division Number *
-                </label>
-
-                <input
-                    type="text"
-                    [(ngModel)]="subDivisionNo"
-                    name="subDivisionNo"
-                    id="subDivisionNo"
-                    placeholder="Enter sub division number">
-
-            </div>
+        </div>
 
             <div class="form-group">
 
