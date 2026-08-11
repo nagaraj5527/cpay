@@ -1214,7 +1214,19 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
           
           const validParcels = assetsRes.data.filter((bParcel: any) => bParcel && !bParcel.name?.includes('N/A/N/A'));
           if (validParcels.length > 0) {
-            this.landParcels = this.deduplicateParcels(validParcels.map((p: any) => this.normalizeAssetCard(p)));
+            const normalizedBackendParcels = validParcels.map((p: any) => this.normalizeAssetCard(p));
+            const merged = [...normalizedBackendParcels];
+            (this.landParcels || []).forEach((localP: any) => {
+              const exists = merged.some((mP: any) => 
+                (mP.registration_id && localP.registration_id && mP.registration_id === localP.registration_id) ||
+                (mP.surveyNo && localP.surveyNo && mP.surveyNo.toString().toLowerCase().trim() === localP.surveyNo.toString().toLowerCase().trim() && (mP.subDivisionNo || '') === (localP.subDivisionNo || '')) ||
+                (mP.name && localP.name && mP.name === localP.name)
+              );
+              if (!exists) {
+                merged.unshift(localP);
+              }
+            });
+            this.landParcels = this.deduplicateParcels(merged);
           }
           
           const mobile = localStorage.getItem('currentUserMobile') || '+919876543210';
@@ -3874,20 +3886,29 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       this.updateComplianceStats();
     };
 
+    // 1. Immediately save locally to UI and local storage
+    saveAssetLocally();
+    this.isAddingLand = false;
+    this.activeTab = 'Asset profiling';
+    this.showToast('Land Parcel & Pond Details Added Successfully! Status: Pending Auditor Verification.', 'success');
+    this.cdr.detectChanges();
+
+    // 2. Synchronize to backend in background
     this.registrationService.addAsset(payload).subscribe({
       next: (res: any) => {
-        saveAssetLocally(res.data?.registrationId, res.data?.applicationNumber);
-        alert('Land Parcel & Pond Details Submitted Successfully!');
-        this.showToast('Asset Profiling added! Status set to Pending Auditor Verification.', 'success');
-        this.isAddingLand = false;
-        this.loadUserAssetsFromBackend();
+        if (res.data?.registrationId) {
+          const matching = this.landParcels.find(p => p.name === nameVal || p.surveyNo === this.newLandSurvey.surveyNo);
+          if (matching) {
+            matching.registration_id = res.data.registrationId;
+            matching.id = res.data.registrationId;
+            matching.application_number = res.data.applicationNumber || matching.application_number;
+            this.saveParcels();
+            this.cdr.detectChanges();
+          }
+        }
       },
       error: (err: any) => {
-        console.warn('Backend addAsset sync error, completing via local fallback:', err);
-        saveAssetLocally();
-        alert('Land Parcel & Pond Details Submitted Successfully!');
-        this.showToast('Asset Profiling added! Status set to Pending Auditor Verification.', 'success');
-        this.isAddingLand = false;
+        console.warn('Backend addAsset sync warning (local parcel preserved):', err);
       }
     });
   }
