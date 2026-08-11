@@ -15,10 +15,10 @@ export const getWalletData = async (user) => {
     );
 
     if (walletRes.rows.length === 0) {
-        // Create initial wallet balance (Default 0 Credits, ₹100,000 Cash for trading)
+        // Create initial wallet balance (Default 0 Credits, ₹0.00 Cash)
         const initRes = await pool.query(
             `INSERT INTO cpay.wallet_balances (user_id, credit_wallet_balance, cash_wallet_balance, currency, created_at, updated_at)
-             VALUES ($1, 0, 100000.00, 'INR', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+             VALUES ($1, 0, 0.00, 'INR', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
              RETURNING *;`,
             [userId]
         );
@@ -90,7 +90,7 @@ export const executeTrade = async (user, tradePayload) => {
         if (wRes.rows.length === 0) {
             const newW = await client.query(
                 `INSERT INTO cpay.wallet_balances (user_id, credit_wallet_balance, cash_wallet_balance)
-                 VALUES ($1, 0, 100000.00) RETURNING *;`,
+                 VALUES ($1, 0, 0.00) RETURNING *;`,
                 [user.userId]
             );
             wRes = newW;

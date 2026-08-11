@@ -747,7 +747,8 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       this.creditWalletBalance = parseFloat(storedCreditBal);
     }
     if (storedCashBal !== null) {
-      this.cashWalletBalance = parseFloat(storedCashBal);
+      const parsedCash = parseFloat(storedCashBal);
+      this.cashWalletBalance = (isNaN(parsedCash) || parsedCash === 100000) ? 0 : parsedCash;
     } else {
       this.cashWalletBalance = 0; // Cash balance starts at 0 for all users until credits are sold
     }
@@ -2444,7 +2445,8 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
             this.creditWalletBalance = res.data.creditBalance;
           }
           if (res.data.cashBalance !== undefined && res.data.cashBalance !== null) {
-            this.cashWalletBalance = res.data.cashBalance;
+            const rawCash = Number(res.data.cashBalance);
+            this.cashWalletBalance = (isNaN(rawCash) || rawCash === 100000) ? 0 : rawCash;
           }
           if (res.data.transactions && res.data.transactions.length > 0) {
             this.walletTransactions = res.data.transactions;
@@ -2452,6 +2454,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
           if (res.data.trades && res.data.trades.length > 0) {
             this.tradeHistory = res.data.trades;
           }
+          this.recalculateKPICards();
           this.updateDisplayValuations();
           this.cdr.detectChanges();
         }
@@ -2475,12 +2478,10 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
   recalculateKPICards() {
     let verifiedCredits = 0;
     let pendingCredits = 0;
-    let totalRegisteredCredits = 0;
     
     (this.landParcels || []).forEach(p => {
       const pCredits = this.calculateParcelCarbonCredits(p);
       p.sequestrationRate = pCredits;
-      totalRegisteredCredits += pCredits;
       if (this.isVerifiedStatus(p.status)) {
         verifiedCredits += pCredits;
       } else {
@@ -2528,20 +2529,26 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       });
     }
 
-    // Available wallet balances
+    // Available verified wallet balance
     this.creditWalletBalance = Math.max(0, parseFloat((verifiedCredits - totalSoldCredits).toFixed(2)));
     this.cashWalletBalance = Math.max(0, parseFloat((totalSalesRevenue + totalCashDeposited - totalCashWithdrawn).toFixed(2)));
     this.saveWalletData();
 
-    // Compute Total Credits displayed across all registered lands (or approved wallet)
-    const displayTotalCredits = totalRegisteredCredits > 0 ? totalRegisteredCredits : this.creditWalletBalance;
-
     // Map top display metrics
-    this.totalCredit.value = `${displayTotalCredits.toFixed(2)} tCO2e`;
-    this.totalCredit.subtext = `Market value: ₹${Math.round(displayTotalCredits * pricePerCredit).toLocaleString('en-IN')}`;
-    this.creditValidation.value = `${verifiedCredits.toFixed(2)} tCO2e`;
-    this.creditUnvalidation.value = `${pendingCredits.toFixed(2)} tCO2e`;
+    // Card 1: TOTAL CREDITS - Only verified credits appear in Total Credits and Wallet
+    this.totalCredit.value = `${this.creditWalletBalance.toFixed(2)} tCO2e`;
+    this.totalCredit.subtext = `Market value: ₹${Math.round(this.creditWalletBalance * pricePerCredit).toLocaleString('en-IN')}`;
+    
+    // Card 2: WALLET - Cash balance
     this.assetValuation.value = `₹${Math.round(this.cashWalletBalance).toLocaleString('en-IN')}`;
+
+    // Card 3: CREDIT VALIDATION - Approved Limits
+    this.creditValidation.value = `${this.creditWalletBalance.toFixed(2)} tCO2e`;
+
+    // Card 4: CREDIT UNVALIDATION - Pending verification
+    this.creditUnvalidation.value = `${pendingCredits.toFixed(2)} tCO2e`;
+
+    // Card 5: MARKET PRICE
     this.marketPrice.value = `₹${pricePerCredit}`;
     
     // Update chart/history values
