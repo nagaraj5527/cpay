@@ -580,6 +580,9 @@ export class PreviewComponent implements OnInit {
         localStorage.removeItem('selectedUserType');
         localStorage.removeItem('currentRegistrationId');
 
+        this.isSubmitting = false;
+        localStorage.setItem('loginMobile', currentMobile);
+        localStorage.setItem('loginRole', 'Seller');
         this.router.navigate(['/login/seller-buyer']);
       },
       error: (err: any) => {
