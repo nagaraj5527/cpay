@@ -164,6 +164,56 @@ export const SPECIES_DEFAULTS: Record<string, SpeciesConfig> = {
     probioticsCost: 28000,
     otherCosts: 22000
   },
+  "Roopchand": {
+    cultureType: "Red Pacu",
+    speciesName: "Roopchand (Red Pacu)",
+    stockingDensity: 10000,
+    stockingWeightG: 20,
+    finalHarvestWeightG: 800,
+    cultureDurationDays: 210,
+    survivalFraction: 0.80,
+    fcrBaseline: 1.8,
+    feedProtein: 0.28,
+    feedCarbon: 0.40,
+    feedMfgEF: 0.5500,
+    nitrogenRetention: 0.25,
+    carbonRetention: 0.22,
+    anaerobicBaseline: 0.22,
+    n2oEF: 0.0071,
+    gridElectricityKwh: 3000,
+    dieselL: 1000,
+    seedPrice: 2.0,
+    feedPrice: 46,
+    salePrice: 120,
+    labourCost: 65000,
+    probioticsCost: 28000,
+    otherCosts: 22000
+  },
+  "Rupchanda": {
+    cultureType: "Red Pacu",
+    speciesName: "Roopchand (Red Pacu)",
+    stockingDensity: 10000,
+    stockingWeightG: 20,
+    finalHarvestWeightG: 800,
+    cultureDurationDays: 210,
+    survivalFraction: 0.80,
+    fcrBaseline: 1.8,
+    feedProtein: 0.28,
+    feedCarbon: 0.40,
+    feedMfgEF: 0.5500,
+    nitrogenRetention: 0.25,
+    carbonRetention: 0.22,
+    anaerobicBaseline: 0.22,
+    n2oEF: 0.0071,
+    gridElectricityKwh: 3000,
+    dieselL: 1000,
+    seedPrice: 2.0,
+    feedPrice: 46,
+    salePrice: 120,
+    labourCost: 65000,
+    probioticsCost: 28000,
+    otherCosts: 22000
+  },
   "Tilapia": {
     cultureType: "Tilapia",
     speciesName: "Tilapia (Nile / GIFT)",
@@ -612,5 +662,111 @@ export class CalculatorService {
 
   downloadPdf(): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/download-pdf`, { responseType: 'blob' });
+  }
+
+  /**
+   * Verra VCS (VM0047 ARR v1.1 & VM0033 Blue Carbon v2.1) Trees & Mangroves Calculator
+   */
+  calculateTreeMangroveCarbon(input: {
+    landType?: string;
+    smallTreeCount?: number;
+    mediumTreeCount?: number;
+    largeTreeCount?: number;
+    mangroveAreaHa?: number;
+    biomassFactor?: number;
+    creditRateInr?: number;
+  }) {
+    const landType = input.landType || 'Open Land';
+    const smallTreeCount = Math.max(0, Number(input.smallTreeCount || 0));
+    const mediumTreeCount = Math.max(0, Number(input.mediumTreeCount || 0));
+    const largeTreeCount = Math.max(0, Number(input.largeTreeCount || 0));
+    const mangroveAreaHa = Math.max(0, Number(input.mangroveAreaHa || 0));
+    const biomassFactor = Math.max(0.1, Number(input.biomassFactor || 1.0));
+    const creditRateInr = Math.max(1, Number(input.creditRateInr || 120));
+
+    // Universal Constants
+    const a = -2.134;
+    const b = 2.530;
+    const R_tree = 0.24;
+    const R_mangrove = 0.39;
+    const CF = 0.47;
+    const RATIO = 44 / 12; // 3.66667
+
+    // Single Tree AGB (kg)
+    const smallAgbKg = Math.exp(a + (b * Math.log(10.0))) * biomassFactor; // 40.107 kg
+    const mediumAgbKg = Math.exp(a + (b * Math.log(25.0))) * biomassFactor; // 407.419 kg
+    const largeAgbKg = Math.exp(a + (b * Math.log(45.0))) * biomassFactor; // 1802.404 kg
+
+    // Single Tree CO2e (tonnes)
+    const smallPerTreeTonnes = (smallAgbKg / 1000.0) * (1.0 + R_tree) * CF * RATIO;   // 0.0857 t
+    const mediumPerTreeTonnes = (mediumAgbKg / 1000.0) * (1.0 + R_tree) * CF * RATIO; // 0.8710 t
+    const largePerTreeTonnes = (largeAgbKg / 1000.0) * (1.0 + R_tree) * CF * RATIO;   // 3.8535 t
+
+    // Totals by tree category
+    const smallTreeCO2e = smallTreeCount * smallPerTreeTonnes;
+    const mediumTreeCO2e = mediumTreeCount * mediumPerTreeTonnes;
+    const largeTreeCO2e = largeTreeCount * largePerTreeTonnes;
+    const totalTreesCount = smallTreeCount + mediumTreeCount + largeTreeCount;
+    const totalTreesCO2e = smallTreeCO2e + mediumTreeCO2e + largeTreeCO2e;
+
+    // Mangroves (Biomass + Soil)
+    const mangroveBiomassCarbonTonnes = mangroveAreaHa * 150.0 * (1.0 + R_mangrove) * CF; // Area * 97.995 t C
+    const mangroveSoilCarbonTonnes = mangroveAreaHa * 386.0; // Area * 386 t C
+    const mangroveTotalCarbonTonnes = mangroveBiomassCarbonTonnes + mangroveSoilCarbonTonnes; // Area * 483.995 t C
+    const totalMangroveCO2e = mangroveTotalCarbonTonnes * RATIO; // Area * 1774.648 tCO2e
+
+    // Combined Totals
+    const totalCO2eStored = totalTreesCO2e + totalMangroveCO2e;
+    const totalCarbonCredits = totalCO2eStored;
+    const portfolioValueInr = totalCarbonCredits * creditRateInr;
+
+    return {
+      landType,
+      biomassFactor,
+      treeInventory: {
+        small: {
+          count: smallTreeCount,
+          dbhCm: 10,
+          agbPerTreeKg: parseFloat(smallAgbKg.toFixed(1)),
+          co2ePerTreeTonnes: parseFloat(smallPerTreeTonnes.toFixed(3)), // 0.086
+          totalCarbonTonnes: parseFloat(((smallAgbKg / 1000.0) * (1.0 + R_tree) * CF * smallTreeCount).toFixed(2)),
+          totalCO2eTonnes: parseFloat(smallTreeCO2e.toFixed(2))
+        },
+        medium: {
+          count: mediumTreeCount,
+          dbhCm: 25,
+          agbPerTreeKg: parseFloat(mediumAgbKg.toFixed(1)),
+          co2ePerTreeTonnes: parseFloat(mediumPerTreeTonnes.toFixed(3)), // 0.871
+          totalCarbonTonnes: parseFloat(((mediumAgbKg / 1000.0) * (1.0 + R_tree) * CF * mediumTreeCount).toFixed(2)),
+          totalCO2eTonnes: parseFloat(mediumTreeCO2e.toFixed(2))
+        },
+        large: {
+          count: largeTreeCount,
+          dbhCm: 45,
+          agbPerTreeKg: parseFloat(largeAgbKg.toFixed(1)),
+          co2ePerTreeTonnes: parseFloat(largePerTreeTonnes.toFixed(3)), // 3.852
+          totalCarbonTonnes: parseFloat(((largeAgbKg / 1000.0) * (1.0 + R_tree) * CF * largeTreeCount).toFixed(2)),
+          totalCO2eTonnes: parseFloat(largeTreeCO2e.toFixed(2))
+        },
+        totalCount: totalTreesCount,
+        totalCO2eTonnes: parseFloat(totalTreesCO2e.toFixed(2))
+      },
+      mangroveDetails: {
+        areaHa: mangroveAreaHa,
+        biomassCarbonTonnes: parseFloat(mangroveBiomassCarbonTonnes.toFixed(2)),
+        soilCarbonTonnes: parseFloat(mangroveSoilCarbonTonnes.toFixed(2)),
+        totalCarbonTonnes: parseFloat(mangroveTotalCarbonTonnes.toFixed(2)),
+        co2ePerHaTonnes: parseFloat((483.995 * RATIO).toFixed(1)), // ~1774.6
+        totalCO2eTonnes: parseFloat(totalMangroveCO2e.toFixed(2))
+      },
+      summary: {
+        totalTreesCO2eTonnes: parseFloat(totalTreesCO2e.toFixed(2)),
+        totalMangroveCO2eTonnes: parseFloat(totalMangroveCO2e.toFixed(2)),
+        totalCO2eStoredTonnes: parseFloat(totalCO2eStored.toFixed(2)),
+        totalCarbonCredits: parseFloat(totalCarbonCredits.toFixed(2)),
+        creditRateInr,
+        portfolioValueInr: Math.round(portfolioValueInr)
+      }
+    };
   }
 }

@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { RegistrationService } from '../../services/registration.service';
 
 @Component({
   selector: 'app-user-type',
@@ -7,20 +8,20 @@ import { Router } from '@angular/router';
   templateUrl: './user-type.html',
   styleUrl: './user-type.css'
 })
-export class UserTypeComponent {
+export class UserTypeComponent implements OnInit {
 
   selectedUserType: string = '';
 
   constructor(
-    private router: Router
-  ) {
-    const currentStep = 1;
-    const storedFurthest = localStorage.getItem('SellerFurthestStep');
-    const furthest = storedFurthest ? parseInt(storedFurthest, 10) : 1;
-    if (currentStep > furthest) {
-      localStorage.setItem('SellerFurthestStep', currentStep.toString());
-    }
-    this.selectedUserType = localStorage.getItem('selectedUserType') || '';
+    private router: Router,
+    private registrationService: RegistrationService
+  ) {}
+
+  ngOnInit(): void {
+    // Clear all previous registration details so registration form starts completely empty
+    this.registrationService.clearAllRegistrationDrafts();
+    this.selectedUserType = '';
+    localStorage.setItem('SellerFurthestStep', '1');
   }
 
   selectUserType(type: string): void {

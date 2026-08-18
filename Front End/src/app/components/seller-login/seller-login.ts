@@ -281,6 +281,7 @@ export class SellerLogin implements OnInit {
   }
 
   goToRegistration(): void {
+    this.registrationService.clearAllRegistrationDrafts();
     if (this.loginType === 'buyer') {
       this.router.navigate(['/buyer-registration']);
     } else if (this.loginType === 'valuator') {

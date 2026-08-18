@@ -15,6 +15,7 @@ import walletRoutes from './routes/wallet.routes.js';
 import pondRoutes from './routes/pond.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import supportRoutes from './routes/support.routes.js';
+import treeMangroveRoutes from './routes/tree_mangrove.routes.js';
 
 const app = express();
 
@@ -108,6 +109,8 @@ Carbon Calculator APIs
 
 app.use('/api/calculator', calculatorRoutes);
 app.use('/api/v1/calculator', calculatorRoutes);
+app.use('/api/carbon', treeMangroveRoutes);
+app.use('/api/v1/carbon', treeMangroveRoutes);
 
 /*
 ====================================================

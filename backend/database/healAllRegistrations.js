@@ -40,7 +40,6 @@ export async function healAllRegistrations(clientOrPool = pool) {
                 VALUES ($1, $2, 'Male', '123456789012', 'ABCDE1234F', $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 ON CONFLICT (user_id) DO NOTHING;
             `, [userId, defaultName, defaultEmail, defaultMobile]);
-            console.log(`   Created individual_details for user ${userId} (${defaultName})`);
         }
 
         // B. Ensure cpay.address_details exists for this registration_id
@@ -61,24 +60,27 @@ export async function healAllRegistrations(clientOrPool = pool) {
             const mandRes = await client.query("SELECT mandal_id FROM cpay.mandals LIMIT 1");
             const villRes = await client.query("SELECT village_id FROM cpay.villages LIMIT 1");
 
-            await client.query(`
-                INSERT INTO cpay.address_details
-                (registration_id, address_line1, state_id, district_id, mandal_id, village_id, pincode, latitude, longitude, created_at, updated_at)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, 14.4450, 79.9860, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                ON CONFLICT (registration_id) DO UPDATE SET
-                    address_line1 = EXCLUDED.address_line1,
-                    pincode = EXCLUDED.pincode,
-                    updated_at = CURRENT_TIMESTAMP;
-            `, [
-                regId,
-                sampleVillage,
-                stateRes.rows[0]?.state_id || null,
-                distRes.rows[0]?.district_id || null,
-                mandRes.rows[0]?.mandal_id || null,
-                villRes.rows[0]?.village_id || null,
-                samplePincode
-            ]);
-            console.log(`   Healed address_details for registration ${reg.application_number}`);
+            if (addrRes.rows.length > 0) {
+                await client.query(`
+                    UPDATE cpay.address_details
+                    SET address_line1 = $1, pincode = $2, updated_at = CURRENT_TIMESTAMP
+                    WHERE address_id = $3
+                `, [sampleVillage, samplePincode, addrRes.rows[0].address_id]);
+            } else {
+                await client.query(`
+                    INSERT INTO cpay.address_details
+                    (registration_id, address_line1, state_id, district_id, mandal_id, village_id, pincode, latitude, longitude, created_at, updated_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, 14.4450, 79.9860, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                `, [
+                    regId,
+                    sampleVillage,
+                    stateRes.rows[0]?.state_id || null,
+                    distRes.rows[0]?.district_id || null,
+                    mandRes.rows[0]?.mandal_id || null,
+                    villRes.rows[0]?.village_id || null,
+                    samplePincode
+                ]);
+            }
         }
 
         // C. Ensure cpay.land_details exists for this registration_id
@@ -117,7 +119,6 @@ export async function healAllRegistrations(clientOrPool = pool) {
                 unitRes.rows[0]?.unit_id || null
             ]);
             landId = newLand.rows[0].land_id;
-            console.log(`   Healed land_details for registration ${reg.application_number} (Survey ${sampleSurvey}/${sampleSubDiv})`);
         }
 
         // D. Ensure cpay.carbon_calculation exists for this registration_id
@@ -136,20 +137,29 @@ export async function healAllRegistrations(clientOrPool = pool) {
             const marketRate = 120.00;
             const marketValue = parseFloat((credits * marketRate).toFixed(2));
 
+            if (carbonRes.rows.length > 0) {
+                await client.query(`
+                    UPDATE cpay.carbon_calculation
+                    SET land_id = $1, estimated_co2 = $2, carbon_credits = $3, market_rate = $4, market_value = $5, calculated_at = $6, updated_at = CURRENT_TIMESTAMP
+                    WHERE calculation_id = $7
+                `, [landId, estCO2, credits, marketRate, marketValue, reg.submitted_at || new Date(), carbonRes.rows[0].calculation_id]);
+            } else {
+                await client.query(`
+                    INSERT INTO cpay.carbon_calculation
+                    (registration_id, land_id, estimated_co2, carbon_credits, market_rate, market_value, calculated_at, source_type, created_at, updated_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, 'AUTOMATED_HEAL', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                `, [regId, landId, estCO2, credits, marketRate, marketValue, reg.submitted_at || new Date()]);
+            }
+
+            // Sync total_production, total_carbon_credits, portfolio_value on cpay.land_details
             await client.query(`
-                INSERT INTO cpay.carbon_calculation
-                (registration_id, land_id, estimated_co2, carbon_credits, market_rate, market_value, calculated_at, source_type, created_at, updated_at)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, 'AUTOMATED_HEAL', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                ON CONFLICT (registration_id) DO UPDATE SET
-                    land_id = EXCLUDED.land_id,
-                    estimated_co2 = EXCLUDED.estimated_co2,
-                    carbon_credits = EXCLUDED.carbon_credits,
-                    market_rate = EXCLUDED.market_rate,
-                    market_value = EXCLUDED.market_value,
-                    calculated_at = EXCLUDED.calculated_at,
-                    updated_at = CURRENT_TIMESTAMP;
-            `, [regId, landId, estCO2, credits, marketRate, marketValue, reg.submitted_at || new Date()]);
-            console.log(`   Healed carbon_calculation for registration ${reg.application_number} (${credits} tCO2e, ₹${marketValue})`);
+                UPDATE cpay.land_details
+                SET total_production = COALESCE(total_production, 500),
+                    total_carbon_credits = $1,
+                    portfolio_value = $2,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE land_id = $3
+            `, [credits, marketValue, landId]);
         }
     }
 

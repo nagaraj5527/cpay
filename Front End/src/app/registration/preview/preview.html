@@ -337,11 +337,38 @@
             <div class="review-grid text-start">
 
                 <div><label>LAND TYPE</label><strong>{{ landType }}</strong></div>
-                <div><label>CATEGORY</label><strong>{{ plantationType }} {{ subCategory ? '(' + subCategory + ')' : '' }}</strong></div>
+                <div><label>CATEGORY</label><strong>{{ (landType === 'Open Land' || landType === 'Govt Land' || landType === 'House' || plantationType === 'Tree') ? 'Tree (Mixed Stand Trees)' : (plantationType + (subCategory ? ' (' + subCategory + ')' : '')) }}</strong></div>
                 <div><label>{{ landType === 'Fish Pond' ? 'TOTAL STOCKED' : 'TOTAL TREES' }}</label><strong>{{ quantity | number }}</strong></div>
                 <div><label>AREA</label><strong>{{ plantationArea | number:'1.2-2' }} {{ plantationUnit }}</strong></div>
                 <div><label>{{ landType === 'Fish Pond' ? 'CULTURE PERIOD' : 'AGE' }}</label><strong>{{ landType === 'Fish Pond' ? (subCategory === 'IMC' ? age + ' Months' : daysOfCulture + ' Days') : (age + ' Years') }}</strong></div>
 
+            </div>
+
+            <!-- Tree Size Distribution (VM0047 Model) for Open Land, Govt Land, House, or Tree Plantation -->
+            <div *ngIf="landType === 'Open Land' || landType === 'Govt Land' || landType === 'House' || plantationType === 'Tree'" style="margin-top: 18px; padding-top: 16px; border-top: 1px solid #f1f5f9; text-align: left;">
+                <h5 style="font-size: 13.5px; font-weight: 700; color: #1e293b; margin: 0 0 12px 0;">🌲 Tree Size Distribution (VM0047 Model)</h5>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                    <!-- Small Trees -->
+                    <div style="background-color: #f0fdf4; border: 1px solid #a7f3d0; border-radius: 12px; padding: 12px 14px;">
+                        <span style="font-size: 13px; font-weight: 700; color: #047857; display: block; margin-bottom: 6px;">🌱 Small Trees (&lt;15 cm)</span>
+                        <div style="font-size: 12px; color: #1e293b; margin-bottom: 2px;"><strong>Count:</strong> {{ smallTreeCount | number }}</div>
+                        <div style="font-size: 12px; color: #1e293b;"><strong>Rate:</strong> 0.086 t CO2e/tree</div>
+                    </div>
+
+                    <!-- Medium Trees -->
+                    <div style="background-color: #f0fdf4; border: 1px solid #a7f3d0; border-radius: 12px; padding: 12px 14px;">
+                        <span style="font-size: 13px; font-weight: 700; color: #047857; display: block; margin-bottom: 6px;">🌲 Medium Trees (15–30 cm)</span>
+                        <div style="font-size: 12px; color: #1e293b; margin-bottom: 2px;"><strong>Count:</strong> {{ mediumTreeCount | number }}</div>
+                        <div style="font-size: 12px; color: #1e293b;"><strong>Rate:</strong> 0.871 t CO2e/tree</div>
+                    </div>
+
+                    <!-- Large Trees -->
+                    <div style="background-color: #f0fdf4; border: 1px solid #a7f3d0; border-radius: 12px; padding: 12px 14px;">
+                        <span style="font-size: 13px; font-weight: 700; color: #047857; display: block; margin-bottom: 6px;">🌲 Large Trees (&gt;30 cm)</span>
+                        <div style="font-size: 12px; color: #1e293b; margin-bottom: 2px;"><strong>Count:</strong> {{ largeTreeCount | number }}</div>
+                        <div style="font-size: 12px; color: #1e293b;"><strong>Rate:</strong> 3.852 t CO2e/tree</div>
+                    </div>
+                </div>
             </div>
 
             <!-- Multi-Pond Registered Summary Breakdown -->

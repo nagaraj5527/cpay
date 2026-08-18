@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -15,12 +15,19 @@ import { CustomSelectComponent } from '../components/custom-select/custom-select
   templateUrl: './buyer-registration.html',
   styleUrl: './buyer-registration.css',
 })
-export class BuyerRegistrationComponent {
+export class BuyerRegistrationComponent implements OnInit {
   experienceOptions: string[] = ['Select Experience', '0 - 1 Year', '1 - 3 Years', '3 - 5 Years', 'More than 5 Years'];
   accountTypeOptions: string[] = ['Select Account Type', 'Savings', 'Current', 'Business'];
   countriesList = COUNTRIES;
   currentStep: any = 1;
   furthestStep: any = 1;
+
+  ngOnInit(): void {
+    // Clear all previous registration draft inputs so buyer registration form starts empty
+    this.registrationService.clearAllRegistrationDrafts();
+    this.currentStep = 1;
+    this.furthestStep = 1;
+  }
 
   // ================= STEP 1: BUYER TYPE =================
   selectedBuyerType: string = '';

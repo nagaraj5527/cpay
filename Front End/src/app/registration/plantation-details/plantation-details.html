@@ -629,20 +629,20 @@
             <!-- Number of Stocked Units / Trees -->
             <div class="form-group">
                 <label>
-                    Number of Trees / Plants *
+                    Total Number of Trees / Plants *
                 </label>
 
                 <input
                     type="number"
                     name="quantity"
                     [(ngModel)]="quantity"
-                    placeholder="Enter quantity">
+                    placeholder="Enter total quantity">
             </div>
 
             <!-- Age / Culture Period -->
             <div class="form-group">
                 <label>
-                    Age (Years) *
+                    Average Age (Years) *
                 </label>
 
                 <input
@@ -655,7 +655,7 @@
             <!-- Area -->
             <div class="form-group">
                 <label>
-                    Area Under Plantation *
+                    Plantation Area *
                 </label>
 
                 <input
@@ -670,6 +670,30 @@
                 <label>Unit *</label>
                 <app-custom-select [options]="['Acre', 'Hectare', 'Sq.ft', 'Guntha', 'Sq.Yards']" [(ngModel)]="unit" name="unit" placeholder="Select Unit"></app-custom-select>
             </div>
+
+            <!-- Simple Tree & Mangrove Inputs (For Open Land, Govt Land, House) -->
+            <ng-container *ngIf="selectedLandType === 'Open Land' || selectedLandType === 'Govt Land' || selectedLandType === 'House'">
+                <div class="form-group">
+                    <label>Small Trees (DBH &lt; 15 cm)</label>
+                    <input type="number" min="0" name="smallTreeCount" [(ngModel)]="smallTreeCount" placeholder="300">
+                </div>
+                <div class="form-group">
+                    <label>Medium Trees (DBH 15–30 cm)</label>
+                    <input type="number" min="0" name="mediumTreeCount" [(ngModel)]="mediumTreeCount" placeholder="120">
+                </div>
+                <div class="form-group">
+                    <label>Large Trees (DBH &gt; 30 cm)</label>
+                    <input type="number" min="0" name="largeTreeCount" [(ngModel)]="largeTreeCount" placeholder="30">
+                </div>
+                <div class="form-group">
+                    <label>Existing Mangrove Area (Hectares)</label>
+                    <input type="number" step="0.1" min="0" name="mangroveAreaHa" [(ngModel)]="mangroveAreaHa" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label>Biomass Factor</label>
+                    <app-custom-select [options]="biomassFactorOptions" [(ngModel)]="biomassFactorDisplay" name="biomassFactorDisplay" placeholder="Select Biomass Factor" (ngModelChange)="onBiomassFactorSelect($event)"></app-custom-select>
+                </div>
+            </ng-container>
 
         </div>
 

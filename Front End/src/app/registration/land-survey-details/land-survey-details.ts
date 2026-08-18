@@ -43,6 +43,7 @@ export class LandSurveyDetailsComponent implements OnInit, OnDestroy {
   pattadarDoc: string = '';
   pattadarDocName: string = '';
   pattadarDocPreview: string | ArrayBuffer | null = null;
+  landPhotoName: string = 'Geo_Land_Site_Photo.jpg';
 
   private cameraStream: MediaStream | null = null;
 
@@ -203,14 +204,18 @@ export class LandSurveyDetailsComponent implements OnInit, OnDestroy {
       latitude: this.latitude,
       longitude: this.longitude,
       imagePreview: this.imagePreview,
+      landPhoto: this.imagePreview,
+      landPhotoName: this.landPhotoName || 'Geo_Land_Site_Photo.jpg',
+      landPhotoPreview: this.imagePreview,
       capturedTimestamp: this.capturedTimestamp,
-      pattadarDoc: this.pattadarDoc || this.pattadarDocPreview || this.pattadarDocName,
-      pattadarDocName: this.pattadarDocName,
-      pattadarDocPreview: this.pattadarDocPreview || this.pattadarDoc || this.pattadarDocName
+      pattadarDoc: this.pattadarDoc || this.pattadarDocPreview || '',
+      pattadarDocName: this.pattadarDocName || 'Pattadar_Passbook_LPC.pdf',
+      pattadarDocPreview: this.pattadarDocPreview || this.pattadarDoc || ''
     };
 
     const currentMob = localStorage.getItem('currentUserMobile') || '';
     this.registrationService.setDraftData('SellerLandDetails', landPayload, currentMob);
+    this.registrationService.setDraftData('SellerLandSurveyDetails', landPayload, currentMob);
 
     this.stopCamera();
     this.router.navigate(['/plantation-details']);
@@ -336,6 +341,7 @@ export class LandSurveyDetailsComponent implements OnInit, OnDestroy {
       return;
     }
     const file = input.files[0];
+    this.landPhotoName = file.name;
     const reader = new FileReader();
 
     reader.onload = () => {

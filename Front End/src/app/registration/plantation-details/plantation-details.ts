@@ -180,9 +180,50 @@ export class PlantationDetailsComponent implements OnInit, OnDestroy {
   quantity: number | null = null;
   age: number | null = null;
   area: number | null = null;
-  unit: string = 'Hectare';
+  unit: string = '';
   daysOfCulture: number | null = null;
   selectedSubCategory: string = '';
+
+  // Tree & Mangrove Carbon Sequestration Inventory (Verra VM0047/VM0033 for Open Land, Govt Land, House)
+  smallTreeCount: number | null = null;
+  mediumTreeCount: number | null = null;
+  largeTreeCount: number | null = null;
+  mangroveAreaHa: number | null = null;
+  biomassFactor: number | null = null;
+
+  biomassFactorOptions: string[] = [
+    '1.00 - Standard Average Tropical Tree (Default)',
+    '0.30 - Palms / Coconut Plantation (~0.30)',
+    '0.80 - Softwood / Fast Growing Agroforest (~0.80)',
+    '1.10 - Dense Hardwood / Teak / Rosewood (~1.10)'
+  ];
+  biomassFactorDisplay: string = '';
+
+  getBiomassFactorLabel(val: number | null): string {
+    if (val === null || val === undefined) return '';
+    const num = Number(val);
+    if (Math.abs(num - 0.30) < 0.01) return '0.30 - Palms / Coconut Plantation (~0.30)';
+    if (Math.abs(num - 0.80) < 0.01) return '0.80 - Softwood / Fast Growing Agroforest (~0.80)';
+    if (Math.abs(num - 1.10) < 0.01) return '1.10 - Dense Hardwood / Teak / Rosewood (~1.10)';
+    return '1.00 - Standard Average Tropical Tree (Default)';
+  }
+
+  onBiomassFactorSelect(selectedOption: string): void {
+    this.biomassFactorDisplay = selectedOption;
+    if (!selectedOption) {
+      this.biomassFactor = null;
+      return;
+    }
+    if (selectedOption.includes('0.30')) {
+      this.biomassFactor = 0.30;
+    } else if (selectedOption.includes('0.80')) {
+      this.biomassFactor = 0.80;
+    } else if (selectedOption.includes('1.10')) {
+      this.biomassFactor = 1.10;
+    } else {
+      this.biomassFactor = 1.00;
+    }
+  }
 
   // Multi-Pond Aquaculture State
   ponds: PondData[] = [];
@@ -208,15 +249,34 @@ export class PlantationDetailsComponent implements OnInit, OnDestroy {
       this.selectedLandType = details.landType || '';
       this.selectedPlantationType = details.plantationType || '';
       this.selectedSubCategory = details.subCategory || '';
-      this.quantity = details.quantity || 6250;
-      this.age = details.age || null;
-      this.area = details.area || 1.0;
-      this.unit = details.unit || 'Hectare';
+      this.quantity = details.quantity ?? null;
+      this.age = details.age ?? null;
+      this.area = details.area ?? null;
+      this.unit = details.unit || '';
+      this.smallTreeCount = details.smallTreeCount ?? null;
+      this.mediumTreeCount = details.mediumTreeCount ?? null;
+      this.largeTreeCount = details.largeTreeCount ?? null;
+      this.mangroveAreaHa = details.mangroveAreaHa ?? null;
+      this.biomassFactor = details.biomassFactor ?? null;
+      this.biomassFactorDisplay = this.getBiomassFactorLabel(this.biomassFactor);
 
       if (details.ponds && Array.isArray(details.ponds) && details.ponds.length > 0) {
         this.ponds = details.ponds;
         this.activePondIndex = 0;
       }
+    } else {
+      this.selectedLandType = '';
+      this.selectedPlantationType = '';
+      this.quantity = null;
+      this.age = null;
+      this.area = null;
+      this.unit = '';
+      this.smallTreeCount = null;
+      this.mediumTreeCount = null;
+      this.largeTreeCount = null;
+      this.mangroveAreaHa = null;
+      this.biomassFactor = null;
+      this.biomassFactorDisplay = '';
     }
 
     if (this.selectedLandType === 'Fish Pond' && (this.selectedPlantationType === 'Fish' || this.selectedPlantationType === 'Prawns')) {
@@ -543,7 +603,12 @@ export class PlantationDetailsComponent implements OnInit, OnDestroy {
         quantity: this.quantity,
         age: this.age,
         area: this.area,
-        unit: this.unit
+        unit: this.unit,
+        smallTreeCount: this.smallTreeCount || 0,
+        mediumTreeCount: this.mediumTreeCount || 0,
+        largeTreeCount: this.largeTreeCount || 0,
+        mangroveAreaHa: this.mangroveAreaHa || 0,
+        biomassFactor: this.biomassFactor || 1.00
       });
     }
 

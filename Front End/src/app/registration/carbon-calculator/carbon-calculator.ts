@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CalculatorService, SPECIES_DEFAULTS } from '../../services/calculator.service';
+import { RegistrationService } from '../../services/registration.service';
 
 @Component({
   selector: 'app-carbon-calculator',
@@ -94,6 +95,15 @@ export class CarbonCalculatorComponent implements OnInit {
   // Unit Options for Pond Area Dropdown
   areaUnits: string[] = ['Hectare', 'Acre', 'Gunta', 'Cent', 'Bigha', 'Sq. Meters'];
 
+  // Land & Tree/Mangrove Properties (Verra VM0047 / VM0033 for Open Land, Govt Land, House)
+  selectedLandType: string = '';
+  smallTreeCount: number = 300;
+  mediumTreeCount: number = 120;
+  largeTreeCount: number = 30;
+  mangroveAreaHa: number = 0;
+  biomassFactor: number = 1.00;
+  treeMangroveResult: any = null;
+
   // Multi-Pond & Single Outputs
   results: any = null;
   ponds: any[] = [];
@@ -115,7 +125,8 @@ export class CarbonCalculatorComponent implements OnInit {
 
   constructor(
     private router: Router,
-    private calculatorService: CalculatorService
+    private calculatorService: CalculatorService,
+    private registrationService: RegistrationService
   ) {
     const currentStep = 6;
     const storedFurthest = localStorage.getItem('SellerFurthestStep');
@@ -126,19 +137,26 @@ export class CarbonCalculatorComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const savedLand = localStorage.getItem('SellerLandDetails');
+    const currentMob = localStorage.getItem('currentUserMobile') || '';
+    const savedLand = this.registrationService.getDraftData('SellerLandDetails', currentMob);
     if (savedLand) {
       try {
-        const ld = JSON.parse(savedLand);
-        if (ld.area && !isNaN(Number(ld.area))) this.pondArea = Number(ld.area);
-        if (ld.unit) this.pondAreaUnit = ld.unit;
+        if (savedLand.area && !isNaN(Number(savedLand.area))) this.pondArea = Number(savedLand.area);
+        if (savedLand.unit) this.pondAreaUnit = savedLand.unit;
       } catch (e) {}
     }
 
-    const savedPlantation = localStorage.getItem('SellerPlantationDetails');
+    const savedPlantation = this.registrationService.getDraftData('SellerPlantationDetails', currentMob);
     if (savedPlantation) {
       try {
-        const pd = JSON.parse(savedPlantation);
+        const pd = savedPlantation;
+        this.selectedLandType = pd.landType || '';
+        if (pd.smallTreeCount !== undefined) this.smallTreeCount = Number(pd.smallTreeCount);
+        if (pd.mediumTreeCount !== undefined) this.mediumTreeCount = Number(pd.mediumTreeCount);
+        if (pd.largeTreeCount !== undefined) this.largeTreeCount = Number(pd.largeTreeCount);
+        if (pd.mangroveAreaHa !== undefined) this.mangroveAreaHa = Number(pd.mangroveAreaHa);
+        if (pd.biomassFactor !== undefined) this.biomassFactor = Number(pd.biomassFactor);
+
         if (pd.ponds && Array.isArray(pd.ponds) && pd.ponds.length > 0) {
           this.ponds = pd.ponds;
         }
@@ -205,10 +223,11 @@ export class CarbonCalculatorComponent implements OnInit {
       this.recalculateSuccessMessage = 'Portfolio Carbon Estimation Recalculated Successfully!';
     }
 
-    const savedPlantation = localStorage.getItem('SellerPlantationDetails');
+    const currentMob = localStorage.getItem('currentUserMobile') || '';
+    const savedPlantation = this.registrationService.getDraftData('SellerPlantationDetails', currentMob);
     if (savedPlantation) {
       try {
-        const pd = JSON.parse(savedPlantation);
+        const pd = savedPlantation;
         if (pd.ponds && Array.isArray(pd.ponds) && pd.ponds.length > 0) {
           this.ponds = pd.ponds;
         }
@@ -217,24 +236,57 @@ export class CarbonCalculatorComponent implements OnInit {
       }
     }
 
-    if (this.ponds && this.ponds.length > 0) {
+    if (this.selectedLandType === 'Open Land' || this.selectedLandType === 'Govt Land' || this.selectedLandType === 'House' || (this.selectedLandType !== 'Fish Pond' && (!this.ponds || this.ponds.length === 0))) {
+      this.treeMangroveResult = this.calculatorService.calculateTreeMangroveCarbon({
+        landType: this.selectedLandType || 'Open Land',
+        smallTreeCount: this.smallTreeCount,
+        mediumTreeCount: this.mediumTreeCount,
+        largeTreeCount: this.largeTreeCount,
+        mangroveAreaHa: this.mangroveAreaHa,
+        biomassFactor: this.biomassFactor,
+        creditRateInr: this.currentMarketRate
+      });
+
+      this.overallSummary = {
+        totalCO2Reduction: this.treeMangroveResult.summary.totalCO2eStoredTonnes,
+        totalCarbonCredits: this.treeMangroveResult.summary.totalCarbonCredits,
+        totalProductionKg: 0,
+        totalAreaHa: this.mangroveAreaHa || this.pondArea || 1.0,
+        currentMarketRate: this.currentMarketRate,
+        portfolioValue: this.treeMangroveResult.summary.portfolioValueInr
+      };
+
+      const calcPayload = {
+        landType: this.selectedLandType,
+        treeMangroveResult: this.treeMangroveResult,
+        overallSummary: this.overallSummary
+      };
+
+      this.registrationService.setDraftData('SellerCalculatorDetails', calcPayload, currentMob);
+      this.registrationService.setDraftData('SellerCalculation', {
+        estimatedCO2: this.treeMangroveResult.summary.totalCarbonCredits,
+        carbonCredits: this.treeMangroveResult.summary.totalCarbonCredits,
+        marketValue: this.treeMangroveResult.summary.portfolioValueInr
+      }, currentMob);
+    } else if (this.ponds && this.ponds.length > 0) {
       const multiRes = this.calculatorService.calculateMultiPond(this.ponds, this.currentMarketRate);
       this.pondResults = multiRes.pondResults;
       this.overallSummary = multiRes.overallSummary;
       this.results = multiRes.pondResults[0]?.fullResults || null;
 
-      localStorage.setItem('SellerCalculatorDetails', JSON.stringify({
+      const calcPayload = {
         ponds: this.ponds,
         pondResults: this.pondResults,
         overallSummary: this.overallSummary,
         results: this.results
-      }));
+      };
 
-      localStorage.setItem('SellerCalculation', JSON.stringify({
+      this.registrationService.setDraftData('SellerCalculatorDetails', calcPayload, currentMob);
+      this.registrationService.setDraftData('SellerCalculation', {
         estimatedCO2: this.overallSummary.totalCarbonCredits,
         carbonCredits: this.overallSummary.totalCarbonCredits,
         marketValue: this.overallSummary.portfolioValue
-      }));
+      }, currentMob);
     } else {
       const payload = {
         cultureType: this.selectedSpecies,

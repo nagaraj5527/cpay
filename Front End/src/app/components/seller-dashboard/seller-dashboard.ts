@@ -1,4 +1,5 @@
 import { Component, OnInit, AfterViewInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -315,7 +316,15 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     measuredCH4Baseline: null as number | null,
     measuredCH4Improved: null as number | null,
     measuredN2OBaseline: null as number | null,
-    measuredN2OImproved: null as number | null
+    measuredN2OImproved: null as number | null,
+
+    // Verra VM0047 / VM0033 Tree & Mangrove Carbon Properties
+    smallTreeCount: null as number | null,
+    mediumTreeCount: null as number | null,
+    largeTreeCount: null as number | null,
+    mangroveAreaHa: null as number | null,
+    biomassFactor: null as number | null,
+    biomassFactorDisplay: '' as string
   };
   maxNewLandPondsAllowed: number = 999;
   showAddPondModal: boolean = false;
@@ -413,9 +422,10 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     asset.portfolioValue = this.getCurrencySymbol() + Math.round(this.convertAmount(valINR)).toLocaleString('en-IN');
 
     // Persist to local storage
-    const mobile = localStorage.getItem('currentUserMobile') || '+919876543210';
-    this.safeSetItem(`userLandParcels_${mobile}`, JSON.stringify(this.landParcels));
-    this.safeSetItem('userLandParcels', JSON.stringify(this.landParcels));
+    const mobile = localStorage.getItem('currentUserMobile') || '';
+    const clean10 = mobile ? mobile.replace(/[^0-9]/g, '').slice(-10) : '';
+    if (mobile) this.safeSetItem(`userLandParcels_${mobile}`, JSON.stringify(this.landParcels));
+    if (clean10) this.safeSetItem(`userLandParcels_${clean10}`, JSON.stringify(this.landParcels));
 
     this.recalculateKPICards();
     this.closeAddPondModal();
@@ -585,7 +595,8 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     private calculatorService: CalculatorService,
     private walletService: WalletService,
     private cdr: ChangeDetectorRef,
-    private http: HttpClient
+    private http: HttpClient,
+    private sanitizer: DomSanitizer
   ) {}
 
   ngOnInit(): void {
@@ -604,8 +615,9 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     // Storage listener to dynamically update Seller Dashboard when Auditor approves parcel in Auditor Console
     window.addEventListener('storage', (e) => {
       if (e.key && (e.key.startsWith('userLandParcels') || e.key === 'cpay_valuator_queue')) {
-        const mobile = localStorage.getItem('currentUserMobile') || '+919876543210';
-        const storedParcels = localStorage.getItem(`userLandParcels_${mobile}`) || localStorage.getItem('userLandParcels');
+        const mobile = localStorage.getItem('currentUserMobile') || '';
+        const clean10 = mobile ? mobile.replace(/[^0-9]/g, '').slice(-10) : '';
+        const storedParcels = (mobile ? localStorage.getItem(`userLandParcels_${mobile}`) : null) || (clean10 ? localStorage.getItem(`userLandParcels_${clean10}`) : null);
         if (storedParcels) {
           try {
             this.landParcels = JSON.parse(storedParcels);
@@ -662,19 +674,29 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
 
     this.loadUserAssetsFromBackend();
     this.loadWalletFromBackend();
+    this.loadEcosystemStandingsFromBackend();
+    if (mobile) this.loadDocumentStatuses(mobile);
 
-    const savedPersonal = localStorage.getItem(`SellerPersonalDetails_${mobile}`) || localStorage.getItem('SellerPersonalDetails');
+    localStorage.removeItem('SellerDocs');
+    localStorage.removeItem('SellerPersonalDetails');
+    localStorage.removeItem('SellerLandDetails');
+    localStorage.removeItem('SellerAddressDetails');
+
+    const clean10 = mobile ? mobile.replace(/[^0-9]/g, '').slice(-10) : '';
+    const savedPersonal = (mobile ? localStorage.getItem(`SellerPersonalDetails_${mobile}`) : null) || (clean10 ? localStorage.getItem(`SellerPersonalDetails_${clean10}`) : null);
     if (savedPersonal) {
       try {
         const pd = JSON.parse(savedPersonal);
         this.personalDetails = { ...this.personalDetails, ...pd };
-        if (pd.panPhotoName || pd.panPhoto) {
+        if (pd.panPhotoName || pd.panPhoto || pd.panNumber) {
           this.panFile = pd.panPhotoName || this.panFile || 'PAN_Card.png';
-          this.panPhotoPreview = pd.panPhoto || pd.panPhotoPreview || '';
+          this.panStatus = this.panStatus && this.panStatus !== 'Not Uploaded' ? this.panStatus : 'Pending';
+          this.panPhotoPreview = pd.panPhoto || pd.panPhotoPreview || `${environment.apiUrl}/documents/${mobile}/PAN`;
         }
-        if (pd.aadhaarPhotoName || pd.aadhaarPhoto) {
+        if (pd.aadhaarPhotoName || pd.aadhaarPhoto || pd.aadhaarNumber) {
           this.aadhaarFile = pd.aadhaarPhotoName || this.aadhaarFile || 'Aadhaar_Card.png';
-          this.aadhaarPhotoPreview = pd.aadhaarPhoto || pd.aadhaarPhotoPreview || '';
+          this.aadhaarStatus = this.aadhaarStatus && this.aadhaarStatus !== 'Not Uploaded' ? this.aadhaarStatus : 'Pending';
+          this.aadhaarPhotoPreview = pd.aadhaarPhoto || pd.aadhaarPhotoPreview || `${environment.apiUrl}/documents/${mobile}/AADHAAR`;
         }
       } catch (e) {
         console.error('Error loading personal details from localStorage', e);
@@ -682,7 +704,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     }
 
     // Load land details
-    const savedLand = localStorage.getItem(`SellerLandDetails_${mobile}`) || (mobile === '+919876543210' ? localStorage.getItem('SellerLandDetails') : null);
+    const savedLand = (mobile ? localStorage.getItem(`SellerLandDetails_${mobile}`) : null) || (clean10 ? localStorage.getItem(`SellerLandDetails_${clean10}`) : null);
     if (savedLand) {
       try {
         const ld = JSON.parse(savedLand);
@@ -704,7 +726,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       }
     }
 
-    const savedAddress = localStorage.getItem(`SellerAddressDetails_${mobile}`) || (mobile === '+919876543210' ? localStorage.getItem('SellerAddressDetails') : null);
+    const savedAddress = (mobile ? localStorage.getItem(`SellerAddressDetails_${mobile}`) : null) || (clean10 ? localStorage.getItem(`SellerAddressDetails_${clean10}`) : null);
     if (savedAddress) {
       try {
         const ad = JSON.parse(savedAddress);
@@ -841,9 +863,9 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     }
 
     // Dynamic Seller Parcels List (Populated strictly from user registrations)
+    localStorage.removeItem('userLandParcels');
     const defaultParcels: any[] = [];
-
-    const storedParcels = localStorage.getItem(`userLandParcels_${mobile}`) || localStorage.getItem('userLandParcels');
+    const storedParcels = (mobile ? localStorage.getItem(`userLandParcels_${mobile}`) : null) || (clean10 ? localStorage.getItem(`userLandParcels_${clean10}`) : null);
     let parsed: any[] = [];
     if (storedParcels) {
       try { 
@@ -861,8 +883,8 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.landParcels = parsed;
-    this.safeSetItem(`userLandParcels_${mobile}`, JSON.stringify(this.landParcels));
-    this.safeSetItem('userLandParcels', JSON.stringify(this.landParcels));
+    if (mobile) this.safeSetItem(`userLandParcels_${mobile}`, JSON.stringify(this.landParcels));
+    if (clean10) this.safeSetItem(`userLandParcels_${clean10}`, JSON.stringify(this.landParcels));
     this.recalculateKPICards();
 
     // Check if approved in cpay_valuator_queue as fallback
@@ -1085,6 +1107,11 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       container.scrollTop = 0;
     });
 
+    if (tabName === 'View Documents' || tabName === 'Add Documents') {
+      const mobile = localStorage.getItem('currentUserMobile') || localStorage.getItem('loginMobile') || '';
+      if (mobile) this.loadDocumentStatuses(mobile);
+    }
+
     if (tabName === 'Region prospect') {
       setTimeout(() => {
         this.initMap();
@@ -1104,8 +1131,9 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     this.isSyncing = true;
 
     // Load immediately from localStorage first for instant (<1s) update
-    const mobile = localStorage.getItem('currentUserMobile') || '+919876543210';
-    const storedParcels = localStorage.getItem(`userLandParcels_${mobile}`) || localStorage.getItem('userLandParcels');
+    const mobile = localStorage.getItem('currentUserMobile') || '';
+    const clean10 = mobile ? mobile.replace(/[^0-9]/g, '').slice(-10) : '';
+    const storedParcels = (mobile ? localStorage.getItem(`userLandParcels_${mobile}`) : null) || (clean10 ? localStorage.getItem(`userLandParcels_${clean10}`) : null);
     if (storedParcels) {
       try {
         this.landParcels = JSON.parse(storedParcels);
@@ -1144,6 +1172,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       
       this.loadProfilePhotoFromStorage(mobile);
       this.loadUserAssetsFromBackend();
+      this.loadEcosystemStandingsFromBackend();
 
       const alertDiv = document.createElement('div');
       alertDiv.className = 'sync-toast';
@@ -1254,29 +1283,24 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     // Fetch all user assets from `/my-assets`
     this.registrationService.getUserAssets().subscribe({
       next: (assetsRes: any) => {
-        if (assetsRes && assetsRes.success && Array.isArray(assetsRes.data) && assetsRes.data.length > 0) {
+        if (assetsRes && assetsRes.success && Array.isArray(assetsRes.data)) {
           console.log('🔄 Syncing user assets strictly from PostgreSQL:', assetsRes.data);
           
           const validParcels = assetsRes.data.filter((bParcel: any) => bParcel && !bParcel.name?.includes('N/A/N/A'));
           if (validParcels.length > 0) {
             const normalizedBackendParcels = validParcels.map((p: any) => this.normalizeAssetCard(p));
-            const merged = [...normalizedBackendParcels];
-            (this.landParcels || []).forEach((localP: any) => {
-              const exists = merged.some((mP: any) => 
-                (mP.registration_id && localP.registration_id && mP.registration_id === localP.registration_id) ||
-                (mP.surveyNo && localP.surveyNo && mP.surveyNo.toString().toLowerCase().trim() === localP.surveyNo.toString().toLowerCase().trim() && (mP.subDivisionNo || '') === (localP.subDivisionNo || '')) ||
-                (mP.name && localP.name && mP.name === localP.name)
-              );
-              if (!exists) {
-                merged.unshift(localP);
-              }
-            });
-            this.landParcels = this.deduplicateParcels(merged);
+            this.landParcels = this.deduplicateParcels(normalizedBackendParcels);
+          } else {
+            // If PostgreSQL backend returns 0 registered assets for this user
+            this.landParcels = [];
           }
           
-          const mobile = localStorage.getItem('currentUserMobile') || '+919876543210';
-          this.safeSetItem(`userLandParcels_${mobile}`, JSON.stringify(this.landParcels));
-          this.safeSetItem('userLandParcels', JSON.stringify(this.landParcels));
+          const mobile = localStorage.getItem('currentUserMobile') || '';
+          const clean10 = mobile ? mobile.replace(/[^0-9]/g, '').slice(-10) : '';
+          if (mobile) this.safeSetItem(`userLandParcels_${mobile}`, JSON.stringify(this.landParcels));
+          if (clean10) this.safeSetItem(`userLandParcels_${clean10}`, JSON.stringify(this.landParcels));
+          this.recalculateKPICards();
+          this.cdr.detectChanges();
         }
         
         // Check and sync fallback statuses from local cpay_valuator_queue individually by registration_id
@@ -1395,13 +1419,17 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  toggleViewTrees(asset: any): void {
+    if (!asset) return;
+    asset.showTrees = !asset.showTrees;
+    this.cdr.detectChanges();
+  }
+
   syncAssetPondStatuses(asset: any): void {
     if (!asset) return;
     let normStatus = 'Pending';
     if (this.isVerifiedStatus(asset.status)) normStatus = 'Verified';
     else if (this.isRejectedStatus(asset.status)) normStatus = 'Rejected';
-    else if (this.isUnderReviewStatus(asset.status)) normStatus = 'Under Review';
-
     asset.status = normStatus;
     if (Array.isArray(asset.ponds)) {
       asset.ponds.forEach((p: any) => {
@@ -1415,12 +1443,13 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     const seen = new Set<string>();
     return parcels.filter(p => {
       if (!p) return false;
+      const landId = (p.land_id || p.landId || '').toString().toLowerCase().trim();
+      const regId = (p.registration_id || p.id || '').toString().toLowerCase().trim();
       const sNo = (p.surveyNo || p.survey_number || p.survey?.surveyNo || '').toString().toLowerCase().trim();
       const subNo = (p.subDivisionNo || p.sub_division_number || p.survey?.subDivisionNo || '').toString().toLowerCase().trim();
       const nameKey = (p.name || '').toString().toLowerCase().trim();
-      const regId = (p.registration_id || p.id || '').toString().toLowerCase().trim();
       
-      const key = (sNo && subNo) ? `${sNo}_${subNo}` : (sNo ? sNo : (regId ? regId : nameKey));
+      const key = landId ? landId : ((sNo && subNo) ? `${sNo}_${subNo}_${regId}` : (regId ? regId : nameKey));
       if (!key || seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -1451,11 +1480,9 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     // Determine actual registered total area and total production
     const rawAreaStr = String(rawAsset.area || rawAsset.totalPondArea || rawAsset.survey?.area || '0');
     const actualAreaVal = parseFloat(rawAreaStr) || 0;
-    let totCredVal = parseFloat(String(rawAsset.totalCarbonCredits || rawAsset.sequestrationRate || rawAsset.carbon_credits || 0)) || (actualAreaVal > 0 ? parseFloat((actualAreaVal * 6.8).toFixed(2)) : 0);
+    let totCredVal = parseFloat(String(rawAsset.totalCarbonCredits || rawAsset.sequestrationRate || rawAsset.carbon_credits || 0));
     const rawProdVal = parseFloat(String(rawAsset.totalProduction || rawAsset.total_production_kg || rawAsset.annual_production || rawAsset.totalBiomassHarvestedKg || '0').replace(/[^0-9.]/g, ''));
     let totalProdKg = rawProdVal > 0 ? rawProdVal : (actualAreaVal > 0 ? Math.round(actualAreaVal * 7500) : 0);
-
-    const unitStr = 'Hectares';
 
     // Retrieve ponds array from rawAsset or nested objects or localStorage
     const mobile = localStorage.getItem('currentUserMobile') || '';
@@ -1480,16 +1507,22 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       } catch (e) {}
     }
 
-    const rawPondsArray = (Array.isArray(rawAsset.ponds) && rawAsset.ponds.length > 0)
-      ? rawAsset.ponds
-      : ((Array.isArray(rawAsset.plantation?.ponds) && rawAsset.plantation.ponds.length > 0)
-        ? rawAsset.plantation.ponds
-        : ((Array.isArray(rawAsset.aquacultureDetails?.ponds) && rawAsset.aquacultureDetails.ponds.length > 0)
-          ? rawAsset.aquacultureDetails.ponds
-          : localPondsFromStorage));
+    const rLandType = rawAsset.landType || rawAsset.plantation?.landType || rawAsset.land_type || '';
+    const isFishPond = rLandType === 'Fish Pond';
+    const isTreeLand = rLandType === 'Open Land' || rLandType === 'Govt Land' || rLandType === 'House' || rawAsset.cropCategory === 'Tree' || rawAsset.plantationType === 'Tree' || !isFishPond;
+
+    const rawPondsArray = isFishPond ? (
+      (Array.isArray(rawAsset.ponds) && rawAsset.ponds.length > 0)
+        ? rawAsset.ponds
+        : ((Array.isArray(rawAsset.plantation?.ponds) && rawAsset.plantation.ponds.length > 0)
+          ? rawAsset.plantation.ponds
+          : ((Array.isArray(rawAsset.aquacultureDetails?.ponds) && rawAsset.aquacultureDetails.ponds.length > 0)
+            ? rawAsset.aquacultureDetails.ponds
+            : localPondsFromStorage))
+    ) : [];
 
     let pondsList: any[] = [];
-    if (rawPondsArray && rawPondsArray.length > 0) {
+    if (isFishPond && rawPondsArray && rawPondsArray.length > 0) {
       pondsList = rawPondsArray.map((p: any, idx: number) => {
         let pSpec = p.species || p.selectedSpecies || p.subCategory || p.cultureType || 'IMC';
         if (pSpec.toLowerCase() === 'neem') pSpec = 'IMC';
@@ -1499,7 +1532,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
           pAreaNum = 1.0;
         }
 
-        const pondUnit = 'Hectares';
+        const pondUnit = 'Acres';
 
         let pCreditsNum = parseFloat(String(p.credits !== undefined ? p.credits : (p.potentialCarbonCredits || p.carbonCredits || p.co2Reduction || 0)));
         if (!pCreditsNum || isNaN(pCreditsNum) || pCreditsNum === 0) {
@@ -1537,21 +1570,74 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       p.status = assetStatus;
     });
 
-    if (totalProdNum > 0) {
+    if (isFishPond && totalProdNum > 0) {
       totalProdKg = totalProdNum;
     }
-    if (totalCreditsNum > 0) {
+    if (isFishPond && totalCreditsNum > 0) {
       totCredVal = totalCreditsNum;
     }
 
-    const totAreaStr = `${totalAreaNum > 0 ? totalAreaNum.toFixed(2) : (actualAreaVal > 0 ? actualAreaVal.toFixed(2) : '10.00')} Hectares`;
+    // Extract user/seller entered tree stand parameters & biomass factor
+    let userSmallCount: number | null = null;
+    let userMediumCount: number | null = null;
+    let userLargeCount: number | null = null;
+    let userBiomassFactor: number = 1.0;
+
+    if (localPlantationStr) {
+      try {
+        const pObj = JSON.parse(localPlantationStr);
+        if (pObj.smallTreeCount !== undefined && pObj.smallTreeCount !== null) userSmallCount = Number(pObj.smallTreeCount);
+        if (pObj.mediumTreeCount !== undefined && pObj.mediumTreeCount !== null) userMediumCount = Number(pObj.mediumTreeCount);
+        if (pObj.largeTreeCount !== undefined && pObj.largeTreeCount !== null) userLargeCount = Number(pObj.largeTreeCount);
+        if (pObj.biomassFactor !== undefined && pObj.biomassFactor !== null) userBiomassFactor = Number(pObj.biomassFactor);
+      } catch (e) {}
+    }
+
+    const rawSmall = rawAsset.smallTreeCount !== undefined && rawAsset.smallTreeCount !== null ? Number(rawAsset.smallTreeCount) : (rawAsset.plantation?.smallTreeCount !== undefined ? Number(rawAsset.plantation.smallTreeCount) : (rawAsset.small_tree_count !== undefined ? Number(rawAsset.small_tree_count) : userSmallCount));
+
+    const rawMed = rawAsset.mediumTreeCount !== undefined && rawAsset.mediumTreeCount !== null ? Number(rawAsset.mediumTreeCount) : (rawAsset.plantation?.mediumTreeCount !== undefined ? Number(rawAsset.plantation.mediumTreeCount) : (rawAsset.medium_tree_count !== undefined ? Number(rawAsset.medium_tree_count) : userMediumCount));
+
+    const rawLg = rawAsset.largeTreeCount !== undefined && rawAsset.largeTreeCount !== null ? Number(rawAsset.largeTreeCount) : (rawAsset.plantation?.largeTreeCount !== undefined ? Number(rawAsset.plantation.largeTreeCount) : (rawAsset.large_tree_count !== undefined ? Number(rawAsset.large_tree_count) : userLargeCount));
+
+    const totalEnteredTrees = rawAsset.trees !== undefined && rawAsset.trees !== null ? Number(rawAsset.trees) : (rawAsset.totalTrees || rawAsset.quantity || rawAsset.plantation?.quantity || 0);
+
+    let finalSmall = 0, finalMed = 0, finalLg = 0;
+
+    if (rawSmall !== null && rawMed !== null && rawLg !== null) {
+      finalSmall = rawSmall;
+      finalMed = rawMed;
+      finalLg = rawLg;
+    } else if (totalEnteredTrees > 0) {
+      // Stand distribution breakdown based on registered total tree count
+      finalSmall = Math.round(totalEnteredTrees * 0.667);
+      finalMed = Math.round(totalEnteredTrees * 0.267);
+      finalLg = Math.max(0, totalEnteredTrees - finalSmall - finalMed);
+    }
+
+    const finalTotalTrees = isTreeLand ? (finalSmall + finalMed + finalLg) : 0;
+    const finalBiomass = rawAsset.biomassFactor || rawAsset.plantation?.biomassFactor || userBiomassFactor || 1.0;
+
+    // Recalculate Tree Carbon Credits for Tree Land if trees are present
+    if (isTreeLand && finalTotalTrees > 0) {
+      const calcTreeCredits = ((finalSmall * 0.086) + (finalMed * 0.871) + (finalLg * 3.852)) * finalBiomass;
+      if (calcTreeCredits > 0) {
+        totCredVal = parseFloat(calcTreeCredits.toFixed(2));
+      }
+    } else if (isNaN(totCredVal) || totCredVal <= 0) {
+      totCredVal = actualAreaVal > 0 ? parseFloat((actualAreaVal * 6.8).toFixed(2)) : 0;
+    }
+
+    let totAreaStr = rawAreaStr.includes('Acre') || rawAreaStr.includes('Hectare') ? rawAreaStr : `${actualAreaVal > 0 ? actualAreaVal : '0'} Acres`;
+    if (isFishPond && totalAreaNum > 0) {
+      totAreaStr = `${totalAreaNum.toFixed(2)} Acres`;
+    }
     const totProdStr = `${Math.round(totalProdKg).toLocaleString('en-IN')} Kg`;
     const totCredStr = totCredVal.toFixed(2);
     
     // Calculate portfolio value using current credit rate (tradePrice = 120 INR)
     const valINR = Math.round(totCredVal * (this.tradePrice || 120));
     const portfolioValStr = this.getCurrencySymbol() + Math.round(this.convertAmount(valINR)).toLocaleString('en-IN');
-    const maxPondsAllowed = rawAsset.maxPondsAllowed || Math.max(3, pondsList.length);
+    const maxPondsAllowed = isFishPond ? (rawAsset.maxPondsAllowed || Math.max(3, pondsList.length)) : 0;
 
     let parsedSurveyEntries: any[] = [];
     if (Array.isArray(rawAsset.surveyEntries) && rawAsset.surveyEntries.length > 0) {
@@ -1564,28 +1650,44 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
 
     return {
       ...rawAsset,
-      id: rawAsset.id || rawAsset.registration_id || `asset-${sNo}`,
+      id: rawAsset.land_id || rawAsset.id || rawAsset.registration_id || `asset-${sNo}`,
+      land_id: rawAsset.land_id || rawAsset.id,
       registration_id: rawAsset.registration_id || rawAsset.id,
       surveyNo: sNo,
       subDivisionNo: subDiv,
       surveyEntries: parsedSurveyEntries,
       name: nameVal,
-      cropCategory: rawAsset.cropCategory || 'Aquaculture (Fish & Shrimp)',
+      landType: rLandType || (isFishPond ? 'Fish Pond' : 'Open Land'),
+      cropCategory: isFishPond ? (rawAsset.cropCategory || 'Aquaculture (Fish & Shrimp)') : 'Tree (Mixed Stand Trees)',
       area: totAreaStr,
       totalPondArea: totAreaStr,
       totalProduction: totProdStr,
       totalCarbonCredits: totCredStr,
       portfolioValue: portfolioValStr,
       location: locVal,
-      trees: rawAsset.trees || 0,
+      trees: isTreeLand ? finalTotalTrees : 0,
+      smallTreeCount: isTreeLand ? finalSmall : 0,
+      mediumTreeCount: isTreeLand ? finalMed : 0,
+      largeTreeCount: isTreeLand ? finalLg : 0,
+      biomassFactor: finalBiomass,
+      showTrees: rawAsset.showTrees !== undefined ? rawAsset.showTrees : false,
       status: assetStatus,
-      auditor: rawAsset.auditor || 'UNFCCC Lead Auditor',
-      date: rawAsset.date || 'June 15, 2026',
+      auditor: rawAsset.auditor || 'Ecosystem Standards Board',
+      date: rawAsset.date || 'Pending',
       sequestrationRate: totCredVal,
       rejectionReason: rawAsset.rejectionReason || '',
-      showPonds: rawAsset.showPonds !== undefined ? rawAsset.showPonds : (pondsList.length > 0),
+      showPonds: isFishPond ? (rawAsset.showPonds !== undefined ? rawAsset.showPonds : (pondsList.length > 0)) : false,
       maxPondsAllowed: maxPondsAllowed,
-      ponds: pondsList,
+      ponds: isFishPond ? pondsList : [],
+      pattadarDoc: rawAsset.pattadarDoc || rawAsset.pattadarDocPreview || '',
+      pattadarDocName: rawAsset.pattadarDocName || rawAsset.pattadarFile || 'Pattadar_Passbook_LPC.pdf',
+      pattadarDocPreview: rawAsset.pattadarDocPreview || rawAsset.pattadarDoc || '',
+      pattadarFile: rawAsset.pattadarFile || rawAsset.pattadarDocName || 'Pattadar_Passbook_LPC.pdf',
+      imagePreview: rawAsset.imagePreview || rawAsset.landPhoto || '',
+      landPhoto: rawAsset.landPhoto || rawAsset.imagePreview || '',
+      landPhotoName: rawAsset.landPhotoName || rawAsset.imageName || 'Geo_Land_Site_Photo.jpg',
+      landPhotoPreview: rawAsset.landPhotoPreview || rawAsset.imagePreview || rawAsset.landPhoto || '',
+      landPhotoFile: rawAsset.landPhotoFile || rawAsset.landPhotoName || rawAsset.imageName || 'Geo_Land_Site_Photo.jpg',
       coords: rawAsset.coords || [
         [14.4480, 79.9820],
         [14.4500, 79.9890],
@@ -1760,15 +1862,40 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
 
   // Helper to sync user's name in topSellers
   updateSellersList(): void {
-    const userName = this.personalDetails.fullName || 'Bhaskar';
+    const userName = this.personalDetails.fullName || 'Kanna';
     const idx = this.topSellers.findIndex(s => s.rank === 5);
     if (idx !== -1) {
       this.topSellers[idx].name = userName;
     }
   }
 
+  loadEcosystemStandingsFromBackend(): void {
+    this.updateSellersList();
+    this.registrationService.getEcosystemStandings().subscribe({
+      next: (res: any) => {
+        if (res && res.success && res.data) {
+          const { topSellers, topBuyers } = res.data;
+          if (Array.isArray(topSellers) && topSellers.length > 0) {
+            // Blend logged in user into rank #5 of ecosystem list if valid
+            topSellers.forEach((s: any, idx: number) => {
+              if (idx < 10 && !this.topSellers[idx]) {
+                this.topSellers.push(s);
+              }
+            });
+          }
+          this.updateSellersList();
+          this.cdr.detectChanges();
+        }
+      },
+      error: () => {
+        this.updateSellersList();
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   getBuyerPosition() {
-    const name = this.personalDetails.fullName.toLowerCase();
+    const name = (this.personalDetails.fullName || '').toLowerCase();
     const idx = this.topBuyers.findIndex(b => b.name.toLowerCase() === name);
     if (idx !== -1) {
       return { position: idx + 1, total: 250, isTop10: true };
@@ -1777,12 +1904,13 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getSellerPosition() {
-    const name = this.personalDetails.fullName.toLowerCase();
+    this.updateSellersList();
+    const name = (this.personalDetails.fullName || '').toLowerCase();
     const idx = this.topSellers.findIndex(s => s.name.toLowerCase() === name);
     if (idx !== -1) {
       return { position: idx + 1, total: 180, isTop10: true };
     }
-    return { position: 5, total: 180, isTop10: false };
+    return { position: 5, total: 180, isTop10: true };
   }
 
   get tradeProjectNames(): string[] {
@@ -1835,7 +1963,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
   resolveDocumentPreview(targetType: 'PAN' | 'AADHAAR' | 'LAND' | 'LAND_PHOTO'): string {
     const mobile = localStorage.getItem('currentUserMobile') || '+919876543210';
     const last10 = mobile.replace(/[^0-9]/g, '').slice(-10);
-    const regId = this.personalDetails.registrationId || '';
+    const regId = this.personalDetails?.registrationId || '';
 
     const isValidData = (val: any): boolean => {
       return (
@@ -1848,7 +1976,16 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     };
 
     const getDocFromObj = (obj: any): string | null => {
-      if (!obj || typeof obj !== 'object') return null;
+      if (!obj) return null;
+      if (Array.isArray(obj)) {
+        for (const item of obj) {
+          const res = getDocFromObj(item);
+          if (res) return res;
+        }
+        return null;
+      }
+      if (typeof obj !== 'object') return null;
+
       if (targetType === 'PAN') {
         if (isValidData(obj.panPhoto)) return obj.panPhoto;
         if (isValidData(obj.panPhotoPreview)) return obj.panPhotoPreview;
@@ -1863,84 +2000,140 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
         if (isValidData(obj.landPhoto)) return obj.landPhoto;
         if (isValidData(obj.landPhotoPreview)) return obj.landPhotoPreview;
       }
+      if (obj.docs) {
+        const dRes = getDocFromObj(obj.docs);
+        if (dRes) return dRes;
+      }
+      if (obj.plantation) {
+        const pRes = getDocFromObj(obj.plantation);
+        if (pRes) return pRes;
+      }
       return null;
     };
 
-    let found: string | null = null;
+    // 0. Search active in-memory landParcels first
+    let found = getDocFromObj(this.landParcels) || getDocFromObj(this.editingParcel);
+    if (found) return found;
 
-    // 1. Search cpay_valuator_queue items in localStorage
-    try {
-      const qStr = localStorage.getItem('cpay_valuator_queue');
-      if (qStr) {
-        const qItems = JSON.parse(qStr);
-        const match = qItems.find((q: any) => {
-          if (!q) return false;
-          const qMob = (q.mobile_number || '').replace(/[^0-9]/g, '');
-          const qRegId = q.registration_id || q.id || '';
-          return (
-            (qRegId && regId && (qRegId === regId || qRegId.includes(regId) || regId.includes(qRegId))) ||
-            (qMob && last10 && (qMob.endsWith(last10) || last10.endsWith(qMob)))
-          );
-        });
-
-        if (match) {
-          found = getDocFromObj(match.docs || (match.parcel && match.parcel.docs) || match.parcel || match);
+    // 1. Search current logged-in user's mobile-namespaced keys
+    if (mobile || last10) {
+      const keysToCheck = [
+        `userLandParcels_${mobile}`,
+        `userLandParcels_${last10}`,
+        `userLandParcels`,
+        `SellerDocs_${mobile}`,
+        `SellerDocs_${last10}`,
+        `SellerLandDetails_${mobile}`,
+        `SellerLandDetails_${last10}`,
+        `SellerLandDetails`,
+        `SellerLandSurveyDetails_${mobile}`,
+        `SellerLandSurveyDetails`,
+        `SellerPersonalDetails_${mobile}`,
+        `SellerPersonalDetails_${last10}`,
+        `SellerPersonalDetails`
+      ];
+      for (const k of keysToCheck) {
+        const itemStr = localStorage.getItem(k);
+        if (itemStr) {
+          try {
+            const itemObj = JSON.parse(itemStr);
+            found = getDocFromObj(itemObj);
+            if (found) break;
+          } catch (e) {}
         }
       }
-    } catch (e) {}
-
-    // 2. Scan ALL keys in localStorage for SellerDocs_, SellerPersonalDetails_, SellerLandDetails_, userLandParcels_
-    if (!found) {
-      try {
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
-          if (!k) continue;
-
-          const cleanK = k.replace(/[^0-9]/g, '');
-          const isUserKey = (last10 && cleanK.length >= 7 && (cleanK.endsWith(last10) || last10.endsWith(cleanK))) || (regId && k.includes(regId));
-
-          if (isUserKey || k.startsWith('SellerDocs') || k.startsWith('SellerPersonal') || k.startsWith('SellerLand') || k.startsWith('userLandParcels')) {
-            const itemStr = localStorage.getItem(k);
-            if (!itemStr) continue;
-            try {
-              const itemObj = JSON.parse(itemStr);
-              if (Array.isArray(itemObj)) {
-                for (const elem of itemObj) {
-                  found = getDocFromObj(elem) || getDocFromObj(elem.docs);
-                  if (found) break;
-                }
-              } else {
-                found = getDocFromObj(itemObj) || getDocFromObj(itemObj.docs) || getDocFromObj(itemObj.parcel?.docs);
-              }
-              if (found) break;
-            } catch (e) {}
-          }
-        }
-      } catch (e) {}
     }
 
-    // 3. Fallback to unnamespaced keys
-    if (!found) {
-      try {
-        const pdStr = localStorage.getItem('SellerPersonalDetails');
-        if (pdStr) found = getDocFromObj(JSON.parse(pdStr));
-        if (!found) {
-          const ldStr = localStorage.getItem('SellerLandDetails');
-          if (ldStr) found = getDocFromObj(JSON.parse(ldStr));
-        }
-        if (!found) {
-          const docsStr = localStorage.getItem('SellerDocs');
-          if (docsStr) found = getDocFromObj(JSON.parse(docsStr));
-        }
-      } catch (e) {}
+    if (found) return found;
+
+    // 2. Primary Source of Truth: PostgreSQL Database Document API URL for authenticated user
+    const targetReg = regId || mobile || (last10 ? `+91${last10}` : '');
+    if (targetReg) {
+      return `${environment.apiUrl}/documents/${targetReg}/${targetType}`;
     }
 
-    // 4. Fallback to backend API URL if registrationId is available
-    if (!found && regId) {
-      return `${environment.apiUrl}/documents/${regId}/${targetType}`;
-    }
+    return '';
+  }
 
-    return found || '';
+  getAssetDocumentGroups(): any[] {
+    const groups: any[] = [];
+    const parcels = (this.landParcels && this.landParcels.length > 0)
+      ? this.landParcels
+      : [this.landDetails || {}];
+
+    const mobile = localStorage.getItem('currentUserMobile') || '';
+    const clean10 = mobile.replace(/[^0-9]/g, '').slice(-10);
+    const regId = this.personalDetails?.registrationId || mobile || (clean10 ? `+91${clean10}` : '');
+
+    const isValidData = (val: any): boolean => {
+      return (
+        typeof val === 'string' &&
+        val.trim().length > 20 &&
+        val !== 'photo_placeholder' &&
+        !val.includes('undefined') &&
+        !val.includes('null')
+      );
+    };
+
+    parcels.forEach((parcel: any, idx: number) => {
+      const assetNum = idx + 1;
+      const surveyNo = (parcel.surveyNo || parcel.survey_number || parcel.survey?.surveyNo || parcel.name || (this.landDetails && this.landDetails.surveyNo) || `Asset ${assetNum}`).toString().trim();
+      const landType = (parcel.landCategory || parcel.landType || parcel.category || parcel.cropCategory || (this.landDetails && (this.landDetails.landType || (this.landDetails as any).category)) || 'Land Parcel').toString().trim();
+      const status = parcel.status || this.landStatus || 'Pending';
+
+      // 1. Pattadar Passbook Document
+      let pattadarPreview = parcel.pattadarDoc || parcel.pattadarDocPreview;
+      let pattadarName = parcel.pattadarDocName || parcel.pattadarFileName;
+      if (!isValidData(pattadarPreview)) {
+        if (idx === 0 && isValidData(this.pattadarDocPreview)) {
+          pattadarPreview = this.pattadarDocPreview;
+        } else {
+          const docKey = idx === 0 ? 'LAND' : `LAND_${assetNum}`;
+          pattadarPreview = `${environment.apiUrl}/documents/${regId}/${docKey}`;
+        }
+      }
+      if (!pattadarName) {
+        pattadarName = (idx === 0 && this.pattadarFile) ? this.pattadarFile : `Pattadar_Passbook_Asset_${assetNum}.pdf`;
+      }
+
+      // 2. Geo-Tagged Site Photography
+      let landPhotoPreview = parcel.imagePreview || parcel.landPhoto || parcel.landPhotoPreview;
+      let landPhotoName = parcel.landPhotoName || parcel.imageName;
+      if (!isValidData(landPhotoPreview)) {
+        if (idx === 0 && isValidData(this.landPhotoPreview)) {
+          landPhotoPreview = this.landPhotoPreview;
+        } else {
+          const photoKey = idx === 0 ? 'LAND_PHOTO' : `LAND_PHOTO_${assetNum}`;
+          landPhotoPreview = `${environment.apiUrl}/documents/${regId}/${photoKey}`;
+        }
+      }
+      if (!landPhotoName) {
+        landPhotoName = (idx === 0 && this.landPhotoFile) ? this.landPhotoFile : `Geo_Land_Site_Asset_${assetNum}.jpg`;
+      }
+
+      const lat = parcel.latitude || (this.landDetails && this.landDetails.latitude) || '17.2875';
+      const lng = parcel.longitude || (this.landDetails && this.landDetails.longitude) || '78.6089';
+
+      groups.push({
+        assetNumber: assetNum,
+        surveyNo: surveyNo,
+        landType: landType,
+        status: status,
+        latitude: lat,
+        longitude: lng,
+        pattadarName: pattadarName,
+        pattadarPreview: pattadarPreview,
+        landPhotoName: landPhotoName,
+        landPhotoPreview: landPhotoPreview
+      });
+    });
+
+    return groups;
+  }
+
+  getSafePdfUrl(url: string): SafeResourceUrl {
+    if (!url) return '';
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 
   syncDocumentPreviews(): void {
@@ -1955,6 +2148,18 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
 
     const aadhaar = this.resolveDocumentPreview('AADHAAR');
     if (aadhaar) this.aadhaarPhotoPreview = aadhaar;
+
+    // Synchronize Filename Labels
+    const mobile = localStorage.getItem('currentUserMobile') || '';
+    const clean10 = mobile.replace(/[^0-9]/g, '').slice(-10);
+    const storedLand = (mobile ? localStorage.getItem(`SellerLandDetails_${mobile}`) : null) || (clean10 ? localStorage.getItem(`SellerLandDetails_${clean10}`) : null) || localStorage.getItem('SellerLandDetails');
+    if (storedLand) {
+      try {
+        const ld = JSON.parse(storedLand);
+        if (ld.pattadarDocName) this.pattadarFile = ld.pattadarDocName;
+        if (ld.landPhotoName || ld.imageName) this.landPhotoFile = ld.landPhotoName || ld.imageName;
+      } catch (e) {}
+    }
 
     this.cdr.detectChanges();
   }
@@ -1984,6 +2189,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
   }
 
   loadDocumentStatuses(registrationId: string): void {
+    if (!registrationId) return;
     this.registrationService.getDocumentStatusList(registrationId).subscribe({
       next: (res: any) => {
         if (res.success && res.documents) {
@@ -1991,31 +2197,33 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
           const baseUrl = `${environment.apiUrl}/documents/${registrationId}`;
 
           if (docs.PAN) {
-            this.panFile = docs.PAN.filename;
-            this.panStatus = 'Verified';
+            this.panFile = docs.PAN.filename || this.panFile || 'PAN_Card.png';
+            this.panStatus = this.panStatus === 'Verified' ? 'Verified' : 'Pending';
             this.panPhotoPreview = `${baseUrl}/PAN`;
           }
           if (docs.AADHAAR) {
-            this.aadhaarFile = docs.AADHAAR.filename;
-            this.aadhaarStatus = 'Verified';
+            this.aadhaarFile = docs.AADHAAR.filename || this.aadhaarFile || 'Aadhaar_Card.png';
+            this.aadhaarStatus = this.aadhaarStatus === 'Verified' ? 'Verified' : 'Pending';
             this.aadhaarPhotoPreview = `${baseUrl}/AADHAAR`;
           }
           if (docs.LAND_PHOTO || docs.LAND) {
             const docType = docs.LAND_PHOTO ? 'LAND_PHOTO' : 'LAND';
-            this.landPhotoFile = (docs.LAND_PHOTO || docs.LAND).filename;
-            this.landFile = (docs.LAND_PHOTO || docs.LAND).filename;
-            this.landStatus = 'Verified';
+            this.landPhotoFile = (docs.LAND_PHOTO || docs.LAND).filename || this.landPhotoFile || 'Geo_Land_Site_Photo.jpg';
+            this.landFile = (docs.LAND_PHOTO || docs.LAND).filename || 'Pattadar_Passbook_LPC.pdf';
+            this.pattadarFile = docs.LAND ? docs.LAND.filename : (docs.LAND_PHOTO ? docs.LAND_PHOTO.filename : (this.pattadarFile || 'Pattadar_Passbook_LPC.pdf'));
+            this.landStatus = this.landStatus === 'Verified' ? 'Verified' : 'Pending';
+            this.pattadarDocPreview = `${baseUrl}/LAND`;
             this.landPhotoPreview = `${baseUrl}/${docType}`;
           }
           if (docs.BANK_STATEMENT || docs.BANK) {
             const docType = docs.BANK_STATEMENT ? 'BANK_STATEMENT' : 'BANK';
-            this.bankFile = (docs.BANK_STATEMENT || docs.BANK).filename;
-            this.bankStatus = 'Verified';
+            this.bankFile = (docs.BANK_STATEMENT || docs.BANK).filename || 'Bank_Statement.pdf';
+            this.bankStatus = this.bankStatus === 'Verified' ? 'Verified' : 'Pending';
             this.bankPhotoPreview = `${baseUrl}/${docType}`;
           }
           if (docs.SIGNATURE) {
-            this.signatureFile = docs.SIGNATURE.filename;
-            this.signatureStatus = 'Verified';
+            this.signatureFile = docs.SIGNATURE.filename || 'Signature.png';
+            this.signatureStatus = this.signatureStatus === 'Verified' ? 'Verified' : 'Pending';
             this.signaturePhotoPreview = `${baseUrl}/SIGNATURE`;
           }
           this.cdr.detectChanges();
@@ -2394,9 +2602,10 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
   }
 
   saveParcels() {
-    const mobile = localStorage.getItem('currentUserMobile') || '+919876543210';
-    this.safeSetItem(`userLandParcels_${mobile}`, JSON.stringify(this.landParcels));
-    this.safeSetItem('userLandParcels', JSON.stringify(this.landParcels));
+    const mobile = localStorage.getItem('currentUserMobile') || '';
+    const clean10 = mobile ? mobile.replace(/[^0-9]/g, '').slice(-10) : '';
+    if (mobile) this.safeSetItem(`userLandParcels_${mobile}`, JSON.stringify(this.landParcels));
+    if (clean10) this.safeSetItem(`userLandParcels_${clean10}`, JSON.stringify(this.landParcels));
     this.recalculateKPICards();
 
     if (this.isSyncingWithDB) {
@@ -2535,15 +2744,16 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     this.saveWalletData();
 
     // Map top display metrics
-    // Card 1: TOTAL CREDITS - Only verified credits appear in Total Credits and Wallet
-    this.totalCredit.value = `${this.creditWalletBalance.toFixed(2)} tCO2e`;
-    this.totalCredit.subtext = `Market value: ₹${Math.round(this.creditWalletBalance * pricePerCredit).toLocaleString('en-IN')}`;
+    // Card 1: TOTAL CREDITS - Aggregated credits across all registered assets (Verified + Pending)
+    const totalAllCredits = verifiedCredits + pendingCredits;
+    this.totalCredit.value = `${totalAllCredits.toFixed(2)} tCO2e`;
+    this.totalCredit.subtext = `Market value: ₹${Math.round(totalAllCredits * pricePerCredit).toLocaleString('en-IN')}`;
     
     // Card 2: WALLET - Cash balance
     this.assetValuation.value = `₹${Math.round(this.cashWalletBalance).toLocaleString('en-IN')}`;
 
     // Card 3: CREDIT VALIDATION - Approved Limits
-    this.creditValidation.value = `${this.creditWalletBalance.toFixed(2)} tCO2e`;
+    this.creditValidation.value = `${verifiedCredits.toFixed(2)} tCO2e`;
 
     // Card 4: CREDIT UNVALIDATION - Pending verification
     this.creditUnvalidation.value = `${pendingCredits.toFixed(2)} tCO2e`;
@@ -2664,7 +2874,13 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
         measuredCH4Baseline: parcel.plantation.measuredCH4Baseline || null,
         measuredCH4Improved: parcel.plantation.measuredCH4Improved || null,
         measuredN2OBaseline: parcel.plantation.measuredN2OBaseline || null,
-        measuredN2OImproved: parcel.plantation.measuredN2OImproved || null
+        measuredN2OImproved: parcel.plantation.measuredN2OImproved || null,
+        smallTreeCount: parcel.plantation.smallTreeCount ?? null,
+        mediumTreeCount: parcel.plantation.mediumTreeCount ?? null,
+        largeTreeCount: parcel.plantation.largeTreeCount ?? null,
+        mangroveAreaHa: parcel.plantation.mangroveAreaHa ?? null,
+        biomassFactor: parcel.plantation.biomassFactor ?? null,
+        biomassFactorDisplay: this.getBiomassFactorLabel(parcel.plantation.biomassFactor)
       };
     } else {
       const isA2 = parcel.name === 'Cooperative Parcel A-2';
@@ -2714,7 +2930,13 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
         measuredCH4Baseline: null,
         measuredCH4Improved: null,
         measuredN2OBaseline: null,
-        measuredN2OImproved: null
+        measuredN2OImproved: null,
+        smallTreeCount: 300,
+        mediumTreeCount: 120,
+        largeTreeCount: 30,
+        mangroveAreaHa: 0,
+        biomassFactor: 1.00,
+        biomassFactorDisplay: '1.00 - Standard Average Tropical Tree (Default)'
       };
     }
   }
@@ -3092,19 +3314,31 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
           const areaVal = parseFloat(String(p.area || parcel.area || '1.0').replace(/[^0-9.]/g, '')) || 1.0;
           return parseFloat((areaVal * 6.8).toFixed(2));
         }
-      } else {
-        let factor = 0.022;
-        if (category === 'Tree') factor = 0.022;
-        else if (category === 'Crop') factor = 0.008;
-        else if (category === 'Garden') factor = 0.012;
-        else if (category === 'Mangrove') factor = 0.035;
-        else factor = 0.015;
-        return parseFloat((quantity * factor * (1 + (age * 0.1))).toFixed(2));
+      } else if (landType === 'Open Land' || landType === 'Govt Land' || landType === 'House' || landType !== 'Fish Pond') {
+        const tmRes = this.calculatorService.calculateTreeMangroveCarbon({
+          landType: landType,
+          smallTreeCount: p.smallTreeCount !== undefined ? p.smallTreeCount : (quantity > 0 ? quantity : 300),
+          mediumTreeCount: p.mediumTreeCount !== undefined ? p.mediumTreeCount : 120,
+          largeTreeCount: p.largeTreeCount !== undefined ? p.largeTreeCount : 30,
+          mangroveAreaHa: p.mangroveAreaHa !== undefined ? p.mangroveAreaHa : 0,
+          biomassFactor: p.biomassFactor !== undefined ? p.biomassFactor : 1.00,
+          creditRateInr: 120
+        });
+        return tmRes.summary.totalCarbonCredits;
       }
     }
     
-    const areaNum = parseFloat(String(parcel.area || parcel.totalPondArea || '1.0').replace(/[^0-9.]/g, '')) || 1.0;
-    return parseFloat((areaNum * 6.8).toFixed(2));
+    // Fallback calculation using Verra VM0047/VM0033
+    const tmRes = this.calculatorService.calculateTreeMangroveCarbon({
+      landType: parcel.cropCategory || parcel.user_type_name || 'Open Land',
+      smallTreeCount: parcel.trees ? Math.round(parcel.trees * 0.6) : 300,
+      mediumTreeCount: parcel.trees ? Math.round(parcel.trees * 0.3) : 120,
+      largeTreeCount: parcel.trees ? Math.round(parcel.trees * 0.1) : 30,
+      mangroveAreaHa: 0,
+      biomassFactor: 1.00,
+      creditRateInr: 120
+    });
+    return tmRes.summary.totalCarbonCredits;
   }
 
   verifyParcel(parcel: any) {
@@ -3208,13 +3442,13 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     this.newLandSurveyEntries = [{ surveyNo: '', subDivisionNo: '' }];
     this.newLandSurvey = { surveyNo: '', subDivisionNo: '', area: '', unit: 'Acre' };
     this.newLandPlantation = {
-      landType: 'Fish Pond',
-      plantationType: 'Fish',
-      subCategory: 'IMC',
-      quantity: 500,
-      age: 2,
-      area: 1.0,
-      unit: 'Acre',
+      landType: '',
+      plantationType: '',
+      subCategory: '',
+      quantity: null,
+      age: null,
+      area: null,
+      unit: '',
       rohuStock: null,
       rohuDays: null,
       rohuArea: null,
@@ -3253,7 +3487,13 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       measuredCH4Baseline: null,
       measuredCH4Improved: null,
       measuredN2OBaseline: null,
-      measuredN2OImproved: null
+      measuredN2OImproved: null,
+      smallTreeCount: null,
+      mediumTreeCount: null,
+      largeTreeCount: null,
+      mangroveAreaHa: null,
+      biomassFactor: null,
+      biomassFactorDisplay: ''
     };
     this.newLandPonds = [
       {
@@ -3632,10 +3872,43 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  biomassFactorOptions: string[] = [
+    '1.00 - Standard Average Tropical Tree (Default)',
+    '0.30 - Palms / Coconut Plantation (~0.30)',
+    '0.80 - Softwood / Fast Growing Agroforest (~0.80)',
+    '1.10 - Dense Hardwood / Teak / Rosewood (~1.10)'
+  ];
+
+  getBiomassFactorLabel(val: number | null): string {
+    if (val === null || val === undefined) return '';
+    const num = Number(val);
+    if (Math.abs(num - 0.30) < 0.01) return '0.30 - Palms / Coconut Plantation (~0.30)';
+    if (Math.abs(num - 0.80) < 0.01) return '0.80 - Softwood / Fast Growing Agroforest (~0.80)';
+    if (Math.abs(num - 1.10) < 0.01) return '1.10 - Dense Hardwood / Teak / Rosewood (~1.10)';
+    return '1.00 - Standard Average Tropical Tree (Default)';
+  }
+
+  onSellerBiomassFactorSelect(selectedOption: string): void {
+    this.newLandPlantation.biomassFactorDisplay = selectedOption;
+    if (!selectedOption) {
+      this.newLandPlantation.biomassFactor = null;
+      return;
+    }
+    if (selectedOption.includes('0.30')) {
+      this.newLandPlantation.biomassFactor = 0.30;
+    } else if (selectedOption.includes('0.80')) {
+      this.newLandPlantation.biomassFactor = 0.80;
+    } else if (selectedOption.includes('1.10')) {
+      this.newLandPlantation.biomassFactor = 1.10;
+    } else {
+      this.newLandPlantation.biomassFactor = 1.00;
+    }
+  }
+
   selectNewLandType(type: string): void {
     this.newLandPlantation.landType = type;
-    this.newLandPlantation.plantationType = type === 'Fish Pond' ? 'Fish' : '';
-    this.newLandPlantation.subCategory = type === 'Fish Pond' ? 'IMC' : '';
+    this.newLandPlantation.plantationType = '';
+    this.newLandPlantation.subCategory = '';
     if (type === 'Fish Pond' && (!this.newLandPonds || this.newLandPonds.length === 0)) {
       this.newLandPonds = [
         {
@@ -3829,6 +4102,17 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
           status: 'PENDING'
         };
       });
+    } else if (this.newLandPlantation.landType === 'Open Land' || this.newLandPlantation.landType === 'Govt Land' || this.newLandPlantation.landType === 'House') {
+      const treeRes = this.calculatorService.calculateTreeMangroveCarbon({
+        landType: this.newLandPlantation.landType,
+        smallTreeCount: this.newLandPlantation.smallTreeCount || 0,
+        mediumTreeCount: this.newLandPlantation.mediumTreeCount || 0,
+        largeTreeCount: this.newLandPlantation.largeTreeCount || 0,
+        mangroveAreaHa: this.newLandPlantation.mangroveAreaHa || 0,
+        biomassFactor: this.newLandPlantation.biomassFactor || 1.00,
+        creditRateInr: 120
+      });
+      estSeqRate = treeRes.summary.totalCarbonCredits;
     } else {
       estSeqRate = this.calculateParcelCarbonCredits({
         area: areaNum,
@@ -3873,7 +4157,14 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       ponds: childPondsList,
       showPonds: true,
       latitude: this.newLandLatitude || (14.4450 + (Math.random() - 0.5) * 0.012),
-      longitude: this.newLandLongitude || (79.9860 + (Math.random() - 0.5) * 0.012)
+      longitude: this.newLandLongitude || (79.9860 + (Math.random() - 0.5) * 0.012),
+      pattadarDoc: this.newLandPattadarDoc || this.newLandPattadarDocPreview || '',
+      pattadarDocName: this.newLandPattadarDocName || 'Pattadar_Passbook_LPC.pdf',
+      pattadarDocPreview: this.newLandPattadarDocPreview || this.newLandPattadarDoc || '',
+      landPhoto: this.newLandImagePreview || '',
+      landPhotoName: 'Geo_Land_Site_Photo.jpg',
+      landPhotoPreview: this.newLandImagePreview || '',
+      imagePreview: this.newLandImagePreview || ''
     };
 
     const mobile = localStorage.getItem('currentUserMobile') || '+919876543210';
@@ -3895,7 +4186,12 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
         area: areaNum || 1.0,
         unit: unitText,
         latitude: newParcelItem.latitude,
-        longitude: newParcelItem.longitude
+        longitude: newParcelItem.longitude,
+        pattadarDoc: this.newLandPattadarDoc || this.newLandPattadarDocPreview || '',
+        pattadarDocName: this.newLandPattadarDocName || 'Pattadar_Passbook_LPC.pdf',
+        landPhoto: this.newLandImagePreview || '',
+        landPhotoName: 'Geo_Land_Site_Photo.jpg',
+        imagePreview: this.newLandImagePreview || ''
       },
       plantationDetails: {
         plantationType: this.newLandPlantation.plantationType,
@@ -4874,108 +5170,155 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       const isSurvey230_2T = surveyNo.includes('230/2T');
       const isSurvey308_4R = surveyNo.includes('308/4R');
 
-      const rawArea = parseFloat(parcel.area || parcel.totalPondArea || '10.0') || 10.0;
+      const rawArea = parseFloat(parcel.area || parcel.totalPondArea || parcel.landArea || '10.0') || 10.0;
       const parcelUnitStr = String(parcel.unit || parcel.area || parcel.totalPondArea || '').toLowerCase();
-      const speciesCode = parcel.plantation?.subCategory || parcel.plantation?.plantationType || parcel.cropCategory || 'IMC';
+      
+      const landCategory = String(parcel.landCategory || parcel.landType || parcel.category || parcel.cropCategory || 'Open Land').trim();
+      const isTreeLand = landCategory !== 'Fish Pond';
 
-      let speciesDesc = 'Indian Major Carp';
-      if (speciesCode.includes('Pangasius')) speciesDesc = 'Striped Catfish';
-      else if (speciesCode.includes('Red Pacu')) speciesDesc = 'Rupchanda';
-      else if (speciesCode.includes('vannamei')) speciesDesc = 'Pacific White Shrimp';
-      else if (speciesCode.includes('monodon')) speciesDesc = 'Giant Tiger Prawn';
-      else if (speciesCode.includes('Tilapia')) speciesDesc = 'Nile / GIFT Tilapia';
+      // Convert Area to Hectares
+      let parcelAreaHa = rawArea;
+      if (parcelUnitStr.includes('acre')) {
+        parcelAreaHa = parseFloat((rawArea * 0.404686).toFixed(2));
+      } else if (parcelUnitStr.includes('guntha') || parcelUnitStr.includes('gunta')) {
+        parcelAreaHa = parseFloat((rawArea * 0.010117).toFixed(2));
+      } else if (parcelUnitStr.includes('bigha')) {
+        parcelAreaHa = parseFloat((rawArea * 0.252929).toFixed(2));
+      } else if (parcelUnitStr.includes('cent')) {
+        parcelAreaHa = parseFloat((rawArea * 0.00404686).toFixed(2));
+      }
 
-      const pondsList = (parcel.ponds && Array.isArray(parcel.ponds) && parcel.ponds.length > 0)
-        ? parcel.ponds
-        : [{ pondName: 'Pond 1', area: rawArea, species: speciesCode }];
+      if (isTreeLand) {
+        // OPEN LAND / TREE LAND REPORT
+        const smallTreeCount = parseInt(String(parcel.smallTreeCount || 300), 10);
+        const mediumTreeCount = parseInt(String(parcel.mediumTreeCount || 120), 10);
+        const largeTreeCount = parseInt(String(parcel.largeTreeCount || 30), 10);
+        const totalTrees = smallTreeCount + mediumTreeCount + largeTreeCount;
+        const biomassFactor = parseFloat(String(parcel.biomassFactor || 1.00)) || 1.00;
 
-      pondsList.forEach((pond: any, pondIdx: number) => {
-        const pRawArea = parseFloat(pond.area || pond.pondArea || rawArea) || rawArea;
-        const pUnitStr = String(pond.unit || pond.area || parcelUnitStr).toLowerCase();
-
-        // Convert ONLY if explicitly an Acre or non-Hectare unit selection. IF ALREADY HECTARES, KEEP AS-IS!
-        let pondAreaHa = pRawArea;
-        if (pUnitStr.includes('acre')) {
-          pondAreaHa = parseFloat((pRawArea * 0.404686).toFixed(2));
-        } else if (pUnitStr.includes('guntha') || pUnitStr.includes('gunta')) {
-          pondAreaHa = parseFloat((pRawArea * 0.010117).toFixed(2));
-        } else if (pUnitStr.includes('bigha')) {
-          pondAreaHa = parseFloat((pRawArea * 0.252929).toFixed(2));
-        } else if (pUnitStr.includes('cent')) {
-          pondAreaHa = parseFloat((pRawArea * 0.00404686).toFixed(2));
-        } else if (pUnitStr.includes('sq.m') || pUnitStr.includes('sqm')) {
-          pondAreaHa = parseFloat((pRawArea * 0.0001).toFixed(2));
-        } else if (pUnitStr.includes('sq.ft') || pUnitStr.includes('feet')) {
-          pondAreaHa = parseFloat((pRawArea * 0.000092903).toFixed(2));
-        }
-
-        const pondSpecies = pond.species || speciesCode;
-
-        let pondSpeciesDesc = speciesDesc;
-        if (pondSpecies.includes('Pangasius')) pondSpeciesDesc = 'Striped Catfish';
-        else if (pondSpecies.includes('Red Pacu')) pondSpeciesDesc = 'Rupchanda';
-        else if (pondSpecies.includes('vannamei')) pondSpeciesDesc = 'Pacific White Shrimp';
-        else if (pondSpecies.includes('monodon')) pondSpeciesDesc = 'Giant Tiger Prawn';
-
-        // Extract exact production & carbon credits matching Asset Profiling & DB 1-to-1
-        let targetCredits = parseFloat(String(pond.credits || pond.co2Reduction || parcel.totalCarbonCredits || parcel.sequestrationRate || parcel.totalCredits || 0));
-        if (!targetCredits || targetCredits === 0) {
-          if (isSurvey230_2T) targetCredits = 273.40;
-          else if (isSurvey308_4R) targetCredits = 32.34;
-          else targetCredits = parseFloat((pondAreaHa * 6.8).toFixed(2));
-        }
-
-        let targetProdKg = parseFloat(String(pond.production || parcel.totalProduction || 0).replace(/[^0-9.]/g, ''));
-        if (!targetProdKg || targetProdKg === 0) {
-          targetProdKg = 30351;
-        }
-
-        const cropsPerYr = 1.5;
-        const fcrUsed = pond.fcr ? Number(pond.fcr) : 3.00;
-        const totalFeedRequiredKg = Math.round(targetProdKg * fcrUsed);
-
-        // GHG Inventory Baseline Breakdown
-        const grossEmission = parseFloat((targetCredits * 5.21).toFixed(2));
-        const feedCO2e = parseFloat((grossEmission * 0.236).toFixed(2));
-        const electricityCO2e = parseFloat((grossEmission * 0.0023).toFixed(2));
-        const dieselCO2e = parseFloat((grossEmission * 0.0125).toFixed(2));
-        const ch4CO2e = parseFloat((grossEmission * 0.698).toFixed(2));
-        const n2oCO2e = parseFloat((grossEmission - feedCO2e - electricityCO2e - dieselCO2e - ch4CO2e).toFixed(2));
-        const biomassCarbonStored = parseFloat((targetCredits * 0.275).toFixed(2));
-        const netEmission = parseFloat((grossEmission - biomassCarbonStored).toFixed(2));
-        const emissionIntensity = parseFloat((netEmission * 1000 / targetProdKg).toFixed(2));
-        const co2eReductionPerCrop = parseFloat((targetCredits / cropsPerYr).toFixed(2));
-        const pctReduction = parseFloat(((co2eReductionPerCrop / (grossEmission / cropsPerYr)) * 100).toFixed(1));
+        const smallCO2e = parseFloat(((smallTreeCount * 0.086) * biomassFactor).toFixed(2));
+        const mediumCO2e = parseFloat(((mediumTreeCount * 0.871) * biomassFactor).toFixed(2));
+        const largeCO2e = parseFloat(((largeTreeCount * 3.852) * biomassFactor).toFixed(2));
+        const totalCredits = parseFloat((smallCO2e + mediumCO2e + largeCO2e).toFixed(2));
 
         reports.push({
-          reportId: `${pIdx + 1}_P${pondIdx + 1}`,
-          assetName: parcel.name || `Parcel ${surveyNo || 'Asset'}`,
-          pondName: pond.pondName || pond.name || `Pond ${pondIdx + 1}`,
-          cultureType: pondSpecies,
-          cultureTypeDesc: pondSpeciesDesc,
-          farmName: `${sellerName} Farm (${parcel.location || defaultVillage})`,
-          pondAreaHa: pondAreaHa,
-          cropsPerYear: cropsPerYr,
-          totalProductionKg: targetProdKg,
-          totalFeedRequiredKg: totalFeedRequiredKg,
-          fcrUsed: fcrUsed,
-          feedCO2e: feedCO2e,
-          electricityCO2e: electricityCO2e,
-          dieselCO2e: dieselCO2e,
-          ch4CO2e: ch4CO2e,
-          n2oCO2e: n2oCO2e,
-          grossEmission: grossEmission,
-          biomassCarbonStored: biomassCarbonStored,
-          netEmission: netEmission,
-          emissionIntensity: emissionIntensity,
-          co2eReductionPerCrop: co2eReductionPerCrop,
-          pctReduction: pctReduction > 0 ? pctReduction : 19.2,
-          potentialCarbonCredits: targetCredits
+          reportId: `${pIdx + 1}_LAND`,
+          isTreeLand: true,
+          landType: landCategory || 'Open Land',
+          assetName: parcel.name || `Parcel ${surveyNo || (pIdx + 1)}`,
+          farmName: `${sellerName} Land (${parcel.location || defaultVillage})`,
+          pondAreaHa: parcelAreaHa,
+          totalTrees: totalTrees,
+          smallTreeCount: smallTreeCount,
+          mediumTreeCount: mediumTreeCount,
+          largeTreeCount: largeTreeCount,
+          biomassFactor: biomassFactor,
+          smallCO2e: smallCO2e,
+          mediumCO2e: mediumCO2e,
+          largeCO2e: largeCO2e,
+          potentialCarbonCredits: totalCredits
         });
-      });
+      } else {
+        // FISH POND REPORT
+        const speciesCode = parcel.plantation?.subCategory || parcel.plantation?.plantationType || parcel.cropCategory || 'IMC';
+
+        let speciesDesc = 'Indian Major Carp';
+        if (speciesCode.includes('Pangasius')) speciesDesc = 'Striped Catfish';
+        else if (speciesCode.includes('Red Pacu')) speciesDesc = 'Rupchanda';
+        else if (speciesCode.includes('vannamei')) speciesDesc = 'Pacific White Shrimp';
+        else if (speciesCode.includes('monodon')) speciesDesc = 'Giant Tiger Prawn';
+        else if (speciesCode.includes('Tilapia')) speciesDesc = 'Nile / GIFT Tilapia';
+
+        const pondsList = (parcel.ponds && Array.isArray(parcel.ponds) && parcel.ponds.length > 0)
+          ? parcel.ponds
+          : [{ pondName: 'Pond 1', area: rawArea, species: speciesCode }];
+
+        pondsList.forEach((pond: any, pondIdx: number) => {
+          const pRawArea = parseFloat(pond.area || pond.pondArea || rawArea) || rawArea;
+          const pUnitStr = String(pond.unit || pond.area || parcelUnitStr).toLowerCase();
+
+          let pondAreaHa = pRawArea;
+          if (pUnitStr.includes('acre')) {
+            pondAreaHa = parseFloat((pRawArea * 0.404686).toFixed(2));
+          } else if (pUnitStr.includes('guntha') || pUnitStr.includes('gunta')) {
+            pondAreaHa = parseFloat((pRawArea * 0.010117).toFixed(2));
+          } else if (pUnitStr.includes('bigha')) {
+            pondAreaHa = parseFloat((pRawArea * 0.252929).toFixed(2));
+          } else if (pUnitStr.includes('cent')) {
+            pondAreaHa = parseFloat((pRawArea * 0.00404686).toFixed(2));
+          }
+
+          const pondSpecies = pond.species || speciesCode;
+          let pondSpeciesDesc = speciesDesc;
+          if (pondSpecies.includes('Pangasius')) pondSpeciesDesc = 'Striped Catfish';
+          else if (pondSpecies.includes('Red Pacu')) pondSpeciesDesc = 'Rupchanda';
+          else if (pondSpecies.includes('vannamei')) pondSpeciesDesc = 'Pacific White Shrimp';
+          else if (pondSpecies.includes('monodon')) pondSpeciesDesc = 'Giant Tiger Prawn';
+
+          let targetCredits = parseFloat(String(pond.credits || pond.co2Reduction || parcel.totalCarbonCredits || parcel.sequestrationRate || parcel.totalCredits || 0));
+          if (!targetCredits || targetCredits === 0) {
+            if (isSurvey230_2T) targetCredits = 273.40;
+            else if (isSurvey308_4R) targetCredits = 32.34;
+            else targetCredits = parseFloat((pondAreaHa * 6.8).toFixed(2));
+          }
+
+          let targetProdKg = parseFloat(String(pond.production || parcel.totalProduction || 0).replace(/[^0-9.]/g, ''));
+          if (!targetProdKg || targetProdKg === 0) {
+            targetProdKg = 30351;
+          }
+
+          const cropsPerYr = 1.5;
+          const fcrUsed = pond.fcr ? Number(pond.fcr) : 3.00;
+          const totalFeedRequiredKg = Math.round(targetProdKg * fcrUsed);
+
+          const grossEmission = parseFloat((targetCredits * 5.21).toFixed(2));
+          const feedCO2e = parseFloat((grossEmission * 0.236).toFixed(2));
+          const electricityCO2e = parseFloat((grossEmission * 0.0023).toFixed(2));
+          const dieselCO2e = parseFloat((grossEmission * 0.0125).toFixed(2));
+          const ch4CO2e = parseFloat((grossEmission * 0.698).toFixed(2));
+          const n2oCO2e = parseFloat((grossEmission - feedCO2e - electricityCO2e - dieselCO2e - ch4CO2e).toFixed(2));
+          const biomassCarbonStored = parseFloat((targetCredits * 0.275).toFixed(2));
+          const netEmission = parseFloat((grossEmission - biomassCarbonStored).toFixed(2));
+          const emissionIntensity = parseFloat((netEmission * 1000 / targetProdKg).toFixed(2));
+          const co2eReductionPerCrop = parseFloat((targetCredits / cropsPerYr).toFixed(2));
+          const pctReduction = parseFloat(((co2eReductionPerCrop / (grossEmission / cropsPerYr)) * 100).toFixed(1));
+
+          reports.push({
+            reportId: `${pIdx + 1}_P${pondIdx + 1}`,
+            isTreeLand: false,
+            assetName: parcel.name || `Parcel ${surveyNo || 'Asset'}`,
+            pondName: pond.pondName || pond.name || `Pond ${pondIdx + 1}`,
+            cultureType: pondSpecies,
+            cultureTypeDesc: pondSpeciesDesc,
+            farmName: `${sellerName} Farm (${parcel.location || defaultVillage})`,
+            pondAreaHa: pondAreaHa,
+            cropsPerYear: cropsPerYr,
+            totalProductionKg: targetProdKg,
+            totalFeedRequiredKg: totalFeedRequiredKg,
+            fcrUsed: fcrUsed,
+            feedCO2e: feedCO2e,
+            electricityCO2e: electricityCO2e,
+            dieselCO2e: dieselCO2e,
+            ch4CO2e: ch4CO2e,
+            n2oCO2e: n2oCO2e,
+            grossEmission: grossEmission,
+            biomassCarbonStored: biomassCarbonStored,
+            netEmission: netEmission,
+            emissionIntensity: emissionIntensity,
+            co2eReductionPerCrop: co2eReductionPerCrop,
+            pctReduction: pctReduction > 0 ? pctReduction : 19.2,
+            potentialCarbonCredits: targetCredits
+          });
+        });
+      }
     });
 
     return reports;
+  }
+
+  hasOnlyTreeLand(): boolean {
+    const reports = this.getGeneratedFarmReports();
+    return reports.length > 0 && reports.every((r: any) => r.isTreeLand);
   }
 
   downloadSingleReportPdf(reportId: string): void {

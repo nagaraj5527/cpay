@@ -80,13 +80,175 @@
             <span style="font-size: 16px;">✨</span> {{ recalculateSuccessMessage }}
         </div>
 
-        <!-- ================= DYNAMICALLY GENERATED POND CARDS ================= -->
-        <div class="section-title text-start mb-3">
+        <!-- ================= VERRA VCS TREES & MANGROVES CARBON BREAKDOWN (For Open Land, Govt Land, House) ================= -->
+        <div *ngIf="(selectedLandType === 'Open Land' || selectedLandType === 'Govt Land' || selectedLandType === 'House' || (selectedLandType !== 'Fish Pond' && (!ponds || ponds.length === 0))) && treeMangroveResult" class="mb-4 text-start">
+            
+            <!-- Top Header Bar -->
+            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="verra-arr-header-badge">Verra VM0047 ARR v1.1</span>
+                    <div *ngIf="recalculateSuccessMessage" class="verra-recalc-toast d-flex align-items-center gap-1">
+                        <span style="color: #facc15;">✨</span> {{ recalculateSuccessMessage }}
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="tree-breakdown-title">Trees — By Size Category Carbon Breakdown</h3>
+
+            <div class="row g-4 mb-4">
+                <!-- Small Tree Card (Green Theme) -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="tree-stand-card theme-small">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="tree-card-badge">🌱 Small Tree</span>
+                                <span class="tree-dbh-tag">DBH: 10 cm</span>
+                            </div>
+                            
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span style="font-size: 24px;">🌱</span>
+                                <div>
+                                    <h5 class="fw-bold text-dark mb-0" style="font-size: 15px;">Small Stand (&lt; 15 cm DBH)</h5>
+                                    <span class="text-muted micro-text" style="font-size: 11.5px;">Height &lt; 5 m • Sparse crown</span>
+                                </div>
+                            </div>
+
+                            <div class="tree-metrics-grid">
+                                <div class="tree-metric-box">
+                                    <span class="tree-metric-label">AGB PER TREE</span>
+                                    <span class="tree-metric-val">{{ treeMangroveResult.treeInventory.small.agbPerTreeKg }} kg</span>
+                                </div>
+                                <div class="tree-metric-box">
+                                    <span class="tree-metric-label">CO2e / TREE</span>
+                                    <span class="tree-metric-val val-green">{{ treeMangroveResult.treeInventory.small.co2ePerTreeTonnes }} t</span>
+                                </div>
+                                <div class="tree-metric-box">
+                                    <span class="tree-metric-label">TREE COUNT</span>
+                                    <span class="tree-metric-val">{{ treeMangroveResult.treeInventory.small.count }}</span>
+                                </div>
+                                <div class="tree-metric-box">
+                                    <span class="tree-metric-label">CATEGORY TOTAL</span>
+                                    <span class="tree-metric-val val-teal">{{ treeMangroveResult.treeInventory.small.totalCO2eTonnes | number:'1.2-2' }} t</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tree-total-carbon-bar">
+                            TOTAL CARBON: {{ treeMangroveResult.treeInventory.small.totalCarbonTonnes | number:'1.2-2' }} t C
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Medium Tree Card (Blue Theme) -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="tree-stand-card theme-medium">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="tree-card-badge">🌲 Medium Tree</span>
+                                <span class="tree-dbh-tag">DBH: 25 cm</span>
+                            </div>
+                            
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span style="font-size: 24px;">🌳</span>
+                                <div>
+                                    <h5 class="fw-bold text-dark mb-0" style="font-size: 15px;">Medium Stand (15–30 cm DBH)</h5>
+                                    <span class="text-muted micro-text" style="font-size: 11.5px;">Height 5–12 m • Full developed crown</span>
+                                </div>
+                            </div>
+
+                            <div class="tree-metrics-grid">
+                                <div class="tree-metric-box">
+                                    <span class="tree-metric-label">AGB PER TREE</span>
+                                    <span class="tree-metric-val">{{ treeMangroveResult.treeInventory.medium.agbPerTreeKg }} kg</span>
+                                </div>
+                                <div class="tree-metric-box">
+                                    <span class="tree-metric-label">CO2e / TREE</span>
+                                    <span class="tree-metric-val val-blue">{{ treeMangroveResult.treeInventory.medium.co2ePerTreeTonnes }} t</span>
+                                </div>
+                                <div class="tree-metric-box">
+                                    <span class="tree-metric-label">TREE COUNT</span>
+                                    <span class="tree-metric-val">{{ treeMangroveResult.treeInventory.medium.count }}</span>
+                                </div>
+                                <div class="tree-metric-box">
+                                    <span class="tree-metric-label">CATEGORY TOTAL</span>
+                                    <span class="tree-metric-val val-blue">{{ treeMangroveResult.treeInventory.medium.totalCO2eTonnes | number:'1.2-2' }} t</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tree-total-carbon-bar">
+                            TOTAL CARBON: {{ treeMangroveResult.treeInventory.medium.totalCarbonTonnes | number:'1.2-2' }} t C
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Large Tree Card (Purple Theme) -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="tree-stand-card theme-large">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="tree-card-badge">🌲 Large Tree</span>
+                                <span class="tree-dbh-tag">DBH: 45 cm</span>
+                            </div>
+                            
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span style="font-size: 24px;">🌲</span>
+                                <div>
+                                    <h5 class="fw-bold text-dark mb-0" style="font-size: 15px;">Large Stand (&gt; 30 cm DBH)</h5>
+                                    <span class="text-muted micro-text" style="font-size: 11.5px;">Height &gt; 12 m • Broad spreading canopy</span>
+                                </div>
+                            </div>
+
+                            <div class="tree-metrics-grid">
+                                <div class="tree-metric-box">
+                                    <span class="tree-metric-label">AGB PER TREE</span>
+                                    <span class="tree-metric-val">{{ treeMangroveResult.treeInventory.large.agbPerTreeKg | number:'1.1-1' }} kg</span>
+                                </div>
+                                <div class="tree-metric-box">
+                                    <span class="tree-metric-label">CO2e / TREE</span>
+                                    <span class="tree-metric-val val-purple">{{ treeMangroveResult.treeInventory.large.co2ePerTreeTonnes }} t</span>
+                                </div>
+                                <div class="tree-metric-box">
+                                    <span class="tree-metric-label">TREE COUNT</span>
+                                    <span class="tree-metric-val">{{ treeMangroveResult.treeInventory.large.count }}</span>
+                                </div>
+                                <div class="tree-metric-box">
+                                    <span class="tree-metric-label">CATEGORY TOTAL</span>
+                                    <span class="tree-metric-val val-purple">{{ treeMangroveResult.treeInventory.large.totalCO2eTonnes | number:'1.2-2' }} t</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tree-total-carbon-bar">
+                            TOTAL CARBON: {{ treeMangroveResult.treeInventory.large.totalCarbonTonnes | number:'1.2-2' }} t C
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Optional Mangrove Card if Mangrove Area > 0 -->
+            <div *ngIf="treeMangroveResult.mangroveDetails &amp;&amp; treeMangroveResult.mangroveDetails.areaHa &gt; 0" class="p-3 bg-white border rounded-4 shadow-sm mb-4" style="border-left: 5px solid #0284c7 !important;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold text-dark" style="font-size: 14px;">🌊 Mangrove Blue Carbon Assessment</span>
+                    <span class="badge bg-info text-white rounded-pill px-3 py-1" style="font-size: 12px;">{{ treeMangroveResult.mangroveDetails.areaHa }} ha</span>
+                </div>
+                <div class="d-flex gap-4 text-muted micro-text" style="font-size: 12px;">
+                    <span>Biomass Carbon: <strong class="text-dark">{{ treeMangroveResult.mangroveDetails.biomassCarbonTonnes }} tC</strong></span>
+                    <span>Soil Carbon: <strong class="text-dark">{{ treeMangroveResult.mangroveDetails.soilCarbonTonnes }} tC</strong></span>
+                    <span>Total Carbon: <strong class="text-dark">{{ treeMangroveResult.mangroveDetails.totalCarbonTonnes }} tC</strong></span>
+                    <span>Density: <strong class="text-info">{{ treeMangroveResult.mangroveDetails.co2ePerHaTonnes }} tCO2e/ha</strong></span>
+                    <span class="ms-auto fw-bold text-info" style="font-size: 15px;">{{ treeMangroveResult.mangroveDetails.totalCO2eTonnes | number:'1.2-2' }} tCO2e</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= DYNAMICALLY GENERATED POND CARDS (For Fish Pond) ================= -->
+        <div *ngIf="selectedLandType === 'Fish Pond' || (ponds &amp;&amp; ponds.length &gt; 0)" class="section-title text-start mb-3">
             <h4 class="fw-bold text-dark mb-1" style="font-size: 18px;"><i class="bi bi-grid-fill text-teal me-2"></i> Individual Pond Carbon KPI Cards</h4>
             <span class="text-muted" style="font-size: 13.5px;">Detailed species-specific emission reductions and potential carbon credits per pond</span>
         </div>
 
-        <div class="row g-4 mb-4 text-start">
+        <div *ngIf="selectedLandType === 'Fish Pond' || (ponds &amp;&amp; ponds.length &gt; 0)" class="row g-4 mb-4 text-start">
             <div class="col-md-6 col-lg-4" *ngFor="let pRes of pondResults; let idx = index">
                 <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden position-relative" style="border: 2px solid #e2e8f0; border-top: 5px solid #047857 !important; transition: transform 0.2s ease, box-shadow 0.2s ease;">
                     
@@ -152,11 +314,16 @@
         </div>
 
         <!-- ================= OVERALL PORTFOLIO SUMMARY CARD ================= -->
+        <!-- ================= OVERALL SUMMARY BANNER ================= -->
         <div class="overall-summary-card mb-4 p-4 rounded-3 text-start" style="background: linear-gradient(90deg, var(--primary-teal, #00a499) 0%, var(--dark-teal, #007a72) 100%); color: #ffffff; box-shadow: 0 10px 30px rgba(0, 164, 153, 0.25); border-radius: 20px !important;">
             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                 <div>
-                    <span class="badge bg-white text-teal px-3 py-1 fw-bold rounded-pill" style="color: var(--primary-teal, #00a499) !important; font-size: 13px;">OVERALL SURVEY SUMMARY</span>
-                    <h3 class="mb-0 mt-2 text-white fw-bold" style="font-size: 22px;">Multi-Pond Carbon Portfolio Assessment</h3>
+                    <span class="badge bg-white text-teal px-3 py-1 fw-bold rounded-pill" style="color: var(--primary-teal, #00a499) !important; font-size: 13px;">
+                        {{ (selectedLandType === 'Open Land' || selectedLandType === 'Govt Land' || selectedLandType === 'House' || (selectedLandType !== 'Fish Pond' && (!ponds || ponds.length === 0))) ? 'OVERALL TREE SUMMARY' : 'OVERALL SURVEY SUMMARY' }}
+                    </span>
+                    <h3 class="mb-0 mt-2 text-white fw-bold" style="font-size: 22px;">
+                        {{ (selectedLandType === 'Open Land' || selectedLandType === 'Govt Land' || selectedLandType === 'House' || (selectedLandType !== 'Fish Pond' && (!ponds || ponds.length === 0))) ? 'Existing Standing Tree Carbon Stock' : 'Multi-Pond Carbon Portfolio Assessment' }}
+                    </h3>
                 </div>
                 <button type="button" 
                         class="btn btn-light rounded-pill px-4 py-2 fw-bold d-flex align-items-center gap-2" 
@@ -170,15 +337,28 @@
             <div class="row g-3 mt-1">
                 <div class="col-md-3 col-6">
                     <div class="p-3 rounded-3" style="background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(5px);">
-                        <span class="d-block text-white-50" style="font-size: 12px; font-weight: 600;">TOTAL CO₂ REDUCTION</span>
-                        <h4 class="mb-0 text-white fw-bold mt-1" style="font-size: 20px;">{{ overallSummary.totalCO2Reduction | number:'1.2-2' }} <span style="font-size: 13px; font-weight: 500;">tCO2e</span></h4>
+                        <span class="d-block text-white-50" style="font-size: 12px; font-weight: 600;">
+                            {{ (selectedLandType === 'Open Land' || selectedLandType === 'Govt Land' || selectedLandType === 'House' || (selectedLandType !== 'Fish Pond' && (!ponds || ponds.length === 0))) ? 'TOTAL TREES INVENTORIED' : 'TOTAL CO₂ REDUCTION' }}
+                        </span>
+                        <h4 class="mb-0 text-white fw-bold mt-1" style="font-size: 20px;">
+                            <ng-container *ngIf="selectedLandType === 'Open Land' || selectedLandType === 'Govt Land' || selectedLandType === 'House' || (selectedLandType !== 'Fish Pond' && (!ponds || ponds.length === 0))">
+                                {{ treeMangroveResult?.treeInventory?.totalCount || 0 }} <span style="font-size: 13px; font-weight: 500;">Trees</span>
+                            </ng-container>
+                            <ng-container *ngIf="selectedLandType === 'Fish Pond' || (ponds &amp;&amp; ponds.length &gt; 0)">
+                                {{ overallSummary.totalCO2Reduction | number:'1.2-2' }} <span style="font-size: 13px; font-weight: 500;">tCO2e</span>
+                            </ng-container>
+                        </h4>
                     </div>
                 </div>
 
                 <div class="col-md-3 col-6">
                     <div class="p-3 rounded-3" style="background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(5px);">
-                        <span class="d-block text-white-50" style="font-size: 12px; font-weight: 600;">TOTAL CARBON CREDITS</span>
-                        <h4 class="mb-0 text-white fw-bold mt-1" style="font-size: 20px;">{{ overallSummary.totalCarbonCredits | number:'1.2-2' }} <span style="font-size: 13px; font-weight: 500;">tCO2e/yr</span></h4>
+                        <span class="d-block text-white-50" style="font-size: 12px; font-weight: 600;">
+                            {{ (selectedLandType === 'Open Land' || selectedLandType === 'Govt Land' || selectedLandType === 'House' || (selectedLandType !== 'Fish Pond' && (!ponds || ponds.length === 0))) ? 'TOTAL EXISTING CO2e STORED' : 'TOTAL CARBON CREDITS' }}
+                        </span>
+                        <h4 class="mb-0 text-white fw-bold mt-1" style="font-size: 20px;">
+                            {{ overallSummary.totalCO2Reduction | number:'1.2-2' }} <span style="font-size: 13px; font-weight: 500;">{{ (selectedLandType === 'Open Land' || selectedLandType === 'Govt Land' || selectedLandType === 'House') ? 'tCO2e' : 'tCO2e/yr' }}</span>
+                        </h4>
                     </div>
                 </div>
 
@@ -198,7 +378,9 @@
 
                 <div class="col-md-3 col-6">
                     <div class="p-3 rounded-3" style="background: rgba(255, 255, 255, 0.22); backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.4);">
-                        <span class="d-block text-white-50" style="font-size: 12px; font-weight: 700; color: #a7f3d0 !important;">PORTFOLIO VALUE</span>
+                        <span class="d-block text-white-50" style="font-size: 12px; font-weight: 700; color: #a7f3d0 !important;">
+                            {{ (selectedLandType === 'Open Land' || selectedLandType === 'Govt Land' || selectedLandType === 'House' || (selectedLandType !== 'Fish Pond' && (!ponds || ponds.length === 0))) ? 'PORTFOLIO VALUATION' : 'PORTFOLIO VALUE' }}
+                        </span>
                         <h4 class="mb-0 text-white fw-bold mt-1" style="font-size: 22px; color: #ffffff;">₹{{ overallSummary.portfolioValue | number:'1.0-0' }}</h4>
                     </div>
                 </div>

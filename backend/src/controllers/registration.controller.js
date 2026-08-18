@@ -597,4 +597,17 @@ export const checkSurvey = async (req, res) => {
     }
 };
 
+export const getEcosystemStandings = async (req, res) => {
+    try {
+        const result = await registrationService.getEcosystemStandings(req.user);
+        return res.status(200).json(result);
+    } catch (error) {
+        console.error("Get Ecosystem Standings Error:", error);
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Internal Server Error"
+        });
+    }
+};
+
 

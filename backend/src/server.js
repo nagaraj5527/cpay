@@ -1,7 +1,12 @@
+import dns from 'dns';
 import dotenv from 'dotenv';
 import app from './app.js';
 import pool from './config/postgres.js';
 import { initializeDatabase } from './config/dbInit.js';
+
+try {
+    dns.setDefaultResultOrder('ipv4first');
+} catch (e) {}
 
 dotenv.config();
 
@@ -29,18 +34,27 @@ const startServer = async () => {
 
     try {
 
-        // Test PostgreSQL Connection
-        await pool.query('SELECT NOW()');
+        // Test PostgreSQL Connection with retry for serverless DB cold-starts
+        let connected = false;
+        let retries = 5;
+        while (retries > 0 && !connected) {
+            try {
+                await pool.query('SELECT NOW()');
+                connected = true;
+            } catch (err) {
+                retries--;
+                if (retries === 0) throw err;
+                const errMsg = err.message || err.cause?.message || String(err);
+                console.warn(`⚠️ PostgreSQL connection attempt failed (${errMsg}). Retrying in 3 seconds... (${retries} attempts left)`);
+                await new Promise(res => setTimeout(res, 3000));
+            }
+        }
 
-        console.log('✅ PostgreSQL Connected Successfully');
-
-        // Automatically initialize database tables if they do not exist
+        // Run self-healing database initialization before starting server HTTP listener
         await initializeDatabase(pool);
 
         app.listen(PORT, () => {
-
             console.log(`🚀 C-PAY Server Running on http://localhost:${PORT}`);
-
         });
 
     } catch (error) {

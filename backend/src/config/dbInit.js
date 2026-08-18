@@ -194,23 +194,20 @@ export const initializeDatabase = async (poolParam) => {
         } catch (e) {}
 
         const schemaPath = path.join(dbDir, 'schema.sql');
+        console.log('   Syncing schema.sql (creating required tables if missing)...');
         if (fs.existsSync(schemaPath)) {
-            console.log('   Syncing schema.sql (creating required tables if missing)...');
             try {
                 const schemaSQL = fs.readFileSync(schemaPath, 'utf8');
                 await pool.query(schemaSQL);
-                console.log('   ✅ Required schema and tables verified.');
             } catch (schemaErr) {
                 console.log(`   ℹ️ schema.sql synced with notice: ${schemaErr.message}`);
             }
-        } else {
-            console.warn(`   ⚠️ schema.sql not found at ${schemaPath}`);
         }
 
-        // Execute indexes.sql automatically if it exists to ensure required performance indexes exist
+        // Execute indexes.sql automatically
         const indexesPath = path.join(dbDir, 'indexes.sql');
+        console.log('   Syncing indexes.sql (creating performance indexes if missing)...');
         if (fs.existsSync(indexesPath)) {
-            console.log('   Syncing indexes.sql (creating performance indexes if missing)...');
             const indexesSQL = fs.readFileSync(indexesPath, 'utf8');
             await pool.query(indexesSQL);
             console.log('   ✅ Performance indexes verified.');
@@ -276,7 +273,22 @@ export const initializeDatabase = async (poolParam) => {
             await pool.query("ALTER TABLE cpay.carbon_calculation ADD COLUMN IF NOT EXISTS source_type VARCHAR(50);");
             await pool.query("ALTER TABLE cpay.carbon_calculation ADD COLUMN IF NOT EXISTS formula_version VARCHAR(50);");
             try {
-                await pool.query("ALTER TABLE cpay.carbon_calculation ADD CONSTRAINT carbon_calculation_registration_id_key UNIQUE (registration_id);");
+                await pool.query("ALTER TABLE cpay.carbon_calculation DROP CONSTRAINT IF EXISTS carbon_calculation_registration_id_key;");
+            } catch (e) {}
+            try {
+                await pool.query("ALTER TABLE cpay.address_details DROP CONSTRAINT IF EXISTS address_details_registration_id_key;");
+            } catch (e) {}
+            try {
+                await pool.query("ALTER TABLE cpay.address_details ADD COLUMN IF NOT EXISTS land_id UUID REFERENCES cpay.land_details(land_id) ON DELETE CASCADE;");
+            } catch (e) {}
+            try {
+                await pool.query("ALTER TABLE cpay.plantation_details ADD CONSTRAINT plantation_details_land_id_key UNIQUE (land_id);");
+            } catch (e) {}
+            try {
+                await pool.query("ALTER TABLE cpay.aquaculture_details ADD CONSTRAINT aquaculture_details_land_id_key UNIQUE (land_id);");
+            } catch (e) {}
+            try {
+                await pool.query("ALTER TABLE cpay.carbon_calculation ADD CONSTRAINT carbon_calculation_land_id_key UNIQUE (land_id);");
             } catch (e) {}
             await pool.query("ALTER TABLE cpay.consent_details ADD COLUMN IF NOT EXISTS accept_terms BOOLEAN DEFAULT TRUE;");
             await pool.query("ALTER TABLE cpay.consent_details ADD COLUMN IF NOT EXISTS accept_privacy BOOLEAN DEFAULT TRUE;");
@@ -459,7 +471,7 @@ export const initializeDatabase = async (poolParam) => {
             await pool.query(`
               INSERT INTO cpay.carbon_calculation (calculation_id, registration_id, land_id, estimated_co2, carbon_credits, market_rate, market_value, source_type, formula_version, calculated_at, created_at, updated_at)
               VALUES ('80570dg3-1bd0-6d6a-ae01-6abe01414343', $1, $2, 890.87, 890.87, 120.00, 106904.40, 'DASHBOARD', '1.0', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-              ON CONFLICT (registration_id) DO UPDATE SET estimated_co2 = 890.87, carbon_credits = 890.87, market_value = 106904.40
+              ON CONFLICT (land_id) DO UPDATE SET estimated_co2 = 890.87, carbon_credits = 890.87, market_value = 106904.40
             `, [reg1Id, land1Id]);
 
             const reg2Id = 'b7f4e6af-3784-4360-b341-6c0145f046c8';
@@ -491,11 +503,33 @@ export const initializeDatabase = async (poolParam) => {
             await pool.query(`
               INSERT INTO cpay.carbon_calculation (calculation_id, registration_id, land_id, estimated_co2, carbon_credits, market_rate, market_value, source_type, formula_version, calculated_at, created_at, updated_at)
               VALUES ('24912hk7-5fh4-010e-e245-0ef245858787', $1, $2, 71.50, 71.50, 120.00, 8580.00, 'DASHBOARD', '1.0', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-              ON CONFLICT (registration_id) DO UPDATE SET estimated_co2 = 71.50, carbon_credits = 71.50, market_value = 8580.00
+              ON CONFLICT (land_id) DO UPDATE SET estimated_co2 = 71.50, carbon_credits = 71.50, market_value = 8580.00
             `, [reg2Id, land2Id]);
 
             console.log('   ✅ Auto-seeded default land assets successfully.');
         }
+
+        // Create Tree & Mangrove Carbon Sequestration Table (Verra VM0047 / VM0033 Aligned)
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS cpay.tree_mangrove_carbon_calculations (
+                calculation_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                registration_id VARCHAR(255),
+                land_id UUID,
+                land_type VARCHAR(100) NOT NULL DEFAULT 'Open Land',
+                small_tree_count INT DEFAULT 0,
+                medium_tree_count INT DEFAULT 0,
+                large_tree_count INT DEFAULT 0,
+                mangrove_area_ha NUMERIC(12,4) DEFAULT 0,
+                biomass_factor NUMERIC(6,3) DEFAULT 1.00,
+                tree_co2e_tonnes NUMERIC(14,4) DEFAULT 0,
+                mangrove_co2e_tonnes NUMERIC(14,4) DEFAULT 0,
+                total_co2e_tonnes NUMERIC(14,4) DEFAULT 0,
+                total_carbon_credits NUMERIC(14,4) DEFAULT 0,
+                market_value_inr NUMERIC(14,2) DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
 
         await healAllSellerPonds(pool);
         await healAllRegistrations(pool);

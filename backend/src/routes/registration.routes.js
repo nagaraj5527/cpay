@@ -187,4 +187,11 @@ router.get(
     registrationController.checkSurvey
 );
 
+// Ecosystem Standings API (Dynamic rankings for Top Buyers & Top Sellers)
+router.get(
+    '/ecosystem-standings',
+    authenticate,
+    registrationController.getEcosystemStandings
+);
+
 export default router;

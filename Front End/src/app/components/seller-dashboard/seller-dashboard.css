@@ -1402,5 +1402,146 @@
   }
 }
 
+/* Compact High Enterprise Level Tree Stand Cards */
+.tree-stand-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tree-stand-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
+}
+
+.tree-stand-card.theme-small {
+    border: 1.5px solid #10b981;
+    border-top: 4px solid #10b981;
+}
+
+.tree-stand-card.theme-medium {
+    border: 1.5px solid #0284c7;
+    border-top: 4px solid #0284c7;
+}
+
+.tree-stand-card.theme-large {
+    border: 1.5px solid #8b5cf6;
+    border-top: 4px solid #8b5cf6;
+}
+
+.tree-card-badge {
+    color: #ffffff;
+    padding: 3px 10px;
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.tree-stand-card.theme-small .tree-card-badge {
+    background-color: #10b981;
+}
+
+.tree-stand-card.theme-medium .tree-card-badge {
+    background-color: #0284c7;
+}
+
+.tree-stand-card.theme-large .tree-card-badge {
+    background-color: #8b5cf6;
+}
+
+.tree-dbh-tag {
+    border: 1px solid #cbd5e1;
+    background-color: #f8fafc;
+    color: #0f172a;
+    padding: 2px 8px;
+    border-radius: 50px;
+    font-size: 10.5px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.tree-metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+.tree-metric-box {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
+    text-align: left;
+}
+
+.tree-metric-label {
+    display: block;
+    font-size: 9px;
+    font-weight: 800;
+    color: #64748b;
+    letter-spacing: 0.4px;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+}
+
+.tree-metric-val {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.tree-metric-val.val-green {
+    color: #10b981;
+}
+
+.tree-metric-val.val-teal {
+    color: #00a499;
+}
+
+.tree-metric-val.val-blue {
+    color: #0284c7;
+}
+
+.tree-metric-val.val-purple {
+    color: #8b5cf6;
+}
+
+.tree-total-carbon-bar {
+    padding: 7px 10px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    margin-top: 6px;
+}
+
+.tree-stand-card.theme-small .tree-total-carbon-bar {
+    background-color: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+.tree-stand-card.theme-medium .tree-total-carbon-bar {
+    background-color: #f0f9ff;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+}
+
+.tree-stand-card.theme-large .tree-total-carbon-bar {
+    background-color: #faf5ff;
+    color: #6b21a8;
+    border: 1px solid #e9d5ff;
+}
+
 
 

@@ -58,6 +58,9 @@ export class PreviewComponent implements OnInit {
   plantationArea: number = 0;
   plantationUnit: string = 'Acre';
   age: number = 0;
+  smallTreeCount: number = 0;
+  mediumTreeCount: number = 0;
+  largeTreeCount: number = 0;
   ponds: any[] = [];
 
   qtyFeedConsumed: number = 0;
@@ -169,6 +172,16 @@ export class PreviewComponent implements OnInit {
       this.plantationArea = pld.area || this.plantationArea;
       this.plantationUnit = pld.unit || this.plantationUnit;
       this.age = pld.age || this.age;
+      this.smallTreeCount = pld.smallTreeCount !== undefined && pld.smallTreeCount !== null ? Number(pld.smallTreeCount) : 300;
+      this.mediumTreeCount = pld.mediumTreeCount !== undefined && pld.mediumTreeCount !== null ? Number(pld.mediumTreeCount) : 120;
+      this.largeTreeCount = pld.largeTreeCount !== undefined && pld.largeTreeCount !== null ? Number(pld.largeTreeCount) : 30;
+
+      if (this.landType === 'Open Land' || this.landType === 'Govt Land' || this.landType === 'House' || this.plantationType === 'Tree') {
+        const treeSum = (this.smallTreeCount || 0) + (this.mediumTreeCount || 0) + (this.largeTreeCount || 0);
+        if (treeSum > 0) {
+          this.quantity = treeSum;
+        }
+      }
 
       this.qtyFeedConsumed = pld.qtyFeedConsumed || 0;
       this.fcr = pld.fcr || 0;
@@ -192,10 +205,11 @@ export class PreviewComponent implements OnInit {
   }
 
   loadCalculationData(): void {
-    const calculatorDetails = localStorage.getItem('SellerCalculatorDetails');
+    const currentMob = localStorage.getItem('currentUserMobile') || localStorage.getItem('loginMobile') || '';
+    const calculatorDetails = this.registrationService.getDraftData('SellerCalculatorDetails', currentMob);
     if (calculatorDetails) {
       try {
-        const calc = JSON.parse(calculatorDetails);
+        const calc = typeof calculatorDetails === 'string' ? JSON.parse(calculatorDetails) : calculatorDetails;
         
         // Priority 1: Check overallSummary (Aggregated across all ponds)
         if (calc.overallSummary) {
@@ -208,8 +222,8 @@ export class PreviewComponent implements OnInit {
         // Priority 2: Check pondResults array (Sum across all ponds)
         if (calc.pondResults && Array.isArray(calc.pondResults) && calc.pondResults.length > 0) {
           this.estimatedCO2 = calc.pondResults.reduce((sum: number, p: any) => sum + Number(p.co2Reduction || p.credits || 0), 0);
-          this.carbonCredits = calc.pondResults.reduce((sum: number, p: any) => sum + Number(p.credits || 0), 0);
-          this.marketValue = calc.pondResults.reduce((sum: number, p: any) => sum + Number(p.valuation || (p.credits * 120) || 0), 0);
+          this.carbonCredits = calc.pondResults.reduce((sum: number, p: any) => sum + Number(p.potentialCarbonCredits || p.credits || 0), 0);
+          this.marketValue = calc.pondResults.reduce((sum: number, p: any) => sum + Number(p.valuation || (Number(p.potentialCarbonCredits || p.credits || 0) * 120) || 0), 0);
           return;
         }
 
@@ -231,10 +245,10 @@ export class PreviewComponent implements OnInit {
       }
     }
 
-    const calculationData = localStorage.getItem('SellerCalculation');
+    const calculationData = this.registrationService.getDraftData('SellerCalculation', currentMob);
     if (calculationData) {
       try {
-        const cd = JSON.parse(calculationData);
+        const cd = typeof calculationData === 'string' ? JSON.parse(calculationData) : calculationData;
         this.estimatedCO2 = Number(cd.estimatedCO2 || cd.carbonCredits || 0);
         this.carbonCredits = Number(cd.carbonCredits || cd.estimatedCO2 || 0);
         this.marketValue = Number(cd.marketValue || (this.carbonCredits * 120));
@@ -387,22 +401,47 @@ export class PreviewComponent implements OnInit {
           localStorage.setItem(`SellerDocs_${clean10}`, JSON.stringify(docsPayload));
           localStorage.setItem(`SellerDocs_+91${clean10}`, JSON.stringify(docsPayload));
         }
-        localStorage.setItem('SellerDocs', JSON.stringify(docsPayload));
+        localStorage.removeItem('SellerDocs');
+        localStorage.removeItem('SellerPersonalDetails');
+        localStorage.removeItem('SellerLandDetails');
+
+        const pdDraft = this.registrationService.getDraftData('SellerPersonalDetails', currentMobile);
+        const ldDraft = this.registrationService.getDraftData('SellerLandDetails', currentMobile);
+        const plantDraft = this.registrationService.getDraftData('SellerPlantationDetails', currentMobile);
+
+        const panVal = this.panPhoto || pdDraft?.panPhoto || pdDraft?.panPhotoPreview;
+        const aadhaarVal = this.aadhaarPhoto || pdDraft?.aadhaarPhoto || pdDraft?.aadhaarPhotoPreview;
+        const landVal = this.pattadarDoc || ldDraft?.pattadarDoc || ldDraft?.pattadarDocPreview;
+        const sitePhotoVal = this.imagePreview || ldDraft?.imagePreview || ldDraft?.landPhoto;
 
         // Sync uploaded document photos directly to PostgreSQL database
         const returnedRegId = res.data?.registrationId || res.registrationId;
-        if (returnedRegId) {
-          if (this.imagePreview) {
-            this.registrationService.uploadDocument(returnedRegId, 'LAND_PHOTO', null, String(this.imagePreview), 'Geo_Land_Site_Photo.jpg').subscribe({ error: (e) => console.error(e) });
+        const regIdToUse = returnedRegId || currentMobile || clean10;
+        if (regIdToUse) {
+          if (plantDraft) {
+            this.registrationService.saveTreeMangroveCarbon({
+              registrationId: regIdToUse,
+              landType: plantDraft.landType || 'Open Land',
+              smallTreeCount: plantDraft.smallTreeCount || 0,
+              mediumTreeCount: plantDraft.mediumTreeCount || 0,
+              largeTreeCount: plantDraft.largeTreeCount || 0,
+              mangroveAreaHa: plantDraft.mangroveAreaHa || 0,
+              biomassFactor: plantDraft.biomassFactor || 1.00,
+              creditRateInr: 120
+            }).subscribe({ error: (e) => console.error('Tree Mangrove calculation save notice:', e) });
           }
-          if (this.panPhoto) {
-            this.registrationService.uploadDocument(returnedRegId, 'PAN', null, String(this.panPhoto), this.panPhotoName || 'PAN_Card.jpg').subscribe({ error: (e) => console.error(e) });
+
+          if (sitePhotoVal && typeof sitePhotoVal === 'string' && sitePhotoVal.length > 20) {
+            this.registrationService.uploadDocument(regIdToUse, 'LAND_PHOTO', null, sitePhotoVal, 'Geo_Land_Site_Photo.jpg').subscribe({ error: (e) => console.error(e) });
           }
-          if (this.aadhaarPhoto) {
-            this.registrationService.uploadDocument(returnedRegId, 'AADHAAR', null, String(this.aadhaarPhoto), this.aadhaarPhotoName || 'Aadhaar_Card.jpg').subscribe({ error: (e) => console.error(e) });
+          if (panVal && typeof panVal === 'string' && panVal.length > 20) {
+            this.registrationService.uploadDocument(regIdToUse, 'PAN', null, panVal, this.panPhotoName || 'PAN_Card.jpg').subscribe({ error: (e) => console.error(e) });
           }
-          if (this.pattadarDoc) {
-            this.registrationService.uploadDocument(returnedRegId, 'LAND', null, String(this.pattadarDoc), this.pattadarDocName || 'Pattadar_Passbook_LPC.pdf').subscribe({ error: (e) => console.error(e) });
+          if (aadhaarVal && typeof aadhaarVal === 'string' && aadhaarVal.length > 20) {
+            this.registrationService.uploadDocument(regIdToUse, 'AADHAAR', null, aadhaarVal, this.aadhaarPhotoName || 'Aadhaar_Card.jpg').subscribe({ error: (e) => console.error(e) });
+          }
+          if (landVal && typeof landVal === 'string' && landVal.length > 20) {
+            this.registrationService.uploadDocument(regIdToUse, 'LAND', null, landVal, this.pattadarDocName || 'Pattadar_Passbook_LPC.pdf').subscribe({ error: (e) => console.error(e) });
           }
         }
 
@@ -419,11 +458,11 @@ export class PreviewComponent implements OnInit {
         
         const nameVal = `Cooperative Parcel ${this.surveyNo}/${this.subDivisionNo}`;
         
-        const calculatorDetails = localStorage.getItem('SellerCalculatorDetails');
+        const calculatorDetails = this.registrationService.getDraftData('SellerCalculatorDetails', currentMobile);
         let calcPondResults: any[] = [];
         if (calculatorDetails) {
           try {
-            const parsedC = JSON.parse(calculatorDetails);
+            const parsedC = typeof calculatorDetails === 'string' ? JSON.parse(calculatorDetails) : calculatorDetails;
             if (Array.isArray(parsedC.pondResults) && parsedC.pondResults.length > 0) {
               calcPondResults = parsedC.pondResults;
             }
@@ -477,6 +516,15 @@ export class PreviewComponent implements OnInit {
           totalCarbonCredits: typeof totCredVal === 'number' ? totCredVal.toFixed(2) : totCredVal,
           sequestrationRate: typeof totCredVal === 'number' ? totCredVal.toFixed(2) : totCredVal,
           portfolioValue: Math.round(Number(totCredVal) * 120),
+          pattadarDoc: landVal,
+          pattadarDocName: this.pattadarDocName || ldDraft?.pattadarDocName || 'Pattadar_Passbook_LPC.pdf',
+          pattadarDocPreview: landVal,
+          pattadarFile: this.pattadarDocName || ldDraft?.pattadarDocName || 'Pattadar_Passbook_LPC.pdf',
+          imagePreview: sitePhotoVal,
+          landPhoto: sitePhotoVal,
+          landPhotoName: ldDraft?.landPhotoName || 'Geo_Land_Site_Photo.jpg',
+          landPhotoPreview: sitePhotoVal,
+          landPhotoFile: ldDraft?.landPhotoName || 'Geo_Land_Site_Photo.jpg',
           docs: docsPayload,
           ponds: finalPondsList.length > 0 ? finalPondsList : [
             { id: 'pond_1', name: 'Pond 1', species: 'IMC', area: '5.00 Hectares', production: '37,500 Kg', credits: '135.51' },
@@ -515,7 +563,7 @@ export class PreviewComponent implements OnInit {
         }
         
         localStorage.setItem(`userLandParcels_${currentMobile}`, JSON.stringify(parcels));
-        localStorage.setItem('userLandParcels', JSON.stringify(parcels));
+        if (clean10) localStorage.setItem(`userLandParcels_${clean10}`, JSON.stringify(parcels));
 
         // Save active seller user account (No admin approval required for Seller/Buyer user account)
         const sellerUser = {

@@ -412,21 +412,30 @@
             <!-- Aggregated Asset Card KPI Grid -->
             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; background-color: #f8fafc; padding: 20px; border-radius: 14px; border: 1px solid #edf2f7; margin-bottom: 20px;">
               
-              <!-- KPI 1: Total Pond Area -->
+              <!-- KPI 1: Area -->
               <div style="display: flex; flex-direction: column; gap: 4px;">
-                <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Total Pond Area</span>
+                <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">
+                  {{ (asset.landType === 'Fish Pond' || asset.plantation?.landType === 'Fish Pond') ? 'Total Pond Area' : 'Total Area' }}
+                </span>
                 <strong style="font-size: 18px; font-weight: 800; color: #1e293b;">
                   <i class="bi bi-aspect-ratio me-1" style="color: var(--primary-teal);"></i>
-                  {{ asset.totalPondArea || asset.area || '6.25 Acres' }}
+                  {{ asset.totalPondArea || asset.area || '20.00 Hectares' }}
                 </strong>
               </div>
 
-              <!-- KPI 2: Total Production -->
+              <!-- KPI 2: Production / Trees -->
               <div style="display: flex; flex-direction: column; gap: 4px;">
-                <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Total Production</span>
+                <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">
+                  {{ (asset.landType === 'Fish Pond' || asset.plantation?.landType === 'Fish Pond') ? 'Total Production' : 'Total Trees' }}
+                </span>
                 <strong style="font-size: 18px; font-weight: 800; color: #1e293b;">
-                  <i class="bi bi-box-seam me-1" style="color: #3b82f6;"></i>
-                  {{ asset.totalProduction || '18,450 Kg' }}
+                  <i class="bi" [ngClass]="(asset.landType === 'Fish Pond' || asset.plantation?.landType === 'Fish Pond') ? 'bi-box-seam text-primary' : 'bi-tree-fill text-success'" style="font-size: 18px; margin-right: 4px;"></i>
+                  <ng-container *ngIf="asset.landType === 'Fish Pond' || asset.plantation?.landType === 'Fish Pond'">
+                    {{ asset.totalProduction || '18,450 Kg' }}
+                  </ng-container>
+                  <ng-container *ngIf="asset.landType !== 'Fish Pond' && asset.plantation?.landType !== 'Fish Pond'">
+                    {{ asset.trees || asset.totalTrees || asset.quantity || 450 }} Trees
+                  </ng-container>
                 </strong>
               </div>
 
@@ -471,18 +480,26 @@
                 <span>Registration Date: <strong style="color: #475569;">{{ asset.date || 'June 15, 2026' }}</strong></span>
               </div>
 
-              <!-- View Ponds Expand/Collapse Button -->
-              <button (click)="toggleViewPonds(asset)" class="btn btn-sm text-teal" style="border: 1.5px solid var(--primary-teal); color: var(--primary-teal); font-weight: 700; border-radius: 8px; padding: 8px 18px; display: inline-flex; align-items: center; gap: 8px; background: transparent; transition: all 0.2s;">
+              <!-- View Ponds Expand/Collapse Button (ONLY FOR FISH POND) -->
+              <button *ngIf="(asset.landType === 'Fish Pond' || asset.plantation?.landType === 'Fish Pond') && asset.ponds && asset.ponds.length > 0" (click)="toggleViewPonds(asset)" class="btn btn-sm text-teal" style="border: 1.5px solid var(--primary-teal); color: var(--primary-teal); font-weight: 700; border-radius: 8px; padding: 8px 18px; display: inline-flex; align-items: center; gap: 8px; background: transparent; transition: all 0.2s;">
                 <span>{{ asset.showPonds ? '▲ Hide Ponds' : '▼ View Ponds' }}</span>
                 <span class="badge rounded-pill text-white" style="background-color: var(--primary-teal); font-size: 11px; padding: 4px 8px;">
                   {{ (asset.ponds && asset.ponds.length) || 0 }} {{ (asset.ponds && asset.ponds.length) === 1 ? 'Pond' : 'Ponds' }}
                 </span>
               </button>
+
+              <!-- View Trees Expand/Collapse Button (FOR OPEN LAND / GOVT LAND / HOUSE / TREE) -->
+              <button *ngIf="asset.landType !== 'Fish Pond' && asset.plantation?.landType !== 'Fish Pond'" (click)="toggleViewTrees(asset)" class="btn btn-sm text-success" style="border: 1.5px solid #10b981; color: #10b981; font-weight: 700; border-radius: 8px; padding: 8px 18px; display: inline-flex; align-items: center; gap: 8px; background: transparent; transition: all 0.2s;">
+                <span>{{ asset.showTrees ? '▲ Hide Trees' : '▼ View Trees' }}</span>
+                <span class="badge rounded-pill text-white" style="background-color: #10b981; font-size: 11px; padding: 4px 8px;">
+                  {{ asset.trees || asset.totalTrees || asset.quantity || 450 }} Trees
+                </span>
+              </button>
             </div>
           </div>
 
-          <!-- Expanded View Ponds Drawer -->
-          <div *ngIf="asset.showPonds" style="background-color: #f1f5f9; border-top: 1px solid #cbd5e1; padding: 24px; animation: fadeIn 0.25s ease-in-out;">
+          <!-- Expanded View Ponds Drawer (ONLY FOR FISH POND) -->
+          <div *ngIf="asset.showPonds && (asset.landType === 'Fish Pond' || asset.plantation?.landType === 'Fish Pond') && asset.ponds && asset.ponds.length > 0" style="background-color: #f1f5f9; border-top: 1px solid #cbd5e1; padding: 24px; animation: fadeIn 0.25s ease-in-out;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
               <div>
                 <h5 style="margin: 0; font-size: 15px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
@@ -553,6 +570,214 @@
                   <i class="bi bi-shield-check" style="color: var(--primary-teal);"></i>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Expanded View Trees Drawer (FOR OPEN LAND / GOVT LAND / HOUSE / TREE) -->
+        <div *ngIf="asset.showTrees && asset.landType !== 'Fish Pond' && asset.plantation?.landType !== 'Fish Pond'" style="background-color: #f8fafc; border-top: 1px solid #cbd5e1; padding: 24px; animation: fadeIn 0.25s ease-in-out;" class="text-start">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <h5 style="margin: 0; font-size: 15px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                <i class="bi bi-tree-fill" style="color: #10b981; font-size: 18px;"></i>
+                Associated Standing Trees for Asset : {{ asset.surveyNo || asset.survey?.surveyNo || 'AP001' }}{{ (asset.subDivisionNo || asset.survey?.subDivisionNo) ? '/' + (asset.subDivisionNo || asset.survey?.subDivisionNo) : '' }}
+                <span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #047857; font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 6px; margin-left: 6px;">
+                  {{ asset.trees || asset.totalTrees || asset.quantity || 450 }} Trees Registered
+                </span>
+              </h5>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 12px; font-weight: 600; color: #64748b; background: #ffffff; padding: 4px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                Status : <span style="font-weight: 800; color: #0f172a;">{{ (asset.status || 'PENDING').toUpperCase() }}</span>
+              </span>
+            </div>
+          </div>
+
+          <h4 class="tree-breakdown-title mb-3" style="font-size: 16px; font-weight: 700; color: #1e293b;">Trees — By Size Category Carbon Breakdown</h4>
+
+          <!-- Grid of Child Tree Stand Cards (COMPACT HIGH ENTERPRISE LEVEL CARDS) -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px;">
+            
+            <!-- 1. Small Tree Stand Card (Green Enterprise Theme) -->
+            <div class="tree-stand-card theme-small">
+              <div>
+                <!-- Top Badge & Status Row -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span class="tree-card-badge">🌱 Small Tree</span>
+                  <span class="badge" 
+                    [ngClass]="{
+                      'bg-success-soft text-success': (asset.status || '').toUpperCase() === 'VERIFIED',
+                      'bg-danger-soft text-danger': (asset.status || '').toUpperCase() === 'REJECTED',
+                      'bg-info-soft text-info': (asset.status || '').toUpperCase() === 'UNDER REVIEW',
+                      'bg-warning-soft text-warning': (asset.status || '').toUpperCase() === 'PENDING' || (asset.status || '').toUpperCase() === 'PENDING AUDIT'
+                    }"
+                    style="padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase;">
+                    Status : {{ (asset.status || 'PENDING').toUpperCase() }}
+                  </span>
+                </div>
+
+                <!-- Stand Title & Subtitle -->
+                <div style="margin-bottom: 8px;">
+                  <h5 style="margin: 0; font-size: 14px; font-weight: 800; color: #0f172a;">Small Stand (&lt; 15 cm DBH)</h5>
+                  <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: nowrap;">
+                    <span class="tree-dbh-tag">DBH: 10 cm</span>
+                    <span style="font-size: 10.5px; color: #64748b; font-weight: 600; white-space: nowrap;">Height &lt; 5 m • Sparse crown</span>
+                  </div>
+                </div>
+
+                <!-- 2x2 Metric Grid -->
+                <div class="tree-metrics-grid">
+                  <div class="tree-metric-box">
+                    <span class="tree-metric-label">AGB PER TREE</span>
+                    <span class="tree-metric-val">40.1 kg</span>
+                  </div>
+                  <div class="tree-metric-box">
+                    <span class="tree-metric-label">CO2E / TREE</span>
+                    <span class="tree-metric-val val-green">0.086 t</span>
+                  </div>
+                  <div class="tree-metric-box">
+                    <span class="tree-metric-label">REGISTERED TREES</span>
+                    <span class="tree-metric-val text-dark">{{ asset.smallTreeCount || 0 }}</span>
+                  </div>
+                  <div class="tree-metric-box">
+                    <span class="tree-metric-label">CATEGORY TOTAL</span>
+                    <span class="tree-metric-val val-green">{{ ((asset.smallTreeCount || 0) * 0.086) | number:'1.2-2' }} t</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Total Carbon Footer Highlight Bar -->
+              <div class="tree-total-carbon-bar">
+                TOTAL CARBON: {{ ((asset.smallTreeCount || 0) * 0.086 / 3.667) | number:'1.2-2' }} t C
+              </div>
+
+              <!-- Micro Footer -->
+              <div style="padding-top: 6px; border-top: 1px solid #f1f5f9; font-size: 10px; color: #94a3b8; display: flex; align-items: center; justify-content: space-between; margin-top: 4px;">
+                <span>Synchronized with Asset</span>
+                <i class="bi bi-shield-check" style="color: #10b981;"></i>
+              </div>
+            </div>
+
+            <!-- 2. Medium Tree Stand Card (Blue Enterprise Theme) -->
+            <div class="tree-stand-card theme-medium">
+              <div>
+                <!-- Top Badge & Status Row -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span class="tree-card-badge">🌲 Medium Tree</span>
+                  <span class="badge" 
+                    [ngClass]="{
+                      'bg-success-soft text-success': (asset.status || '').toUpperCase() === 'VERIFIED',
+                      'bg-danger-soft text-danger': (asset.status || '').toUpperCase() === 'REJECTED',
+                      'bg-info-soft text-info': (asset.status || '').toUpperCase() === 'UNDER REVIEW',
+                      'bg-warning-soft text-warning': (asset.status || '').toUpperCase() === 'PENDING' || (asset.status || '').toUpperCase() === 'PENDING AUDIT'
+                    }"
+                    style="padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase;">
+                    Status : {{ (asset.status || 'PENDING').toUpperCase() }}
+                  </span>
+                </div>
+
+                <!-- Stand Title & Subtitle -->
+                <div style="margin-bottom: 8px;">
+                  <h5 style="margin: 0; font-size: 14px; font-weight: 800; color: #0f172a;">Medium Stand (15–30 cm DBH)</h5>
+                  <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: nowrap;">
+                    <span class="tree-dbh-tag">DBH: 25 cm</span>
+                    <span style="font-size: 10.5px; color: #64748b; font-weight: 600; white-space: nowrap;">Height 5–12 m • Full crown</span>
+                  </div>
+                </div>
+
+                <!-- 2x2 Metric Grid -->
+                <div class="tree-metrics-grid">
+                  <div class="tree-metric-box">
+                    <span class="tree-metric-label">AGB PER TREE</span>
+                    <span class="tree-metric-val">407.4 kg</span>
+                  </div>
+                  <div class="tree-metric-box">
+                    <span class="tree-metric-label">CO2E / TREE</span>
+                    <span class="tree-metric-val val-blue">0.871 t</span>
+                  </div>
+                  <div class="tree-metric-box">
+                    <span class="tree-metric-label">REGISTERED TREES</span>
+                    <span class="tree-metric-val text-dark">{{ asset.mediumTreeCount || 0 }}</span>
+                  </div>
+                  <div class="tree-metric-box">
+                    <span class="tree-metric-label">CATEGORY TOTAL</span>
+                    <span class="tree-metric-val val-blue">{{ ((asset.mediumTreeCount || 0) * 0.871) | number:'1.2-2' }} t</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Total Carbon Footer Highlight Bar -->
+              <div class="tree-total-carbon-bar">
+                TOTAL CARBON: {{ ((asset.mediumTreeCount || 0) * 0.871 / 3.667) | number:'1.2-2' }} t C
+              </div>
+
+              <!-- Micro Footer -->
+              <div style="padding-top: 6px; border-top: 1px solid #f1f5f9; font-size: 10px; color: #94a3b8; display: flex; align-items: center; justify-content: space-between; margin-top: 4px;">
+                <span>Synchronized with Asset</span>
+                <i class="bi bi-shield-check" style="color: #0284c7;"></i>
+              </div>
+            </div>
+
+            <!-- 3. Large Tree Stand Card (Purple Enterprise Theme) -->
+            <div class="tree-stand-card theme-large">
+              <div>
+                <!-- Top Badge & Status Row -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span class="tree-card-badge">🌳 Large Tree</span>
+                  <span class="badge" 
+                    [ngClass]="{
+                      'bg-success-soft text-success': (asset.status || '').toUpperCase() === 'VERIFIED',
+                      'bg-danger-soft text-danger': (asset.status || '').toUpperCase() === 'REJECTED',
+                      'bg-info-soft text-info': (asset.status || '').toUpperCase() === 'UNDER REVIEW',
+                      'bg-warning-soft text-warning': (asset.status || '').toUpperCase() === 'PENDING' || (asset.status || '').toUpperCase() === 'PENDING AUDIT'
+                    }"
+                    style="padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase;">
+                    Status : {{ (asset.status || 'PENDING').toUpperCase() }}
+                  </span>
+                </div>
+
+                <!-- Stand Title & Subtitle -->
+                <div style="margin-bottom: 8px;">
+                  <h5 style="margin: 0; font-size: 14px; font-weight: 800; color: #0f172a;">Large Stand (&gt; 30 cm DBH)</h5>
+                  <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: nowrap;">
+                    <span class="tree-dbh-tag">DBH: 45 cm</span>
+                    <span style="font-size: 10.5px; color: #64748b; font-weight: 600; white-space: nowrap;">Height &gt; 12 m • Canopy</span>
+                  </div>
+                </div>
+
+                <!-- 2x2 Metric Grid -->
+                <div class="tree-metrics-grid">
+                  <div class="tree-metric-box">
+                    <span class="tree-metric-label">AGB PER TREE</span>
+                    <span class="tree-metric-val">1,802.4 kg</span>
+                  </div>
+                  <div class="tree-metric-box">
+                    <span class="tree-metric-label">CO2E / TREE</span>
+                    <span class="tree-metric-val val-purple">3.852 t</span>
+                  </div>
+                  <div class="tree-metric-box">
+                    <span class="tree-metric-label">REGISTERED TREES</span>
+                    <span class="tree-metric-val text-dark">{{ asset.largeTreeCount || 0 }}</span>
+                  </div>
+                  <div class="tree-metric-box">
+                    <span class="tree-metric-label">CATEGORY TOTAL</span>
+                    <span class="tree-metric-val val-purple">{{ ((asset.largeTreeCount || 0) * 3.852) | number:'1.2-2' }} t</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Total Carbon Footer Highlight Bar -->
+              <div class="tree-total-carbon-bar">
+                TOTAL CARBON: {{ ((asset.largeTreeCount || 0) * 3.852 / 3.667) | number:'1.2-2' }} t C
+              </div>
+
+              <!-- Micro Footer -->
+              <div style="padding-top: 6px; border-top: 1px solid #f1f5f9; font-size: 10px; color: #94a3b8; display: flex; align-items: center; justify-content: space-between; margin-top: 4px;">
+                <span>Synchronized with Asset</span>
+                <i class="bi bi-shield-check" style="color: #8b5cf6;"></i>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -1177,33 +1402,65 @@
 
                 </div>
 
-                <!-- Standard Fields (shown only for Standard Land Types e.g. Tree, Crop, Mangrove, Garden) -->
-                <div *ngIf="newLandPlantation.landType && newLandPlantation.landType !== 'Fish Pond' && newLandPlantation.plantationType" style="display: flex; flex-direction: column; gap: 12px;">
-                  <!-- Custom SubCategory for Standard Land Type -->
+                <!-- Standard & Tree/Mangrove Fields for Open Land, Govt Land, and House -->
+                <div *ngIf="newLandPlantation.landType && newLandPlantation.landType !== 'Fish Pond' && newLandPlantation.plantationType" style="display: flex; flex-direction: column; gap: 14px;">
+                  <!-- Custom SubCategory -->
                   <div>
-                    <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Biomass/Crop Sub-Category (Optional)</label>
+                    <label class="form-label small fw-bold text-dark mb-1" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Biomass/Crop Sub-Category (Optional)</label>
                     <input type="text" class="form-control" [(ngModel)]="newLandPlantation.subCategory" placeholder="e.g. Mango Canopy, Coconut" style="border-radius: 14px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
                   </div>
+
+                  <!-- Total Number of Trees / Plants & Average Age -->
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div>
-                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Quantity (No. of Trees/Plants) *</label>
+                      <label class="form-label small fw-bold text-dark mb-1" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Total Number of Trees / Plants *</label>
                       <input type="number" class="form-control" [(ngModel)]="newLandPlantation.quantity" placeholder="e.g. 500" style="border-radius: 14px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
                     </div>
                     <div>
-                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Age (Years) *</label>
+                      <label class="form-label small fw-bold text-dark mb-1" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Average Age (Years) *</label>
                       <input type="number" class="form-control" [(ngModel)]="newLandPlantation.age" placeholder="e.g. 2" style="border-radius: 14px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
                     </div>
                   </div>
+
+                  <!-- Plantation Area & Unit -->
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div>
-                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Area Under Plantation *</label>
+                      <label class="form-label small fw-bold text-dark mb-1" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Plantation Area *</label>
                       <input type="number" class="form-control" [(ngModel)]="newLandPlantation.area" placeholder="Enter area size" style="border-radius: 14px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
                     </div>
                     <div>
-                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Unit *</label>
+                      <label class="form-label small fw-bold text-dark mb-1" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Unit *</label>
                       <app-custom-select [options]="landUnitOptions" [(ngModel)]="newLandPlantation.unit" placeholder="Select Unit"></app-custom-select>
                     </div>
                   </div>
+
+                  <!-- Simple Tree & Mangrove Fields (For Open Land, Govt Land, House) -->
+                  <ng-container *ngIf="newLandPlantation.landType === 'Open Land' || newLandPlantation.landType === 'Govt Land' || newLandPlantation.landType === 'House'">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                      <div>
+                        <label class="form-label small fw-bold text-dark mb-1" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Small Trees (DBH &lt; 15 cm)</label>
+                        <input type="number" min="0" [(ngModel)]="newLandPlantation.smallTreeCount" placeholder="300" class="form-control" style="border-radius: 14px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                      </div>
+                      <div>
+                        <label class="form-label small fw-bold text-dark mb-1" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Medium Trees (DBH 15–30 cm)</label>
+                        <input type="number" min="0" [(ngModel)]="newLandPlantation.mediumTreeCount" placeholder="120" class="form-control" style="border-radius: 14px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                      </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                      <div>
+                        <label class="form-label small fw-bold text-dark mb-1" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Large Trees (DBH &gt; 30 cm)</label>
+                        <input type="number" min="0" [(ngModel)]="newLandPlantation.largeTreeCount" placeholder="30" class="form-control" style="border-radius: 14px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                      </div>
+                      <div>
+                        <label class="form-label small fw-bold text-dark mb-1" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Existing Mangrove Area (Hectares)</label>
+                        <input type="number" step="0.1" min="0" [(ngModel)]="newLandPlantation.mangroveAreaHa" placeholder="0" class="form-control" style="border-radius: 14px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                      </div>
+                    </div>
+                    <div>
+                      <label class="form-label small fw-bold text-dark mb-1" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Biomass Factor</label>
+                      <app-custom-select [options]="biomassFactorOptions" [(ngModel)]="newLandPlantation.biomassFactorDisplay" placeholder="Select Biomass Factor" (ngModelChange)="onSellerBiomassFactorSelect($event)"></app-custom-select>
+                    </div>
+                  </ng-container>
                 </div>
 
                 <div style="display: flex; justify-content: space-between; margin-top: 12px;">
@@ -1928,150 +2185,214 @@
           </div>
         </div>
 
-        <!-- Documents Read-Only Grid -->
-        <div class="upload-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; margin-bottom: 28px;">
-          
-          <!-- Document Card 1: PAN Card -->
-          <div class="upload-card" style="background: #fafdfc; border: 1.5px solid #d8e6e2; border-radius: 18px; padding: 20px; text-align: center; position: relative; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.06)'" onmouseout="this.style.transform='none'; this.style.boxShadow='none'">
-            <div>
-              <div class="upload-icon" style="font-size: 40px; margin-bottom: 8px;">🪪</div>
-              <h4 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 800; color: var(--dark-text);">PAN Card</h4>
-              <p class="text-muted small" style="margin: 0 0 12px 0; font-size: 11.5px;">Permanent Account Number Record</p>
-              
-              <div class="mb-3">
-                <span class="badge fw-bold" 
-                      [ngClass]="panStatus === 'Verified' ? 'bg-success-soft text-success' : 'bg-warning-soft text-warning'" 
-                      [ngClass]="panFile ? (panStatus === 'Verified' ? 'bg-success-soft text-success' : 'bg-warning-soft text-warning') : 'bg-secondary text-white'" 
-                      style="padding: 5px 12px; border-radius: 8px; font-size: 11.5px;">
-                  <i class="bi me-1" [ngClass]="panFile ? (panStatus === 'Verified' ? 'bi-shield-check-fill' : 'bi-clock-history') : 'bi-dash-circle'"></i>
-                  {{ panFile ? (panStatus === 'Verified' ? 'Verified' : 'Pending') : 'Not Uploaded' }}
-                </span>
-                <span class="d-block text-muted" style="font-size: 10px; margin-top: 4px;">
-                  {{ panFile ? (panStatus === 'Verified' ? '(Verified by Auditor / Valuator)' : '(Pending Auditor Approval)') : '(No document submitted)' }}
-                </span>
-              </div>
-
-              <!-- Preview Frame -->
-              <div (click)="panFile ? openDocumentModal('PAN Card Document', 'Identity Proof', panFile, panPhotoPreview, panStatus, 'Official tax identity proof registered for C-PAY portfolio valuation.') : null" [style.cursor]="panFile ? 'pointer' : 'default'" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;">
-                <img *ngIf="panPhotoPreview" [src]="panPhotoPreview" (error)="onPanPhotoError()" alt="PAN Card" style="max-height: 110px; max-width: 100%; object-fit: contain; border-radius: 6px;" />
-                <div *ngIf="!panPhotoPreview" style="padding: 12px; text-align: center;">
-                  <i class="bi bi-file-earmark-person-fill text-muted" style="font-size: 36px;"></i>
-                  <span class="d-block text-muted fw-bold micro-text mt-1" style="font-size: 11px;">{{ panFile || 'No Document Uploaded' }}</span>
-                </div>
-                <div *ngIf="panFile" style="position: absolute; inset: 0; background: rgba(0, 164, 153, 0.08); opacity: 0; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
-                  <span class="badge bg-dark text-white fw-bold" style="font-size: 10px; padding: 4px 8px;"><i class="bi bi-eye-fill me-1"></i> Click to View</span>
-                </div>
-              </div>
-            </div>
-
-            <div style="font-size: 12px; font-weight: 700; margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 4px; background: #ffffff; padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0;"
-                 [ngClass]="panFile ? (panStatus === 'Verified' ? 'text-success' : 'text-warning') : 'text-muted'">
-              <i class="bi" [ngClass]="panFile ? (panStatus === 'Verified' ? 'bi-check-circle-fill text-success' : 'bi-clock-history text-warning') : 'bi-dash-circle text-muted'"></i>
-              <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;">{{ panFile || 'No Document Uploaded' }}</span>
-            </div>
+        <!-- Section 1: Shared Seller Identity Documents (Uploaded once during Registration) -->
+        <div style="margin-bottom: 32px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+            <h4 style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+              <i class="bi bi-person-vcard-fill" style="color: #0284c7;"></i> Seller Identity Credentials (Shared Across All Assets)
+            </h4>
+            <span style="font-size: 11px; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 3px 10px; border-radius: 6px;">
+              Uploaded Once During Registration
+            </span>
           </div>
 
-          <!-- Document Card 2: Aadhaar Card -->
-          <div class="upload-card" style="background: #fafdfc; border: 1.5px solid #d8e6e2; border-radius: 18px; padding: 20px; text-align: center; position: relative; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.06)'" onmouseout="this.style.transform='none'; this.style.boxShadow='none'">
-            <div>
-              <div class="upload-icon" style="font-size: 40px; margin-bottom: 8px;">🆔</div>
-              <h4 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 800; color: var(--dark-text);">Aadhaar Card</h4>
-              <p class="text-muted small" style="margin: 0 0 12px 0; font-size: 11.5px;">National Identity Card Record</p>
-              
-              <div class="mb-3">
-                <span class="badge fw-bold" 
-                      [ngClass]="aadhaarFile ? (aadhaarStatus === 'Verified' ? 'bg-success-soft text-success' : 'bg-warning-soft text-warning') : 'bg-secondary text-white'" 
-                      style="padding: 5px 12px; border-radius: 8px; font-size: 11.5px;">
-                  <i class="bi me-1" [ngClass]="aadhaarFile ? (aadhaarStatus === 'Verified' ? 'bi-shield-check-fill' : 'bi-clock-history') : 'bi-dash-circle'"></i>
-                  {{ aadhaarFile ? (aadhaarStatus === 'Verified' ? 'Verified' : 'Pending') : 'Not Uploaded' }}
-                </span>
-                <span class="d-block text-muted" style="font-size: 10px; margin-top: 4px;">
-                  {{ aadhaarFile ? (aadhaarStatus === 'Verified' ? '(Verified by Auditor / Valuator)' : '(Pending Auditor Approval)') : '(No document submitted)' }}
-                </span>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+            
+            <!-- Shared Document Card 1: PAN Card -->
+            <div class="upload-card" style="background: #fafdfc; border: 1.5px solid #d8e6e2; border-radius: 16px; padding: 18px; text-align: center; display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <div class="upload-icon" style="font-size: 36px; margin-bottom: 6px;">🪪</div>
+                <h4 style="margin: 0 0 2px 0; font-size: 15px; font-weight: 800; color: #0f172a;">PAN Card</h4>
+                <p class="text-muted small" style="margin: 0 0 10px 0; font-size: 11px;">Permanent Account Number Record</p>
+                
+                <div class="mb-2">
+                  <span class="badge fw-bold" 
+                        [ngClass]="panFile ? (panStatus === 'Verified' ? 'bg-success-soft text-success' : 'bg-warning-soft text-warning') : 'bg-secondary text-white'" 
+                        style="padding: 4px 10px; border-radius: 6px; font-size: 11px;">
+                    <i class="bi me-1" [ngClass]="panFile ? (panStatus === 'Verified' ? 'bi-shield-check-fill' : 'bi-clock-history') : 'bi-dash-circle'"></i>
+                    {{ panFile ? (panStatus === 'Verified' ? 'Verified' : 'Pending') : 'Not Uploaded' }}
+                  </span>
+                </div>
+
+                <!-- Preview Frame -->
+                <div (click)="panFile ? openDocumentModal('PAN Card Document', 'Identity Proof', panFile, panPhotoPreview, panStatus, 'Official tax identity proof registered for C-PAY seller account.') : null" [style.cursor]="panFile ? 'pointer' : 'default'" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px; min-height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+                  <img *ngIf="panPhotoPreview" [src]="panPhotoPreview" (error)="onPanPhotoError()" alt="PAN Card" style="max-height: 100px; max-width: 100%; object-fit: contain; border-radius: 6px;" />
+                  <div *ngIf="!panPhotoPreview" style="padding: 10px; text-align: center;">
+                    <i class="bi bi-file-earmark-person-fill text-muted" style="font-size: 32px;"></i>
+                    <span class="d-block text-muted fw-bold micro-text mt-1" style="font-size: 10.5px;">{{ panFile || 'No Document Uploaded' }}</span>
+                  </div>
+                  <div *ngIf="panFile" style="position: absolute; inset: 0; background: rgba(0, 164, 153, 0.08); opacity: 0; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
+                    <span class="badge bg-dark text-white fw-bold" style="font-size: 10px; padding: 4px 8px;"><i class="bi bi-eye-fill me-1"></i> Click to View</span>
+                  </div>
+                </div>
               </div>
 
-              <!-- Preview Frame -->
-              <div (click)="aadhaarFile ? openDocumentModal('Aadhaar Card Document', 'National Identity Proof', aadhaarFile, aadhaarPhotoPreview, aadhaarStatus, 'Official national identity proof verified for carbon credit registry enrollment.') : null" [style.cursor]="aadhaarFile ? 'pointer' : 'default'" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;">
-                <img *ngIf="aadhaarPhotoPreview" [src]="aadhaarPhotoPreview" (error)="onAadhaarPhotoError()" alt="Aadhaar Card" style="max-height: 110px; max-width: 100%; object-fit: contain; border-radius: 6px;" />
-                <div *ngIf="!aadhaarPhotoPreview" style="padding: 12px; text-align: center;">
-                  <i class="bi bi-card-heading text-muted" style="font-size: 36px;"></i>
-                  <span class="d-block text-muted fw-bold micro-text mt-1" style="font-size: 11px;">{{ aadhaarFile || 'No Document Uploaded' }}</span>
-                </div>
-                <div *ngIf="aadhaarFile" style="position: absolute; inset: 0; background: rgba(0, 164, 153, 0.08); opacity: 0; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
-                  <span class="badge bg-dark text-white fw-bold" style="font-size: 10px; padding: 4px 8px;"><i class="bi bi-eye-fill me-1"></i> Click to View</span>
-                </div>
+              <div style="font-size: 11.5px; font-weight: 700; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 4px; background: #ffffff; padding: 6px 10px; border-radius: 8px; border: 1px solid #e2e8f0;"
+                   [ngClass]="panFile ? (panStatus === 'Verified' ? 'text-success' : 'text-warning') : 'text-muted'">
+                <i class="bi" [ngClass]="panFile ? (panStatus === 'Verified' ? 'bi-check-circle-fill text-success' : 'bi-clock-history text-warning') : 'bi-dash-circle text-muted'"></i>
+                <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;">{{ panFile || 'No Document Uploaded' }}</span>
               </div>
             </div>
 
-            <div style="font-size: 12px; font-weight: 700; margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 4px; background: #ffffff; padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0;"
-                 [ngClass]="aadhaarFile ? (aadhaarStatus === 'Verified' ? 'text-success' : 'text-warning') : 'text-muted'">
-              <i class="bi" [ngClass]="aadhaarFile ? (aadhaarStatus === 'Verified' ? 'bi-check-circle-fill text-success' : 'bi-clock-history text-warning') : 'bi-dash-circle text-muted'"></i>
-              <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;">{{ aadhaarFile || 'No Document Uploaded' }}</span>
+            <!-- Shared Document Card 2: Aadhaar Card -->
+            <div class="upload-card" style="background: #fafdfc; border: 1.5px solid #d8e6e2; border-radius: 16px; padding: 18px; text-align: center; display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <div class="upload-icon" style="font-size: 36px; margin-bottom: 6px;">🆔</div>
+                <h4 style="margin: 0 0 2px 0; font-size: 15px; font-weight: 800; color: #0f172a;">Aadhaar Card</h4>
+                <p class="text-muted small" style="margin: 0 0 10px 0; font-size: 11px;">National Identity Card Record</p>
+                
+                <div class="mb-2">
+                  <span class="badge fw-bold" 
+                        [ngClass]="aadhaarFile ? (aadhaarStatus === 'Verified' ? 'bg-success-soft text-success' : 'bg-warning-soft text-warning') : 'bg-secondary text-white'" 
+                        style="padding: 4px 10px; border-radius: 6px; font-size: 11px;">
+                    <i class="bi me-1" [ngClass]="aadhaarFile ? (aadhaarStatus === 'Verified' ? 'bi-shield-check-fill' : 'bi-clock-history') : 'bi-dash-circle'"></i>
+                    {{ aadhaarFile ? (aadhaarStatus === 'Verified' ? 'Verified' : 'Pending') : 'Not Uploaded' }}
+                  </span>
+                </div>
+
+                <!-- Preview Frame -->
+                <div (click)="aadhaarFile ? openDocumentModal('Aadhaar Card Document', 'National Identity Proof', aadhaarFile, aadhaarPhotoPreview, aadhaarStatus, 'Official national identity proof verified for carbon credit registry enrollment.') : null" [style.cursor]="aadhaarFile ? 'pointer' : 'default'" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px; min-height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+                  <img *ngIf="aadhaarPhotoPreview" [src]="aadhaarPhotoPreview" (error)="onAadhaarPhotoError()" alt="Aadhaar Card" style="max-height: 100px; max-width: 100%; object-fit: contain; border-radius: 6px;" />
+                  <div *ngIf="!aadhaarPhotoPreview" style="padding: 10px; text-align: center;">
+                    <i class="bi bi-card-heading text-muted" style="font-size: 32px;"></i>
+                    <span class="d-block text-muted fw-bold micro-text mt-1" style="font-size: 10.5px;">{{ aadhaarFile || 'No Document Uploaded' }}</span>
+                  </div>
+                  <div *ngIf="aadhaarFile" style="position: absolute; inset: 0; background: rgba(0, 164, 153, 0.08); opacity: 0; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
+                    <span class="badge bg-dark text-white fw-bold" style="font-size: 10px; padding: 4px 8px;"><i class="bi bi-eye-fill me-1"></i> Click to View</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="font-size: 11.5px; font-weight: 700; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 4px; background: #ffffff; padding: 6px 10px; border-radius: 8px; border: 1px solid #e2e8f0;"
+                   [ngClass]="aadhaarFile ? (aadhaarStatus === 'Verified' ? 'text-success' : 'text-warning') : 'text-muted'">
+                <i class="bi" [ngClass]="aadhaarFile ? (aadhaarStatus === 'Verified' ? 'bi-check-circle-fill text-success' : 'bi-clock-history text-warning') : 'bi-dash-circle text-muted'"></i>
+                <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;">{{ aadhaarFile || 'No Document Uploaded' }}</span>
+              </div>
             </div>
+
+          </div>
+        </div>
+
+        <!-- Section 2: Asset-Specific Property & Site Documents (Per Asset / Survey Number) -->
+        <div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+            <h4 style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+              <i class="bi bi-folder-fill" style="color: #10b981;"></i> Asset-Specific Property & Site Documents (Per Asset / Survey Number)
+            </h4>
+            <span class="badge bg-success text-white fw-bold" style="font-size: 11px; padding: 4px 10px; border-radius: 6px;">
+              {{ getAssetDocumentGroups().length }} Asset Records Found
+            </span>
           </div>
 
-          <!-- Document Card 3: Pattadar Passbook / Land LPC -->
-          <div class="upload-card" style="background: #fafdfc; border: 1.5px solid #d8e6e2; border-radius: 18px; padding: 20px; text-align: center; position: relative; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.06)'" onmouseout="this.style.transform='none'; this.style.boxShadow='none'">
-            <div>
-              <div class="upload-icon" style="font-size: 40px; margin-bottom: 8px;">📜</div>
-              <h4 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 800; color: var(--dark-text);">Pattadar Passbook / LPC</h4>
-              <p class="text-muted small" style="margin: 0 0 12px 0; font-size: 11.5px;">Land Possession Certificate Record</p>
+          <!-- Asset Group Loop -->
+          <div style="display: flex; flex-direction: column; gap: 28px;">
+            <div *ngFor="let assetDoc of getAssetDocumentGroups()" style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
               
-              <div class="mb-3">
+              <!-- Asset Group Banner Header -->
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                <div>
+                  <h5 style="margin: 0; font-size: 16px; font-weight: 800; color: #003366; display: flex; align-items: center; gap: 6px;">
+                    <i class="bi bi-geo-alt-fill" style="color: #10b981;"></i> Asset {{ assetDoc.assetNumber }} — Survey No: {{ assetDoc.surveyNo }}
+                  </h5>
+                  <span style="font-size: 12px; color: #64748b;">
+                    Land Category: <strong>{{ assetDoc.landType }}</strong> &bull; GPS: <strong>{{ assetDoc.latitude }}° N, {{ assetDoc.longitude }}° E</strong>
+                  </span>
+                </div>
                 <span class="badge fw-bold" 
-                      [ngClass]="pattadarFile ? (landStatus === 'Verified' ? 'bg-success-soft text-success' : 'bg-warning-soft text-warning') : 'bg-secondary text-white'" 
-                      style="padding: 5px 12px; border-radius: 8px; font-size: 11.5px;">
-                  <i class="bi me-1" [ngClass]="pattadarFile ? (landStatus === 'Verified' ? 'bi-shield-check-fill' : 'bi-clock-history') : 'bi-dash-circle'"></i>
-                  {{ pattadarFile ? (landStatus === 'Verified' ? 'Verified' : 'Pending') : 'Not Uploaded' }}
-                </span>
-                <span class="d-block text-muted" style="font-size: 10px; margin-top: 4px;">
-                  {{ pattadarFile ? (landStatus === 'Verified' ? '(Verified by Revenue & GIS Audit)' : '(Pending Auditor Approval)') : '(No document submitted)' }}
+                      [ngClass]="{
+                        'bg-success-soft text-success': (assetDoc.status || '').toUpperCase() === 'VERIFIED',
+                        'bg-danger-soft text-danger': (assetDoc.status || '').toUpperCase() === 'REJECTED',
+                        'bg-info-soft text-info': (assetDoc.status || '').toUpperCase() === 'UNDER REVIEW',
+                        'bg-warning-soft text-warning': (assetDoc.status || '').toUpperCase() === 'PENDING' || (assetDoc.status || '').toUpperCase() === 'PENDING AUDIT'
+                      }"
+                      style="padding: 5px 12px; border-radius: 8px; font-size: 11px; text-transform: uppercase;">
+                  Status: {{ (assetDoc.status || 'PENDING').toUpperCase() }}
                 </span>
               </div>
 
-              <!-- Preview Frame -->
-              <div (click)="pattadarFile ? openDocumentModal('Pattadar Passbook / Land LPC', 'Land Possession Proof', pattadarFile, pattadarDocPreview, landStatus, 'Official Revenue Land Possession Certificate registered for Survey No: ' + (landDetails.surveyNo || '342/1A')) : null" [style.cursor]="pattadarFile ? 'pointer' : 'default'" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;">
-                <img *ngIf="pattadarDocPreview" [src]="pattadarDocPreview" (error)="onPattadarDocError()" alt="Pattadar Passbook" style="max-height: 110px; max-width: 100%; object-fit: contain; border-radius: 6px;" />
-                <div *ngIf="!pattadarDocPreview" style="padding: 12px; text-align: center;">
-                  <i class="bi bi-journal-check text-muted" style="font-size: 36px;"></i>
-                  <span class="d-block text-muted fw-bold micro-text mt-1" style="font-size: 11px;">{{ pattadarFile || 'No Document Uploaded' }}</span>
-                </div>
-                <div *ngIf="pattadarFile" style="position: absolute; inset: 0; background: rgba(0, 164, 153, 0.08); opacity: 0; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
-                  <span class="badge bg-dark text-white fw-bold" style="font-size: 10px; padding: 4px 8px;"><i class="bi bi-eye-fill me-1"></i> Click to View</span>
-                </div>
-              </div>
-            </div>
+              <!-- Asset 2-Card Grid (Pattadar Passbook + Geo Land Photography) -->
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                
+                <!-- Document Card: Pattadar Passbook / LPC (Asset N) -->
+                <div class="upload-card" style="background: #fafdfc; border: 1.5px solid #d8e6e2; border-radius: 14px; padding: 18px; text-align: center; display: flex; flex-direction: column; justify-content: space-between;">
+                  <div>
+                    <div class="upload-icon" style="font-size: 36px; margin-bottom: 6px;">📜</div>
+                    <h4 style="margin: 0 0 2px 0; font-size: 15px; font-weight: 800; color: #0f172a;">Pattadar Passbook / LPC</h4>
+                    <p class="text-muted small" style="margin: 0 0 10px 0; font-size: 11px;">Land Possession Certificate for Asset {{ assetDoc.assetNumber }}</p>
+                    
+                    <div class="mb-2">
+                      <span class="badge fw-bold" 
+                            [ngClass]="assetDoc.pattadarPreview ? 'bg-success-soft text-success' : 'bg-secondary text-white'" 
+                            style="padding: 4px 10px; border-radius: 6px; font-size: 11px;">
+                        <i class="bi me-1" [ngClass]="assetDoc.pattadarPreview ? 'bi-shield-check-fill' : 'bi-dash-circle'"></i>
+                        {{ assetDoc.pattadarPreview ? 'Attached to Asset ' + assetDoc.assetNumber : 'Not Uploaded' }}
+                      </span>
+                    </div>
 
-            <div style="font-size: 12px; font-weight: 700; margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 4px; background: #ffffff; padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0;"
-                 [ngClass]="pattadarFile ? (landStatus === 'Verified' ? 'text-success' : 'text-warning') : 'text-muted'">
-              <i class="bi" [ngClass]="pattadarFile ? (landStatus === 'Verified' ? 'bi-check-circle-fill text-success' : 'bi-clock-history text-warning') : 'bi-dash-circle text-muted'"></i>
-              <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;">{{ pattadarFile || 'No Document Uploaded' }}</span>
+                    <!-- Preview Frame -->
+                    <div (click)="assetDoc.pattadarPreview ? openDocumentModal('Pattadar Passbook / LPC (Asset ' + assetDoc.assetNumber + ')', 'Land Possession Proof', assetDoc.pattadarName, assetDoc.pattadarPreview, assetDoc.status, 'Official Revenue Land Possession Certificate registered for Asset ' + assetDoc.assetNumber + ' (Survey No: ' + assetDoc.surveyNo + ').') : null" [style.cursor]="assetDoc.pattadarPreview ? 'pointer' : 'default'" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px; min-height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+                      <img *ngIf="assetDoc.pattadarPreview && !assetDoc.pattadarPreview.includes('application/pdf') && !assetDoc.pattadarName.toLowerCase().endsWith('.pdf')" [src]="assetDoc.pattadarPreview" (error)="onPattadarDocError()" alt="Pattadar Passbook" style="max-height: 100px; max-width: 100%; object-fit: contain; border-radius: 6px;" />
+                      <div *ngIf="!assetDoc.pattadarPreview || assetDoc.pattadarPreview.includes('application/pdf') || assetDoc.pattadarName.toLowerCase().endsWith('.pdf')" style="padding: 10px; text-align: center;">
+                        <i class="bi bi-journal-check text-muted" style="font-size: 32px;"></i>
+                        <span class="d-block text-muted fw-bold micro-text mt-1" style="font-size: 10.5px;">{{ assetDoc.pattadarName || 'No Document Uploaded' }}</span>
+                      </div>
+                      <div *ngIf="assetDoc.pattadarPreview" style="position: absolute; inset: 0; background: rgba(0, 164, 153, 0.08); opacity: 0; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
+                        <span class="badge bg-dark text-white fw-bold" style="font-size: 10px; padding: 4px 8px;"><i class="bi bi-eye-fill me-1"></i> Click to View</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="font-size: 11.5px; font-weight: 700; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 4px; background: #ffffff; padding: 6px 10px; border-radius: 8px; border: 1px solid #e2e8f0;"
+                       [ngClass]="assetDoc.pattadarPreview ? 'text-success' : 'text-muted'">
+                    <i class="bi" [ngClass]="assetDoc.pattadarPreview ? 'bi-check-circle-fill text-success' : 'bi-dash-circle text-muted'"></i>
+                    <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;">{{ assetDoc.pattadarName || 'No Document Uploaded' }}</span>
+                  </div>
+                </div>
+
+                <!-- Document Card: Geo-Tagged Site Photography (Asset N) -->
+                <div class="upload-card" style="background: #fafdfc; border: 1.5px solid #d8e6e2; border-radius: 14px; padding: 18px; text-align: center; display: flex; flex-direction: column; justify-content: space-between;">
+                  <div>
+                    <div class="upload-icon" style="font-size: 36px; margin-bottom: 6px;">📷</div>
+                    <h4 style="margin: 0 0 2px 0; font-size: 15px; font-weight: 800; color: #0f172a;">Land Photography</h4>
+                    <p class="text-muted small" style="margin: 0 0 10px 0; font-size: 11px;">Geo-Tagged Site Photo for Asset {{ assetDoc.assetNumber }}</p>
+                    
+                    <div class="mb-2">
+                      <span class="badge fw-bold" 
+                            [ngClass]="assetDoc.landPhotoPreview ? 'bg-info text-white' : 'bg-secondary text-white'" 
+                            style="padding: 4px 10px; border-radius: 6px; font-size: 11px;">
+                        <i class="bi me-1" [ngClass]="assetDoc.landPhotoPreview ? 'bi-geo-alt-fill' : 'bi-dash-circle'"></i>
+                        {{ assetDoc.landPhotoPreview ? 'Geo-Verified' : 'Not Uploaded' }}
+                      </span>
+                    </div>
+
+                    <!-- Preview Frame -->
+                    <div (click)="assetDoc.landPhotoPreview ? openDocumentModal('Geo-Tagged Land Photography (Asset ' + assetDoc.assetNumber + ')', 'Site Photo Capture', assetDoc.landPhotoName, assetDoc.landPhotoPreview, assetDoc.status, 'Captured site photo of land area for Asset ' + assetDoc.assetNumber + ' (Survey No: ' + assetDoc.surveyNo + ') at GPS Coordinates (' + assetDoc.latitude + '° N, ' + assetDoc.longitude + '° E).') : null" [style.cursor]="assetDoc.landPhotoPreview ? 'pointer' : 'default'" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px; min-height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+                      <img *ngIf="assetDoc.landPhotoPreview" [src]="assetDoc.landPhotoPreview" (error)="onLandPhotoError()" alt="Land Photography" style="max-height: 100px; max-width: 100%; object-fit: contain; border-radius: 6px;" />
+                      <div *ngIf="!assetDoc.landPhotoPreview" style="padding: 10px; text-align: center;">
+                        <i class="bi bi-camera text-muted" style="font-size: 32px;"></i>
+                        <span class="d-block text-muted fw-bold micro-text mt-1" style="font-size: 10.5px;">{{ assetDoc.landPhotoName || 'No Document Uploaded' }}</span>
+                      </div>
+                      <div *ngIf="assetDoc.landPhotoPreview" style="position: absolute; inset: 0; background: rgba(0, 164, 153, 0.08); opacity: 0; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
+                        <span class="badge bg-dark text-white fw-bold" style="font-size: 10px; padding: 4px 8px;"><i class="bi bi-eye-fill me-1"></i> Click to View</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="font-size: 11.5px; font-weight: 700; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 4px; background: #ffffff; padding: 6px 10px; border-radius: 8px; border: 1px solid #e2e8f0;"
+                       [ngClass]="assetDoc.landPhotoPreview ? 'text-info' : 'text-muted'">
+                    <i class="bi" [ngClass]="assetDoc.landPhotoPreview ? 'bi-geo-alt-fill text-info' : 'bi-dash-circle text-muted'"></i>
+                    <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;">{{ assetDoc.landPhotoName || 'No Document Uploaded' }}</span>
+                  </div>
+                </div>
+
+              </div>
+
             </div>
           </div>
+        </div>
 
-          <!-- Document Card 4: Geo-Tagged Land Site Photography -->
-          <div class="upload-card" style="background: #fafdfc; border: 1.5px solid #d8e6e2; border-radius: 18px; padding: 20px; text-align: center; position: relative; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.06)'" onmouseout="this.style.transform='none'; this.style.boxShadow='none'">
-            <div>
-              <div class="upload-icon" style="font-size: 40px; margin-bottom: 8px;">📷</div>
-              <h4 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 800; color: var(--dark-text);">Land Photography</h4>
-              <p class="text-muted small" style="margin: 0 0 12px 0; font-size: 11.5px;">Geo-Tagged Site Photo Capture</p>
-              
-              <div class="mb-3">
-                <span class="badge fw-bold" 
-                      [ngClass]="landPhotoFile ? ((landStatus === 'Verified' || hasApprovedAsset) ? 'bg-info text-white' : 'bg-warning-soft text-warning') : 'bg-secondary text-white'" 
-                      style="padding: 5px 12px; border-radius: 8px; font-size: 11.5px;">
-                  <i class="bi me-1" [ngClass]="landPhotoFile ? ((landStatus === 'Verified' || hasApprovedAsset) ? 'bi-geo-alt-fill' : 'bi-clock-history') : 'bi-dash-circle'"></i>
-                  {{ landPhotoFile ? ((landStatus === 'Verified' || hasApprovedAsset) ? 'Geo-Verified' : 'Pending') : 'Not Uploaded' }}
-                </span>
-                <span class="d-block text-muted" style="font-size: 10px; margin-top: 4px;">Lat: {{ landDetails.latitude || 14.4426 }}° N, Lon: {{ landDetails.longitude || 79.9865 }}° E</span>
-              </div>
-
-              <!-- Preview Frame -->
-              <div (click)="landPhotoFile ? openDocumentModal('Geo-Tagged Land Photography', 'Site Photo Capture', landPhotoFile, landPhotoPreview, (landStatus === 'Verified' || hasApprovedAsset) ? 'Geo-Verified' : 'Pending', 'Captured site photo of aquaculture pond / canopy area for Survey No: ' + (landDetails.surveyNo || '342/1A') + ' at GPS Coordinates (' + (landDetails.latitude || 14.4426) + ', ' + (landDetails.longitude || 79.9865) + ')') : null" [style.cursor]="landPhotoFile ? 'pointer' : 'default'" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;">
-                <img *ngIf="landPhotoPreview" [src]="landPhotoPreview" (error)="onLandPhotoError()" alt="Land Photography" style="max-height: 110px; max-width: 100%; object-fit: contain; border-radius: 6px;" />
-                <div *ngIf="!landPhotoPreview" style="padding: 12px; text-align: center;">
         <!-- Read Only Info Banner -->
-        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; display: flex; align-items: center; gap: 16px;">
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-top: 24px; display: flex; align-items: center; gap: 16px;">
           <i class="bi bi-shield-lock-fill text-teal" style="font-size: 24px; color: var(--primary-teal); flex-shrink: 0;"></i>
           <div>
             <h5 style="margin: 0 0 2px 0; font-size: 14px; font-weight: 800; color: var(--dark-text);">Security & Audit Trail Policy</h5>
@@ -2080,10 +2401,6 @@
         </div>
       </div>
     </div>
-
-      </div>
-    </div>
-  </div>
     <!-- Full Screen Document Lightbox Modal -->
     <div *ngIf="selectedDocModal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(6px); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;" (click)="closeDocumentModal()">
       <div style="background: #ffffff; border-radius: 20px; max-width: 720px; width: 100%; max-height: 90vh; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; position: relative;" (click)="$event.stopPropagation()">
@@ -2095,9 +2412,17 @@
           </div>
           <button type="button" (click)="closeDocumentModal()" style="background: #f1f5f9; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #64748b; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">✕</button>
         </div>
-        <!-- Body Preview Image -->
+        <!-- Body Preview Image / PDF -->
         <div style="padding: 24px; overflow-y: auto; text-align: center; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 320px;">
-          <img *ngIf="selectedDocModal.url" [src]="selectedDocModal.url" [alt]="selectedDocModal.title" style="max-height: 60vh; max-width: 100%; object-fit: contain; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);" />
+          <!-- If Image Base64 or Image URL -->
+          <img *ngIf="selectedDocModal.url && !selectedDocModal.url.includes('application/pdf') && !(selectedDocModal.fileName || '').toLowerCase().endsWith('.pdf')" [src]="selectedDocModal.url" [alt]="selectedDocModal.title" style="max-height: 60vh; max-width: 100%; object-fit: contain; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);" />
+          
+          <!-- If PDF Base64 or PDF URL -->
+          <div *ngIf="selectedDocModal.url && (selectedDocModal.url.includes('application/pdf') || (selectedDocModal.fileName || '').toLowerCase().endsWith('.pdf'))" style="width: 100%; height: 60vh;">
+            <iframe [src]="getSafePdfUrl(selectedDocModal.url)" style="width: 100%; height: 100%; border: none; border-radius: 8px; background: #ffffff;"></iframe>
+          </div>
+
+          <!-- Fallback if URL is missing -->
           <div *ngIf="!selectedDocModal.url" style="color: #ffffff; padding: 40px; text-align: center;">
             <i class="bi bi-file-earmark-check-fill" style="font-size: 48px; color: #0d9488;"></i>
             <h5 style="margin-top: 12px; color: #ffffff;">{{ selectedDocModal.fileName }}</h5>
@@ -2108,8 +2433,6 @@
         <div *ngIf="selectedDocModal.details" style="padding: 16px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 12.5px; color: #475569;">
           <i class="bi bi-info-circle-fill text-teal me-1"></i> {{ selectedDocModal.details }}
         </div>
-      </div>
-    </div>
       </div>
     </div>
 
@@ -2125,8 +2448,12 @@
                 <i class="bi bi-file-earmark-bar-graph me-1"></i> {{ getGeneratedFarmReports().length }} REPORTS GENERATED
               </span>
             </div>
-            <h3 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">Printable Farm GHG & Carbon Reduction Reports</h3>
-            <p class="text-muted mb-0" style="font-size: 13px;">Auto-generated 1-page reports for each registered asset & fish pond based on PDF Specification v3.3 carbon engine.</p>
+            <h3 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;">
+              {{ hasOnlyTreeLand() ? 'Printable Land GHG & Carbon Sequestration Reports' : 'Printable Farm GHG & Carbon Reduction Reports' }}
+            </h3>
+            <p class="text-muted mb-0" style="font-size: 13px;">
+              {{ hasOnlyTreeLand() ? 'Auto-generated 1-page reports for each registered land parcel based on Verra VM0047 ARR carbon engine.' : 'Auto-generated 1-page reports for each registered asset & fish pond based on PDF Specification v3.3 carbon engine.' }}
+            </p>
           </div>
           <div class="d-flex align-items-center gap-2" style="display: flex; gap: 12px;">
             <button type="button" class="btn btn-teal px-4 py-2 fw-bold text-white" (click)="downloadAllReportsPdf()" style="background-color: var(--primary-teal); color: white; border: none; border-radius: 10px; font-size: 13.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0, 164, 153, 0.2);">
@@ -2144,9 +2471,10 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px dashed #cbd5e1;">
               <div>
                 <h4 style="margin: 0; font-size: 18px; font-weight: 800; color: #003366;">
-                  <i class="bi bi-geo-alt-fill me-1" style="color: var(--primary-teal);"></i> {{ r.assetName }} — {{ r.pondName }}
+                  <i class="bi bi-geo-alt-fill me-1" [style.color]="r.isTreeLand ? '#10b981' : 'var(--primary-teal)'"></i> {{ r.assetName }} <ng-container *ngIf="!r.isTreeLand">— {{ r.pondName }}</ng-container>
                 </h4>
-                <span style="font-size: 12px; color: #64748b;">Species: <strong>{{ r.cultureType }}</strong> ({{ r.cultureTypeDesc }}) &bull; Area: <strong>{{ r.pondAreaHa }} ha</strong></span>
+                <span *ngIf="!r.isTreeLand" style="font-size: 12px; color: #64748b;">Species: <strong>{{ r.cultureType }}</strong> ({{ r.cultureTypeDesc }}) &bull; Area: <strong>{{ r.pondAreaHa }} ha</strong></span>
+                <span *ngIf="r.isTreeLand" style="font-size: 12px; color: #64748b;">Category: <strong>{{ r.landType }}</strong> &bull; Total Trees: <strong>{{ r.totalTrees }} Trees</strong> &bull; Area: <strong>{{ r.pondAreaHa }} ha</strong></span>
               </div>
               <div style="display: flex; gap: 10px;">
                 <button type="button" class="btn btn-sm btn-outline-primary" (click)="downloadSingleReportPdf(r.reportId)" style="border: 1px solid #003366; color: #003366; background: #ffffff; border-radius: 8px; padding: 6px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;">
@@ -2155,8 +2483,122 @@
               </div>
             </div>
 
-            <!-- Exact Spec Printable Farm GHG Report Container -->
-            <div [id]="'farm-report-card-' + r.reportId" style="background-color: #ffffff; border: 2px solid #003366; border-radius: 12px; padding: 28px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); font-family: system-ui, -apple-system, sans-serif; color: #1e293b;">
+            <!-- 1. Open Land Carbon & GHG Sequestration Report Container (If Open Land) -->
+            <div *ngIf="r.isTreeLand" [id]="'farm-report-card-' + r.reportId" style="background-color: #ffffff; border: 2px solid #10b981; border-radius: 12px; padding: 28px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); font-family: system-ui, -apple-system, sans-serif; color: #1e293b;">
+              
+              <!-- Report Title Banner -->
+              <div style="border-bottom: 2px solid #10b981; padding-bottom: 12px; margin-bottom: 20px;">
+                <h2 style="font-size: 22px; font-weight: 800; color: #047857; margin: 0 0 4px 0;">Printable Open Land Carbon & GHG Sequestration Report</h2>
+                <p style="font-size: 12px; color: #475569; font-style: italic; margin: 0;">Auto-generated from Seller Dashboard & Verra VM0047 ARR Carbon Engine. Print this sheet for a one-page land summary.</p>
+              </div>
+
+              <table style="width: 100%; border-collapse: collapse; font-size: 13.5px; margin-bottom: 0;">
+                <!-- 1. LAND & FORESTRY SUMMARY -->
+                <thead>
+                  <tr style="background-color: #ffffff;">
+                    <th colspan="3" style="font-weight: 800; font-size: 14px; color: #047857; text-transform: uppercase; padding: 10px 12px; text-align: left; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1;">1. LAND & FORESTRY SUMMARY</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="font-weight: 600; color: #1e293b; padding: 8px 12px; border: 1px solid #e2e8f0; width: 45%;">Land Category</td>
+                    <td style="font-weight: 800; color: #0f172a; text-align: center; padding: 8px 12px; border: 1px solid #e2e8f0; width: 30%;">{{ r.landType }}</td>
+                    <td style="color: #475569; font-style: italic; padding: 8px 12px; border: 1px solid #e2e8f0; width: 25%;">Registered Type</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 600; color: #1e293b; padding: 8px 12px; border: 1px solid #e2e8f0;">Parcel / Survey No</td>
+                    <td style="font-weight: 800; color: #047857; text-align: center; padding: 8px 12px; border: 1px solid #e2e8f0;">{{ r.assetName }}</td>
+                    <td style="color: #475569; font-style: italic; padding: 8px 12px; border: 1px solid #e2e8f0;">Land Record</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 600; color: #1e293b; padding: 8px 12px; border: 1px solid #e2e8f0;">Plantation Area</td>
+                    <td style="font-weight: 800; color: #000000; text-align: center; padding: 8px 12px; border: 1px solid #e2e8f0;">{{ r.pondAreaHa | number:'1.2-2' }}</td>
+                    <td style="color: #475569; font-style: italic; padding: 8px 12px; border: 1px solid #e2e8f0;">ha</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 600; color: #1e293b; padding: 8px 12px; border: 1px solid #e2e8f0;">Total Registered Trees</td>
+                    <td style="font-weight: 800; color: #047857; text-align: center; padding: 8px 12px; border: 1px solid #e2e8f0;">{{ r.totalTrees }}</td>
+                    <td style="color: #475569; font-style: italic; padding: 8px 12px; border: 1px solid #e2e8f0;">Trees</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 600; color: #1e293b; padding: 8px 12px; border: 1px solid #e2e8f0;">Biomass Expansion Factor</td>
+                    <td style="font-weight: 800; color: #000000; text-align: center; padding: 8px 12px; border: 1px solid #e2e8f0;">{{ r.biomassFactor | number:'1.2-2' }}</td>
+                    <td style="color: #475569; font-style: italic; padding: 8px 12px; border: 1px solid #e2e8f0;">Factor</td>
+                  </tr>
+                </tbody>
+
+                <!-- 2. TREE STAND DISTRIBUTION & BIOMASS INVENTORY -->
+                <thead>
+                  <tr style="background-color: #ffffff;">
+                    <th colspan="3" style="font-weight: 800; font-size: 14px; color: #047857; text-transform: uppercase; padding: 10px 12px; text-align: left; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1;">2. TREE STAND DISTRIBUTION & BIOMASS INVENTORY</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="font-weight: 600; color: #1e293b; padding: 8px 12px; border: 1px solid #e2e8f0;">Small Stand (&lt; 15 cm DBH)</td>
+                    <td style="font-weight: 800; color: #000000; text-align: center; padding: 8px 12px; border: 1px solid #e2e8f0;">{{ r.smallTreeCount }} Trees</td>
+                    <td style="color: #10b981; font-weight: 700; padding: 8px 12px; border: 1px solid #e2e8f0;">{{ r.smallCO2e | number:'1.2-2' }} tCO2e</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 600; color: #1e293b; padding: 8px 12px; border: 1px solid #e2e8f0;">Medium Stand (15–30 cm DBH)</td>
+                    <td style="font-weight: 800; color: #000000; text-align: center; padding: 8px 12px; border: 1px solid #e2e8f0;">{{ r.mediumTreeCount }} Trees</td>
+                    <td style="color: #0284c7; font-weight: 700; padding: 8px 12px; border: 1px solid #e2e8f0;">{{ r.mediumCO2e | number:'1.2-2' }} tCO2e</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 600; color: #1e293b; padding: 8px 12px; border: 1px solid #e2e8f0;">Large Stand (&gt; 30 cm DBH)</td>
+                    <td style="font-weight: 800; color: #000000; text-align: center; padding: 8px 12px; border: 1px solid #e2e8f0;">{{ r.largeTreeCount }} Trees</td>
+                    <td style="color: #9333ea; font-weight: 700; padding: 8px 12px; border: 1px solid #e2e8f0;">{{ r.largeCO2e | number:'1.2-2' }} tCO2e</td>
+                  </tr>
+                </tbody>
+
+                <!-- 3. CARBON & GHG SEQUESTRATION INVENTORY -->
+                <thead>
+                  <tr style="background-color: #ffffff;">
+                    <th colspan="3" style="font-weight: 800; font-size: 14px; color: #047857; text-transform: uppercase; padding: 10px 12px; text-align: left; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1;">3. CARBON & GHG SEQUESTRATION INVENTORY</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="font-weight: 600; color: #1e293b; padding: 8px 12px; border: 1px solid #e2e8f0;">Baseline Open Land Emissions</td>
+                    <td style="font-weight: 800; color: #000000; text-align: center; padding: 8px 12px; border: 1px solid #e2e8f0;">0.00</td>
+                    <td style="color: #475569; font-style: italic; padding: 8px 12px; border: 1px solid #e2e8f0;">tCO2e</td>
+                  </tr>
+                  <tr style="background-color: #ecfdf5;">
+                    <td style="font-weight: 800; color: #000000; padding: 8px 12px; border: 1px solid #e2e8f0;">Gross CO2 Sequestration Rate</td>
+                    <td style="font-weight: 900; color: #047857; text-align: center; padding: 8px 12px; border: 1px solid #e2e8f0; font-size: 15px;">{{ r.potentialCarbonCredits | number:'1.2-2' }}</td>
+                    <td style="color: #047857; font-style: italic; font-weight: 800; padding: 8px 12px; border: 1px solid #e2e8f0;">tCO2e/yr</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 600; color: #1e293b; padding: 8px 12px; border: 1px solid #e2e8f0;">Total Standing Tree Carbon (C)</td>
+                    <td style="font-weight: 800; color: #047857; text-align: center; padding: 8px 12px; border: 1px solid #e2e8f0;">{{ (r.potentialCarbonCredits / 3.667) | number:'1.2-2' }}</td>
+                    <td style="color: #047857; font-style: italic; font-weight: 800; padding: 8px 12px; border: 1px solid #e2e8f0;">t C</td>
+                  </tr>
+                </tbody>
+
+                <!-- 4. CARBON CREDIT ELIGIBILITY & VALUE SUMMARY -->
+                <thead>
+                  <tr style="background-color: #ffffff;">
+                    <th colspan="3" style="font-weight: 800; font-size: 14px; color: #047857; text-transform: uppercase; padding: 10px 12px; text-align: left; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1;">4. CARBON CREDIT ELIGIBILITY & VALUE SUMMARY</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="font-weight: 600; color: #1e293b; padding: 8px 12px; border: 1px solid #e2e8f0;">Verra Risk Buffer Deduction (15%)</td>
+                    <td style="font-weight: 800; color: #dc2626; text-align: center; padding: 8px 12px; border: 1px solid #e2e8f0;">-{{ (r.potentialCarbonCredits * 0.15) | number:'1.2-2' }}</td>
+                    <td style="color: #dc2626; font-style: italic; padding: 8px 12px; border: 1px solid #e2e8f0;">tCO2e Buffer</td>
+                  </tr>
+                  <tr style="background-color: #f0fdf4;">
+                    <td style="font-weight: 800; color: #000000; padding: 8px 12px; border: 1px solid #e2e8f0;">Net Tradable Carbon Credits</td>
+                    <td style="font-weight: 900; color: #059669; text-align: center; padding: 8px 12px; border: 1px solid #e2e8f0; font-size: 16px;">{{ (r.potentialCarbonCredits * 0.85) | number:'1.2-2' }}</td>
+                    <td style="color: #059669; font-style: italic; font-weight: 800; padding: 8px 12px; border: 1px solid #e2e8f0;">Credits/yr</td>
+                  </tr>
+                </tbody>
+              </table>
+
+            </div>
+
+            <!-- 2. Exact Spec Printable Farm GHG Report Container (If Fish Pond) -->
+            <div *ngIf="!r.isTreeLand" [id]="'farm-report-card-' + r.reportId" style="background-color: #ffffff; border: 2px solid #003366; border-radius: 12px; padding: 28px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); font-family: system-ui, -apple-system, sans-serif; color: #1e293b;">
               
               <!-- Report Title Banner -->
               <div style="border-bottom: 2px solid #003366; padding-bottom: 12px; margin-bottom: 20px;">

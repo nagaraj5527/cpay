@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MockDatabaseService } from '../../services/mock-db.service';
+import { RegistrationService } from '../../services/registration.service';
 
 @Component({
   selector: 'app-registration-wizard',
@@ -15,20 +16,13 @@ export class RegistrationWizardComponent implements OnInit {
 
   constructor(
     private router: Router,
-    private dbService: MockDatabaseService
+    private dbService: MockDatabaseService,
+    private registrationService: RegistrationService
   ) {}
 
   ngOnInit(): void {
-    // Clear any previous draft registration inputs when starting the wizard fresh
-    localStorage.removeItem('SellerPersonalDetails');
-    localStorage.removeItem('SellerAddressDetails');
-    localStorage.removeItem('SellerLandDetails');
-    localStorage.removeItem('SellerPlantationDetails');
-    localStorage.removeItem('SellerCalculation');
-    localStorage.removeItem('SellerConsentDetails');
-    localStorage.removeItem('SellerFurthestStep');
-    localStorage.removeItem('selectedUserType');
-    localStorage.removeItem('currentRegistrationId');
+    // Clear all previous draft registration inputs when starting fresh
+    this.registrationService.clearAllRegistrationDrafts();
 
     const mobile = localStorage.getItem('currentUserMobile');
     if (mobile) {
@@ -48,6 +42,7 @@ export class RegistrationWizardComponent implements OnInit {
   }
 
   startRegistration() {
+    this.registrationService.clearAllRegistrationDrafts();
     if (this.selectedRole === 'seller') {
       this.router.navigate(['/user-type']);
     } else if (this.selectedRole === 'buyer') {

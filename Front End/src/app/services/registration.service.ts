@@ -135,6 +135,10 @@ export class RegistrationService {
     return this.http.get(`${this.apiUrl}/check-survey?survey=${encodeURIComponent(surveyNumber)}&subDivision=${encodeURIComponent(subDivision)}`);
   }
 
+  getEcosystemStandings(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/ecosystem-standings`);
+  }
+
   // ==========================================================
   // Enterprise In-Memory & Fallback Draft Storage
   // ==========================================================
@@ -218,9 +222,58 @@ export class RegistrationService {
       tryWrite(key, strippedStr);
       if (mobileSuffix) {
         tryWrite(`${key}_${mobileSuffix}`, strippedStr);
-        if (clean10) tryWrite(`${key}_${clean10}`, strippedStr);
       }
     }
+  }
+
+  clearAllRegistrationDrafts(): void {
+    this.draftStore = {};
+    const keysToRemove = [
+      'SellerPersonalDetails',
+      'SellerAddressDetails',
+      'SellerLandDetails',
+      'SellerPlantationDetails',
+      'SellerCalculation',
+      'SellerConsentDetails',
+      'SellerFurthestStep',
+      'selectedUserType',
+      'registrationData',
+      'registrationId',
+      'cpay_registration_id',
+      'currentRegistrationId',
+      'buyerProfileDetails',
+      'buyerBankDetails',
+      'buyerName',
+      'companyName',
+      'selectedBuyerType'
+    ];
+
+    keysToRemove.forEach(k => {
+      try { sessionStorage.removeItem(k); } catch (e) {}
+      try { localStorage.removeItem(k); } catch (e) {}
+    });
+
+    try {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && (
+          k.startsWith('Seller') ||
+          k.startsWith('buyerProfile') ||
+          k.startsWith('buyerBank') ||
+          k.startsWith('cpay_reg')
+        )) {
+          localStorage.removeItem(k);
+        }
+      }
+    } catch (e) {}
+  }
+
+  saveTreeMangroveCarbon(data: any): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/carbon/save-tree-mangrove`, data);
+  }
+
+  getTreeMangroveCarbon(registrationId: string): Observable<any> {
+    return this.http.get(`${environment.apiUrl}/carbon/tree-mangrove/${registrationId}`);
   }
 }
 

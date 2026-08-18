@@ -1,5 +1,10 @@
+import dns from 'dns';
 import pkg from 'pg';
 import dotenv from 'dotenv';
+
+try {
+    dns.setDefaultResultOrder('ipv4first');
+} catch (e) {}
 
 dotenv.config();
 
@@ -20,7 +25,8 @@ const pool = new Pool({
 
     max: 20,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 15000
+    connectionTimeoutMillis: 30000,
+    keepAlive: true
 });
 
 pool.on('connect', () => {

@@ -957,3 +957,197 @@
     border-bottom: 2px solid #00a499;
     font-weight: 800;
 }
+
+/* ================= VERRA ARR V1.1 TREE BREAKDOWN CARDS (EXACT MATCH TO DESIGN) ================= */
+
+.verra-arr-header-badge {
+    background-color: #00a499;
+    color: #ffffff;
+    padding: 6px 16px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+.verra-recalc-toast {
+    background-color: #047857;
+    color: #ffffff;
+    padding: 6px 18px;
+    border-radius: 50px;
+    font-size: 12.5px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(4, 120, 87, 0.25);
+}
+
+.btn-recalculate-model {
+    background: #ffffff;
+    border: 1.5px solid #00a499;
+    color: #00a499;
+    border-radius: 50px;
+    padding: 6px 18px;
+    font-size: 12.5px;
+    font-weight: 700;
+    transition: all 0.2s ease;
+}
+
+.btn-recalculate-model:hover {
+    background: #e6f7f5;
+    color: #007a72;
+    border-color: #007a72;
+}
+
+.tree-breakdown-title {
+    font-size: 21px;
+    font-weight: 800;
+    color: #1e293b;
+    letter-spacing: -0.3px;
+    margin-top: 10px;
+    margin-bottom: 20px;
+}
+
+/* Base Tree Stand Card */
+.tree-stand-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04);
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tree-stand-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.07);
+}
+
+/* Green Theme (Small Tree) */
+.tree-stand-card.theme-small {
+    border: 2px solid #10b981;
+    border-top: 5px solid #10b981;
+}
+
+/* Blue Theme (Medium Tree) */
+.tree-stand-card.theme-medium {
+    border: 2px solid #0284c7;
+    border-top: 5px solid #0284c7;
+}
+
+/* Purple Theme (Large Tree) */
+.tree-stand-card.theme-large {
+    border: 2px solid #8b5cf6;
+    border-top: 5px solid #8b5cf6;
+}
+
+/* Card Header Badge & DBH Tag */
+.tree-card-badge {
+    color: #ffffff;
+    padding: 5px 14px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.tree-stand-card.theme-small .tree-card-badge {
+    background-color: #10b981;
+}
+
+.tree-stand-card.theme-medium .tree-card-badge {
+    background-color: #0284c7;
+}
+
+.tree-stand-card.theme-large .tree-card-badge {
+    background-color: #8b5cf6;
+}
+
+.tree-dbh-tag {
+    border: 1px solid #e2e8f0;
+    background-color: #ffffff;
+    color: #0f172a;
+    padding: 4px 12px;
+    border-radius: 50px;
+    font-size: 11.5px;
+    font-weight: 700;
+}
+
+/* Inner 2x2 Metric Grid */
+.tree-metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 16px;
+    margin-bottom: 16px;
+}
+
+.tree-metric-box {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px 12px;
+    text-align: left;
+}
+
+.tree-metric-label {
+    display: block;
+    font-size: 9.5px;
+    font-weight: 800;
+    color: #64748b;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+.tree-metric-val {
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.tree-metric-val.val-green {
+    color: #10b981;
+}
+
+.tree-metric-val.val-teal {
+    color: #00a499;
+}
+
+.tree-metric-val.val-blue {
+    color: #0284c7;
+}
+
+.tree-metric-val.val-purple {
+    color: #8b5cf6;
+}
+
+/* Total Carbon Footer Highlight Bar */
+.tree-total-carbon-bar {
+    padding: 12px;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    margin-top: 12px;
+}
+
+.tree-stand-card.theme-small .tree-total-carbon-bar {
+    background-color: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+.tree-stand-card.theme-medium .tree-total-carbon-bar {
+    background-color: #f0f9ff;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+}
+
+.tree-stand-card.theme-large .tree-total-carbon-bar {
+    background-color: #faf5ff;
+    color: #6b21a8;
+    border: 1px solid #e9d5ff;
+}
