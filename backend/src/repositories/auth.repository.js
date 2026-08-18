@@ -294,10 +294,17 @@ Valuator Details Repository Methods
 export const createValuatorDetails = async (data) => {
     const {
         valuatorId,
+        auditorId,
         userId,
         name,
-        address,
+        valuatorName,
+        auditorName,
         licence,
+        licenseNumber,
+        organizationName,
+        mobileNumber,
+        email,
+        address,
         aadhaarNumber,
         panNumber,
         aadhaarFileName,
@@ -305,33 +312,112 @@ export const createValuatorDetails = async (data) => {
         licenceFileName
     } = data;
 
+    const targetId = valuatorId || auditorId || uuidv4();
+    const finalRegistrationId = uuidv4();
+    const finalValuatorName = valuatorName || auditorName || name || 'Auditor';
+    const finalLicenseNumber = licenseNumber || licence || 'N/A';
+    const finalOrgName = organizationName || (name ? `${name} Audit Agency` : 'UNFCCC Lead Auditor Agency');
+    const cleanMobile = mobileNumber ? mobileNumber.trim() : null;
+    const finalEmail = email || (cleanMobile ? `valuator_${cleanMobile.replace(/[^0-9]/g, '')}@cpay.com` : null);
+
+    // Check if valuator details already exist for this user or mobile number
+    const checkQuery = `
+        SELECT * FROM cpay.valuator_details
+        WHERE user_id = $1 OR (mobile_number IS NOT NULL AND mobile_number = $2)
+        LIMIT 1;
+    `;
+    const checkRes = await pool.query(checkQuery, [userId, cleanMobile]);
+
+    if (checkRes.rows.length > 0) {
+        const existingId = checkRes.rows[0].valuator_id;
+        const updateQuery = `
+            UPDATE cpay.valuator_details
+            SET 
+                user_id = $2,
+                registration_id = COALESCE(registration_id, $3),
+                name = $4,
+                valuator_name = $5,
+                licence = $6,
+                license_number = $7,
+                organization_name = $8,
+                mobile_number = $9,
+                email = $10,
+                address = $11,
+                aadhaar_number = $12,
+                pan_number = $13,
+                aadhaar_file = COALESCE($14, aadhaar_file),
+                pan_file = COALESCE($15, pan_file),
+                licence_file = COALESCE($16, licence_file),
+                is_approved = FALSE,
+                remarks = COALESCE(remarks, 'Pending Super Admin Verification'),
+                updated_by = $2,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE valuator_id = $1
+            RETURNING *;
+        `;
+        const updateRes = await pool.query(updateQuery, [
+            existingId,
+            userId,
+            finalRegistrationId,
+            name,
+            finalValuatorName,
+            licence,
+            finalLicenseNumber,
+            finalOrgName,
+            cleanMobile,
+            finalEmail,
+            address,
+            aadhaarNumber || null,
+            panNumber || null,
+            aadhaarFileName || null,
+            panFileName || null,
+            licenceFileName || null
+        ]);
+        return updateRes.rows[0];
+    }
+
     const query = `
         INSERT INTO cpay.valuator_details
         (
             valuator_id,
             user_id,
+            registration_id,
             name,
-            address,
+            valuator_name,
             licence,
+            license_number,
+            organization_name,
+            mobile_number,
+            email,
+            address,
             aadhaar_number,
             pan_number,
             aadhaar_file,
             pan_file,
             licence_file,
             is_approved,
+            remarks,
+            created_by,
+            updated_by,
             created_at,
             updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, FALSE, 'Pending Super Admin Verification', $2, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         RETURNING *;
     `;
 
     const result = await pool.query(query, [
-        valuatorId,
+        targetId,
         userId,
+        finalRegistrationId,
         name,
-        address,
+        finalValuatorName,
         licence,
+        finalLicenseNumber,
+        finalOrgName,
+        cleanMobile,
+        finalEmail,
+        address,
         aadhaarNumber || null,
         panNumber || null,
         aadhaarFileName || null,
@@ -340,6 +426,8 @@ export const createValuatorDetails = async (data) => {
     ]);
     return result.rows[0];
 };
+
+export const createAuditorDetails = createValuatorDetails;
 
 export const findValuatorByUserId = async (userId, mobileNumber) => {
     const query = `

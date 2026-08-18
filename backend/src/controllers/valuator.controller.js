@@ -274,10 +274,10 @@ export const getPincodeUsers = asyncHandler(async (req, res) => {
                 u.user_id,
                 u.mobile_number,
                 u.email,
-                COALESCE(ind.full_name, org.organization_name, gov.department_name, u.email, u.mobile_number) AS user_name,
+                COALESCE(NULLIF(ind.full_name, ''), NULLIF(org.organization_name, ''), NULLIF(gov.department_name, ''), NULLIF(val.valuator_name, ''), u.email, u.mobile_number) AS user_name,
                 COALESCE(ro.role_name, 'SELLER') AS user_role,
-                ind.aadhaar_number,
-                COALESCE(ind.pan_number, org.pan_number, gov.pan_number) AS pan_number,
+                COALESCE(NULLIF(ind.aadhaar_number, ''), NULLIF(val.aadhaar_number, ''), 'N/A') AS aadhaar_number,
+                COALESCE(NULLIF(ind.pan_number, ''), NULLIF(org.pan_number, ''), NULLIF(gov.pan_number, ''), NULLIF(val.pan_number, ''), 'N/A') AS pan_number,
                 COALESCE(CAST(ad.pincode AS VARCHAR), CAST(ad.village_pincode AS VARCHAR)) as pincode,
                 ad.state_name,
                 ad.district_name,
@@ -322,6 +322,7 @@ export const getPincodeUsers = asyncHandler(async (req, res) => {
             LEFT JOIN cpay.individual_details ind ON u.user_id = ind.user_id
             LEFT JOIN cpay.organization_details org ON u.user_id = org.user_id
             LEFT JOIN cpay.government_details gov ON u.user_id = gov.user_id
+            LEFT JOIN cpay.valuator_details val ON (val.user_id = u.user_id OR val.mobile_number = u.mobile_number)
             LEFT JOIN (
                 SELECT ad_inner.*, s.state_name, d.district_name, m.mandal_name, v.village_name, v.pincode as village_pincode
                 FROM cpay.address_details ad_inner
@@ -341,8 +342,8 @@ export const getPincodeUsers = asyncHandler(async (req, res) => {
             LEFT JOIN cpay.prawn_species aq_prawn ON aq.prawn_species_id = aq_prawn.prawn_species_id
             LEFT JOIN cpay.carbon_calculation cc ON (cc.registration_id = r.registration_id OR cc.land_id = ld.land_id)
             LEFT JOIN cpay.roles ro ON u.role_id = ro.role_id
-            WHERE r.application_status IS NOT NULL 
-              AND r.application_status != 'DRAFT'
+            WHERE (ro.role_name IS NULL OR UPPER(ro.role_name) NOT IN ('VALUATOR', 'AUDITOR', 'ADMIN'))
+              AND (u.email IS NULL OR u.email NOT LIKE 'valuator_%')
               AND (
                 $1 = '' 
                 OR CAST(ad.pincode AS VARCHAR) = $1 
@@ -373,6 +374,9 @@ export const getPincodeUsers = asyncHandler(async (req, res) => {
                     'SUBMITTED' AS status
                 FROM cpay.users u
                 LEFT JOIN cpay.individual_details ind ON u.user_id = ind.user_id
+                LEFT JOIN cpay.roles ro ON u.role_id = ro.role_id
+                WHERE (ro.role_name IS NULL OR UPPER(ro.role_name) NOT IN ('VALUATOR', 'AUDITOR', 'ADMIN'))
+                  AND (u.email IS NULL OR u.email NOT LIKE 'valuator_%')
                 ORDER BY u.created_at DESC;
             `;
             const fbResult = await pool.query(fallbackQuery);

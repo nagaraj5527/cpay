@@ -1480,7 +1480,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     // Determine actual registered total area and total production
     const rawAreaStr = String(rawAsset.area || rawAsset.totalPondArea || rawAsset.survey?.area || '0');
     const actualAreaVal = parseFloat(rawAreaStr) || 0;
-    let totCredVal = parseFloat(String(rawAsset.totalCarbonCredits || rawAsset.sequestrationRate || rawAsset.carbon_credits || 0));
+    let totCredVal = parseFloat(String(rawAsset.total_carbon_credits || rawAsset.totalCarbonCredits || rawAsset.sequestrationRate || rawAsset.carbon_credits || rawAsset.carbonCredits || 0));
     const rawProdVal = parseFloat(String(rawAsset.totalProduction || rawAsset.total_production_kg || rawAsset.annual_production || rawAsset.totalBiomassHarvestedKg || '0').replace(/[^0-9.]/g, ''));
     let totalProdKg = rawProdVal > 0 ? rawProdVal : (actualAreaVal > 0 ? Math.round(actualAreaVal * 7500) : 0);
 
@@ -1573,7 +1573,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     if (isFishPond && totalProdNum > 0) {
       totalProdKg = totalProdNum;
     }
-    if (isFishPond && totalCreditsNum > 0) {
+    if (isFishPond && totalCreditsNum > 0 && (!totCredVal || totCredVal <= 0)) {
       totCredVal = totalCreditsNum;
     }
 
@@ -1617,8 +1617,8 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     const finalTotalTrees = isTreeLand ? (finalSmall + finalMed + finalLg) : 0;
     const finalBiomass = rawAsset.biomassFactor || rawAsset.plantation?.biomassFactor || userBiomassFactor || 1.0;
 
-    // Recalculate Tree Carbon Credits for Tree Land if trees are present
-    if (isTreeLand && finalTotalTrees > 0) {
+    // Recalculate Tree Carbon Credits ONLY if NO stored carbon credit value exists in DB
+    if ((!totCredVal || isNaN(totCredVal) || totCredVal <= 0) && isTreeLand && finalTotalTrees > 0) {
       const calcTreeCredits = ((finalSmall * 0.086) + (finalMed * 0.871) + (finalLg * 3.852)) * finalBiomass;
       if (calcTreeCredits > 0) {
         totCredVal = parseFloat(calcTreeCredits.toFixed(2));
@@ -2082,30 +2082,38 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
       const status = parcel.status || this.landStatus || 'Pending';
 
       // 1. Pattadar Passbook Document
-      let pattadarPreview = parcel.pattadarDoc || parcel.pattadarDocPreview;
-      let pattadarName = parcel.pattadarDocName || parcel.pattadarFileName;
+      let pattadarPreview = parcel.pattadarDoc || parcel.pattadarDocPreview || parcel.pattadar_doc;
+      let pattadarName = parcel.pattadarDocName || parcel.pattadarFileName || parcel.pattadar_doc_filename;
+
+      const storedPattadar = localStorage.getItem('SellerPattadarDoc') || (mobile ? localStorage.getItem(`SellerPattadarDoc_${mobile}`) : null) || (clean10 ? localStorage.getItem(`SellerPattadarDoc_${clean10}`) : null);
+      if (!isValidData(pattadarPreview) && isValidData(storedPattadar)) {
+        pattadarPreview = storedPattadar;
+      }
+      if (!isValidData(pattadarPreview) && isValidData(this.pattadarDocPreview)) {
+        pattadarPreview = this.pattadarDocPreview;
+      }
       if (!isValidData(pattadarPreview)) {
-        if (idx === 0 && isValidData(this.pattadarDocPreview)) {
-          pattadarPreview = this.pattadarDocPreview;
-        } else {
-          const docKey = idx === 0 ? 'LAND' : `LAND_${assetNum}`;
-          pattadarPreview = `${environment.apiUrl}/documents/${regId}/${docKey}`;
-        }
+        const docKey = idx === 0 ? 'LAND' : `LAND_${assetNum}`;
+        pattadarPreview = `${environment.apiUrl}/documents/${regId}/${docKey}`;
       }
       if (!pattadarName) {
         pattadarName = (idx === 0 && this.pattadarFile) ? this.pattadarFile : `Pattadar_Passbook_Asset_${assetNum}.pdf`;
       }
 
       // 2. Geo-Tagged Site Photography
-      let landPhotoPreview = parcel.imagePreview || parcel.landPhoto || parcel.landPhotoPreview;
-      let landPhotoName = parcel.landPhotoName || parcel.imageName;
+      let landPhotoPreview = parcel.imagePreview || parcel.landPhoto || parcel.landPhotoPreview || parcel.land_photo;
+      let landPhotoName = parcel.landPhotoName || parcel.imageName || parcel.land_photo_filename;
+
+      const storedLandPhoto = localStorage.getItem('SellerLandPhoto') || (mobile ? localStorage.getItem(`SellerLandPhoto_${mobile}`) : null) || (clean10 ? localStorage.getItem(`SellerLandPhoto_${clean10}`) : null);
+      if (!isValidData(landPhotoPreview) && isValidData(storedLandPhoto)) {
+        landPhotoPreview = storedLandPhoto;
+      }
+      if (!isValidData(landPhotoPreview) && isValidData(this.landPhotoPreview)) {
+        landPhotoPreview = this.landPhotoPreview;
+      }
       if (!isValidData(landPhotoPreview)) {
-        if (idx === 0 && isValidData(this.landPhotoPreview)) {
-          landPhotoPreview = this.landPhotoPreview;
-        } else {
-          const photoKey = idx === 0 ? 'LAND_PHOTO' : `LAND_PHOTO_${assetNum}`;
-          landPhotoPreview = `${environment.apiUrl}/documents/${regId}/${photoKey}`;
-        }
+        const photoKey = idx === 0 ? 'LAND_PHOTO' : `LAND_PHOTO_${assetNum}`;
+        landPhotoPreview = `${environment.apiUrl}/documents/${regId}/${photoKey}`;
       }
       if (!landPhotoName) {
         landPhotoName = (idx === 0 && this.landPhotoFile) ? this.landPhotoFile : `Geo_Land_Site_Asset_${assetNum}.jpg`;
@@ -2129,6 +2137,28 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     });
 
     return groups;
+  }
+
+  onAssetLandPhotoError(assetDoc: any): void {
+    if (!assetDoc) return;
+    const fallback = this.resolveDocumentPreview('LAND_PHOTO');
+    if (fallback && !fallback.includes('/documents/')) {
+      assetDoc.landPhotoPreview = fallback;
+    } else {
+      assetDoc.landPhotoPreview = null;
+    }
+    this.cdr.detectChanges();
+  }
+
+  onAssetPattadarDocError(assetDoc: any): void {
+    if (!assetDoc) return;
+    const fallback = this.resolveDocumentPreview('LAND');
+    if (fallback && !fallback.includes('/documents/')) {
+      assetDoc.pattadarPreview = fallback;
+    } else {
+      assetDoc.pattadarPreview = null;
+    }
+    this.cdr.detectChanges();
   }
 
   getSafePdfUrl(url: string): SafeResourceUrl {
@@ -2744,10 +2774,9 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     this.saveWalletData();
 
     // Map top display metrics
-    // Card 1: TOTAL CREDITS - Aggregated credits across all registered assets (Verified + Pending)
-    const totalAllCredits = verifiedCredits + pendingCredits;
-    this.totalCredit.value = `${totalAllCredits.toFixed(2)} tCO2e`;
-    this.totalCredit.subtext = `Market value: ₹${Math.round(totalAllCredits * pricePerCredit).toLocaleString('en-IN')}`;
+    // Card 1: TOTAL CREDITS - Approved & Verified Carbon Credits ONLY (0.00 tCO2e until Auditor approves)
+    this.totalCredit.value = `${verifiedCredits.toFixed(2)} tCO2e`;
+    this.totalCredit.subtext = `Market value: ₹${Math.round(verifiedCredits * pricePerCredit).toLocaleString('en-IN')}`;
     
     // Card 2: WALLET - Cash balance
     this.assetValuation.value = `₹${Math.round(this.cashWalletBalance).toLocaleString('en-IN')}`;
@@ -3315,30 +3344,28 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
           return parseFloat((areaVal * 6.8).toFixed(2));
         }
       } else if (landType === 'Open Land' || landType === 'Govt Land' || landType === 'House' || landType !== 'Fish Pond') {
-        const tmRes = this.calculatorService.calculateTreeMangroveCarbon({
-          landType: landType,
-          smallTreeCount: p.smallTreeCount !== undefined ? p.smallTreeCount : (quantity > 0 ? quantity : 300),
-          mediumTreeCount: p.mediumTreeCount !== undefined ? p.mediumTreeCount : 120,
-          largeTreeCount: p.largeTreeCount !== undefined ? p.largeTreeCount : 30,
-          mangroveAreaHa: p.mangroveAreaHa !== undefined ? p.mangroveAreaHa : 0,
-          biomassFactor: p.biomassFactor !== undefined ? p.biomassFactor : 1.00,
-          creditRateInr: 120
-        });
-        return tmRes.summary.totalCarbonCredits;
+        const smallCount = p.smallTreeCount !== undefined ? p.smallTreeCount : (quantity > 0 ? quantity : 2001);
+        const mediumCount = p.mediumTreeCount !== undefined ? p.mediumTreeCount : 801;
+        const largeCount = p.largeTreeCount !== undefined ? p.largeTreeCount : 198;
+        const bFactor = p.biomassFactor || 1.00;
+
+        const sCO2 = parseFloat(((smallCount * 0.086) * bFactor).toFixed(2));
+        const mCO2 = parseFloat(((mediumCount * 0.871) * bFactor).toFixed(2));
+        const lCO2 = parseFloat(((largeCount * 3.852) * bFactor).toFixed(2));
+        return parseFloat((sCO2 + mCO2 + lCO2).toFixed(2));
       }
     }
     
-    // Fallback calculation using Verra VM0047/VM0033
-    const tmRes = this.calculatorService.calculateTreeMangroveCarbon({
-      landType: parcel.cropCategory || parcel.user_type_name || 'Open Land',
-      smallTreeCount: parcel.trees ? Math.round(parcel.trees * 0.6) : 300,
-      mediumTreeCount: parcel.trees ? Math.round(parcel.trees * 0.3) : 120,
-      largeTreeCount: parcel.trees ? Math.round(parcel.trees * 0.1) : 30,
-      mangroveAreaHa: 0,
-      biomassFactor: 1.00,
-      creditRateInr: 120
-    });
-    return tmRes.summary.totalCarbonCredits;
+    // Fallback calculation using exact sum of tree categories
+    const sCount = parcel.smallTreeCount !== undefined ? parcel.smallTreeCount : (parcel.trees ? Math.round(parcel.trees * 0.667) : 2001);
+    const mCount = parcel.mediumTreeCount !== undefined ? parcel.mediumTreeCount : (parcel.trees ? Math.round(parcel.trees * 0.267) : 801);
+    const lCount = parcel.largeTreeCount !== undefined ? parcel.largeTreeCount : (parcel.trees ? Math.round(parcel.trees * 0.066) : 198);
+    const bFact = parcel.biomassFactor || 1.00;
+
+    const sVal = parseFloat(((sCount * 0.086) * bFact).toFixed(2));
+    const mVal = parseFloat(((mCount * 0.871) * bFact).toFixed(2));
+    const lVal = parseFloat(((lCount * 3.852) * bFact).toFixed(2));
+    return parseFloat((sVal + mVal + lVal).toFixed(2));
   }
 
   verifyParcel(parcel: any) {
@@ -5196,10 +5223,20 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
         const totalTrees = smallTreeCount + mediumTreeCount + largeTreeCount;
         const biomassFactor = parseFloat(String(parcel.biomassFactor || 1.00)) || 1.00;
 
-        const smallCO2e = parseFloat(((smallTreeCount * 0.086) * biomassFactor).toFixed(2));
-        const mediumCO2e = parseFloat(((mediumTreeCount * 0.871) * biomassFactor).toFixed(2));
-        const largeCO2e = parseFloat(((largeTreeCount * 3.852) * biomassFactor).toFixed(2));
-        const totalCredits = parseFloat((smallCO2e + mediumCO2e + largeCO2e).toFixed(2));
+        const dbCredits = parseFloat(String(parcel.total_carbon_credits || parcel.totalCarbonCredits || parcel.sequestrationRate || parcel.carbon_credits || parcel.carbonCredits || 0));
+        
+        let smallCO2e = parseFloat(((smallTreeCount * 0.086) * biomassFactor).toFixed(2));
+        let mediumCO2e = parseFloat(((mediumTreeCount * 0.871) * biomassFactor).toFixed(2));
+        let largeCO2e = parseFloat(((largeTreeCount * 3.852) * biomassFactor).toFixed(2));
+        let totalCredits = dbCredits > 0 ? dbCredits : parseFloat((smallCO2e + mediumCO2e + largeCO2e).toFixed(2));
+
+        if (dbCredits > 0) {
+          const calcBase = (smallCO2e + mediumCO2e + largeCO2e);
+          const ratio = calcBase > 0 ? (dbCredits / calcBase) : 1.0;
+          smallCO2e = parseFloat((smallCO2e * ratio).toFixed(2));
+          mediumCO2e = parseFloat((mediumCO2e * ratio).toFixed(2));
+          largeCO2e = parseFloat((totalCredits - smallCO2e - mediumCO2e).toFixed(2));
+        }
 
         reports.push({
           reportId: `${pIdx + 1}_LAND`,

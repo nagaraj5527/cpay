@@ -319,6 +319,57 @@ export const initializeDatabase = async (poolParam) => {
             await pool.query("UPDATE cpay.carbon_rate_master SET rate_per_credit = 120.00 WHERE rate_per_credit = 1000.00;");
             await pool.query("UPDATE cpay.carbon_calculation SET market_rate = 120.00 WHERE market_rate = 1000.00 OR market_rate IS NULL;");
             await pool.query("UPDATE cpay.carbon_calculation SET market_value = carbon_credits * market_rate WHERE market_rate = 120.00;");
+
+            try {
+                await pool.query(`
+                    ALTER TABLE cpay.valuator_details ADD COLUMN IF NOT EXISTS valuator_name VARCHAR(200);
+                    ALTER TABLE cpay.valuator_details ADD COLUMN IF NOT EXISTS license_number VARCHAR(100);
+                    ALTER TABLE cpay.valuator_details ADD COLUMN IF NOT EXISTS organization_name VARCHAR(250);
+                    ALTER TABLE cpay.valuator_details ADD COLUMN IF NOT EXISTS mobile_number VARCHAR(15);
+                    ALTER TABLE cpay.valuator_details ADD COLUMN IF NOT EXISTS email VARCHAR(255);
+
+                    UPDATE cpay.valuator_details vd
+                    SET 
+                        valuator_name = COALESCE(vd.valuator_name, vd.name, 'Auditor'),
+                        license_number = COALESCE(vd.license_number, vd.licence),
+                        organization_name = COALESCE(vd.organization_name, vd.name, 'UNFCCC Lead Auditor Agency'),
+                        mobile_number = COALESCE(vd.mobile_number, u.mobile_number),
+                        email = COALESCE(vd.email, u.email)
+                    FROM cpay.users u
+                    WHERE vd.user_id = u.user_id
+                      AND (vd.valuator_name IS NULL OR vd.license_number IS NULL OR vd.organization_name IS NULL OR vd.mobile_number IS NULL OR vd.email IS NULL);
+
+                    CREATE OR REPLACE VIEW cpay.auditor_details AS
+                    SELECT 
+                        valuator_id AS auditor_id,
+                        valuator_id,
+                        user_id,
+                        registration_id,
+                        name,
+                        COALESCE(valuator_name, name) AS auditor_name,
+                        valuator_name,
+                        licence,
+                        COALESCE(license_number, licence) AS license_number,
+                        organization_name,
+                        mobile_number,
+                        email,
+                        address,
+                        aadhaar_number,
+                        pan_number,
+                        aadhaar_file,
+                        pan_file,
+                        licence_file,
+                        is_approved,
+                        remarks,
+                        created_at,
+                        updated_at,
+                        created_by,
+                        updated_by,
+                        deleted_at,
+                        version
+                    FROM cpay.valuator_details;
+                `);
+            } catch (aErr) {}
         } catch (e) {}
 
         // 5. Seed default lookup values if the lookup tables are empty

@@ -31,7 +31,53 @@
 
     <!-- BODY -->
     <div class="wizard-body">
-      <form (ngSubmit)="onSubmit()" #regForm="ngForm" class="registration-form">
+      
+      <!-- ENTERPRISE SUCCESS CONFIRMATION SCREEN -->
+      <div *ngIf="showSuccessModal" class="p-4 p-md-5 text-center my-3 bg-light rounded-4 shadow-sm border border-success border-opacity-25">
+        <div class="mb-4">
+          <div class="d-inline-flex align-items-center justify-content-center bg-success text-white rounded-circle shadow-lg" style="width: 80px; height: 80px;">
+            <i class="bi bi-check-lg" style="font-size: 3rem;"></i>
+          </div>
+        </div>
+        <h3 class="fw-bold text-success mb-2">Auditor Registration Submitted Successfully!</h3>
+        <p class="text-muted fs-6 mb-4 max-w-600 mx-auto">
+          Your official Auditor & Valuator verification application has been recorded in the database and submitted for Super Admin review.
+        </p>
+
+        <div class="card border-0 bg-white shadow-sm rounded-3 p-4 mb-4 text-start mx-auto" style="max-width: 500px;">
+          <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+            <span class="text-muted small text-uppercase font-monospace fw-semibold">Application Reference</span>
+            <span class="badge bg-success bg-opacity-10 text-success font-monospace px-3 py-2 rounded-pill">{{ registrationRefId }}</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-muted small">Applicant Name:</span>
+            <span class="fw-bold text-dark">{{ name }}</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-muted small">Mobile Number:</span>
+            <span class="fw-bold text-dark">{{ countryCode }} {{ mobileNumber }}</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-muted small">License Number:</span>
+            <span class="fw-bold text-dark">{{ licence }}</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="text-muted small">Verification Status:</span>
+            <span class="badge bg-warning text-dark px-2 py-1"><i class="bi bi-clock-history me-1"></i> PENDING VERIFICATION</span>
+          </div>
+        </div>
+
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 mt-4">
+          <button type="button" class="btn btn-success btn-lg px-4 py-2 fw-semibold rounded-pill shadow-sm" (click)="navigateToLogin()">
+            <i class="bi bi-box-arrow-in-right me-2"></i> Proceed to Auditor Login
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-lg px-4 py-2 fw-semibold rounded-pill" [routerLink]="['/']">
+            <i class="bi bi-house-door me-2"></i> Return to Home
+          </button>
+        </div>
+      </div>
+
+      <form *ngIf="!showSuccessModal" (ngSubmit)="onSubmit()" #regForm="ngForm" class="registration-form">
         
         <!-- Alerts -->
         <div *ngIf="errorMessage" class="alert alert-danger py-3 px-4 mb-4 rounded-3 d-flex align-items-center shadow-sm" role="alert">
@@ -39,13 +85,6 @@
           <div>
             <strong>Registration Alert:</strong>
             <div class="small mt-1">{{ errorMessage }}</div>
-          </div>
-        </div>
-        <div *ngIf="successMessage" class="alert alert-success py-3 px-4 mb-4 rounded-3 d-flex align-items-center shadow-sm" role="alert">
-          <i class="bi bi-check-circle-fill me-3 fs-4"></i>
-          <div>
-            <strong>Registration Submitted!</strong>
-            <div class="small mt-1">{{ successMessage }}</div>
           </div>
         </div>
 

@@ -280,7 +280,27 @@ export class ValuatorDashboardComponent implements OnInit {
       next: (res: any) => {
         let backendUsers: UserDetailRecord[] = [];
         if (res && res.success && Array.isArray(res.data)) {
-          res.data.forEach((row: any, qIdx: number) => {
+          const filteredRows = res.data.filter((row: any) => {
+            const role = (row.user_role || '').toUpperCase();
+            const email = (row.email || '').toLowerCase();
+            const uName = (row.user_name || '').toLowerCase();
+            
+            // Exclude Auditor / Valuator / Admin roles from verification request list
+            if (role === 'VALUATOR' || role === 'AUDITOR' || role === 'ADMIN') return false;
+            if (email.startsWith('valuator_') || email.includes('auditor')) return false;
+            if (uName.startsWith('valuator_')) return false;
+
+            // Strict Pincode Filter
+            if (cleanPin && cleanPin.length >= 3) {
+              const rowPin = String(row.pincode || '').replace(/[^0-9]/g, '').trim();
+              if (rowPin && !rowPin.includes(cleanPin) && !cleanPin.includes(rowPin)) {
+                return false;
+              }
+            }
+            return true;
+          });
+
+          filteredRows.forEach((row: any, qIdx: number) => {
             const rowMobile = row.mobile_number || '';
             const fullMob = rowMobile.startsWith('+') ? rowMobile : '+91 ' + rowMobile;
             const regId = row.registration_id || ('USR-REG-' + (row.user_id || ''));
@@ -357,50 +377,53 @@ export class ValuatorDashboardComponent implements OnInit {
                 let pVillage = locParts[0] || row.village_name || 'Agadalalanka';
                 let pDistrict = locParts[1] || row.district_name || 'West Godavari';
 
-                backendUsers.push({
-                  user_id: pItem.registration_id || pItem.assetId || `${regId}_asset_${pIdx + 1}`,
-                  mobile_number: fullMob,
-                  user_name: row.user_name || 'Registered User',
-                  user_type: 'Seller',
-                  aadhaar_number: row.aadhaar_number || 'N/A',
-                  pan_number: row.pan_number || 'N/A',
-                  pincode: pItem.address?.pincode || row.pincode || cleanPin,
-                  status: pStatus,
-                  email: userEmail,
-                  address: {
-                    state: pItem.address?.state || row.state_name || 'Andhra Pradesh',
-                    district: pDistrict,
-                    mandal: pItem.address?.mandal || row.mandal_name || 'Gundugolanu',
-                    village: pVillage,
-                    pincode: pItem.address?.pincode || row.pincode || cleanPin
-                  },
-                  land: {
-                    surveyNo: pSurveyNo,
-                    subDivisionNo: pSubDiv || '2A',
-                    area: typeof pAreaStr === 'number' ? `${pAreaStr} Acres` : String(pAreaStr),
-                    unit: 'Acre',
-                    landType: 'Aquaculture / Agricultural'
-                  },
-                  plantation: {
-                    type: catName,
-                    species: specName,
-                    trees: stockVal,
-                    age: Number(row.plantation_age) || Math.round(cDays / 30) || 6,
-                    cultureDays: cDays
-                  },
-                  carbonCredits: pCredits,
-                  rejectionReason: pItem.rejectionReason || row.rejection_remarks || '',
-                  documents: {
-                    pan: 'PAN_Verification.pdf',
-                    aadhaar: 'Aadhaar_Verification.pdf',
-                    land: 'Aquaculture_Registration.pdf',
-                    landPhoto: 'Land_Photograph.jpg',
-                    license: 'Compliance_Doc.pdf',
-                    signature: 'Applicant_Signature.png'
-                  },
-                  submitted_at: row.created_at || new Date().toISOString(),
-                  rawParcel: pItem
-                });
+                const pPin = String(pItem.address?.pincode || row.pincode || '').replace(/[^0-9]/g, '').trim();
+                if (!cleanPin || !pPin || pPin.includes(cleanPin) || cleanPin.includes(pPin)) {
+                  backendUsers.push({
+                    user_id: pItem.registration_id || pItem.assetId || `${regId}_asset_${pIdx + 1}`,
+                    mobile_number: fullMob,
+                    user_name: row.user_name || 'Registered User',
+                    user_type: 'Seller',
+                    aadhaar_number: row.aadhaar_number || 'N/A',
+                    pan_number: row.pan_number || 'N/A',
+                    pincode: pPin || cleanPin,
+                    status: pStatus,
+                    email: userEmail,
+                    address: {
+                      state: pItem.address?.state || row.state_name || 'Andhra Pradesh',
+                      district: pDistrict,
+                      mandal: pItem.address?.mandal || row.mandal_name || 'Gundugolanu',
+                      village: pVillage,
+                      pincode: pPin || cleanPin
+                    },
+                    land: {
+                      surveyNo: pSurveyNo,
+                      subDivisionNo: pSubDiv || '2A',
+                      area: typeof pAreaStr === 'number' ? `${pAreaStr} Acres` : String(pAreaStr),
+                      unit: 'Acre',
+                      landType: 'Aquaculture / Agricultural'
+                    },
+                    plantation: {
+                      type: catName,
+                      species: specName,
+                      trees: stockVal,
+                      age: Number(row.plantation_age) || Math.round(cDays / 30) || 6,
+                      cultureDays: cDays
+                    },
+                    carbonCredits: pCredits,
+                    rejectionReason: pItem.rejectionReason || row.rejection_remarks || '',
+                    documents: {
+                      pan: 'PAN_Verification.pdf',
+                      aadhaar: 'Aadhaar_Verification.pdf',
+                      land: 'Aquaculture_Registration.pdf',
+                      landPhoto: 'Land_Photograph.jpg',
+                      license: 'Compliance_Doc.pdf',
+                      signature: 'Applicant_Signature.png'
+                    },
+                    submitted_at: row.created_at || new Date().toISOString(),
+                    rawParcel: pItem
+                  });
+                }
               });
             } else {
               if (finalSurveyNo && finalSubDiv && !finalSurveyNo.includes('/')) {
@@ -410,53 +433,56 @@ export class ValuatorDashboardComponent implements OnInit {
                 finalSurveyNo = '231/2A';
               }
 
-              backendUsers.push({
-                user_id: regId,
-                mobile_number: fullMob,
-                user_name: row.user_name || 'Registered User',
-                user_type: isSellerUser ? 'Seller' : 'Buyer',
-                aadhaar_number: row.aadhaar_number || 'N/A',
-                pan_number: row.pan_number || 'N/A',
-                pincode: row.pincode || cleanPin,
-                status: rowStatus,
-                email: userEmail,
-                address: {
-                  state: row.state_name || 'Telangana',
-                  district: row.district_name || 'K.V.Rangareddy',
-                  mandal: row.mandal_name || 'Serilingampally',
-                  village: row.village_name || 'Lingampalli',
-                  pincode: row.pincode || cleanPin
-                },
-                land: isSellerUser ? {
-                  surveyNo: finalSurveyNo,
-                  subDivisionNo: finalSubDiv || '2A',
-                  area: (row.total_area !== null && row.total_area !== undefined && Number(row.total_area) > 0) ? (parseFloat(row.total_area) + ' ' + (row.land_unit_name || 'Acre') + 's') : '10.00 Acres',
-                  unit: row.land_unit_name || 'Acre',
-                  landType: row.land_type_name || 'Aquaculture / Agricultural'
-                } : undefined,
-                plantation: isSellerUser ? {
-                  type: catName,
-                  species: specName,
-                  trees: stockVal,
-                  age: Number(row.plantation_age) || Math.round(cDays / 30) || 6,
-                  cultureDays: cDays
-                } : undefined,
-                carbonCredits: row.carbon_credits ? Math.round(Number(row.carbon_credits)) : 318.59,
-                rejectionReason: row.rejection_remarks || '',
-                documents: {
-                  pan: 'PAN_Verification.pdf',
-                  aadhaar: 'Aadhaar_Verification.pdf',
-                  land: 'Aquaculture_Registration.pdf',
-                  landPhoto: 'Land_Photograph.jpg',
-                  license: 'Compliance_Doc.pdf',
-                  signature: 'Applicant_Signature.png'
-                },
-                submitted_at: row.created_at || new Date().toISOString(),
-                rawParcel: {
-                  ...row,
-                  parcel_name: `Cooperative Parcel ${finalSurveyNo}`
-                }
-              });
+              const rowPin = String(row.pincode || '').replace(/[^0-9]/g, '').trim();
+              if (!cleanPin || !rowPin || rowPin.includes(cleanPin) || cleanPin.includes(rowPin)) {
+                backendUsers.push({
+                  user_id: regId,
+                  mobile_number: fullMob,
+                  user_name: row.user_name || 'Registered User',
+                  user_type: isSellerUser ? 'Seller' : 'Buyer',
+                  aadhaar_number: row.aadhaar_number || 'N/A',
+                  pan_number: row.pan_number || 'N/A',
+                  pincode: rowPin || cleanPin,
+                  status: rowStatus,
+                  email: userEmail,
+                  address: {
+                    state: row.state_name || 'Telangana',
+                    district: row.district_name || 'K.V.Rangareddy',
+                    mandal: row.mandal_name || 'Serilingampally',
+                    village: row.village_name || 'Lingampalli',
+                    pincode: rowPin || cleanPin
+                  },
+                  land: isSellerUser ? {
+                    surveyNo: finalSurveyNo,
+                    subDivisionNo: finalSubDiv || '2A',
+                    area: (row.total_area !== null && row.total_area !== undefined && Number(row.total_area) > 0) ? (parseFloat(row.total_area) + ' ' + (row.land_unit_name || 'Acre') + 's') : '10.00 Acres',
+                    unit: row.land_unit_name || 'Acre',
+                    landType: row.land_type_name || 'Aquaculture / Agricultural'
+                  } : undefined,
+                  plantation: isSellerUser ? {
+                    type: catName,
+                    species: specName,
+                    trees: stockVal,
+                    age: Number(row.plantation_age) || Math.round(cDays / 30) || 6,
+                    cultureDays: cDays
+                  } : undefined,
+                  carbonCredits: row.carbon_credits ? Math.round(Number(row.carbon_credits)) : 318.59,
+                  rejectionReason: row.rejection_remarks || '',
+                  documents: {
+                    pan: 'PAN_Verification.pdf',
+                    aadhaar: 'Aadhaar_Verification.pdf',
+                    land: 'Aquaculture_Registration.pdf',
+                    landPhoto: 'Land_Photograph.jpg',
+                    license: 'Compliance_Doc.pdf',
+                    signature: 'Applicant_Signature.png'
+                  },
+                  submitted_at: row.created_at || new Date().toISOString(),
+                  rawParcel: {
+                    ...row,
+                    parcel_name: `Cooperative Parcel ${finalSurveyNo}`
+                  }
+                });
+              }
             }
           });
         }
@@ -574,8 +600,117 @@ export class ValuatorDashboardComponent implements OnInit {
 
   // 1. FULL VIEW Modal Inspection
   openFullView(user: UserDetailRecord): void {
-    this.selectedUserForView = user;
+    this.selectedUserForView = { ...user };
     this.showFullViewModal = true;
+
+    // Check if rawParcel has asset-specific details (from Seller Dashboard added asset)
+    if (user.rawParcel) {
+      const p = user.rawParcel;
+      if (p.address || p.location) {
+        let locStr = p.location || '';
+        let parts = locStr.split(',').map((s: string) => s.trim());
+        this.selectedUserForView.address = {
+          pincode: p.address?.pincode || p.pincode || user.address.pincode,
+          state: p.address?.state || parts[2] || user.address.state,
+          district: p.address?.district || parts[1] || user.address.district,
+          mandal: p.address?.mandal || user.address.mandal,
+          village: p.address?.village || parts[0] || user.address.village
+        };
+      }
+      if (p.surveyNo || p.survey_number || p.survey?.surveyNo) {
+        let sNo = p.surveyNo || p.survey_number || p.survey?.surveyNo;
+        let sSub = p.subDivisionNo || p.sub_division_number || p.survey?.subDivisionNo || '2A';
+        if (sNo && sSub && !sNo.includes('/')) sNo = `${sNo}/${sSub}`;
+        this.selectedUserForView.land = {
+          surveyNo: sNo,
+          subDivisionNo: sSub,
+          area: p.totalPondArea || p.area || (p.survey?.area ? `${p.survey.area} Acres` : '10.00 Acres'),
+          unit: 'Acre',
+          landType: p.landType || 'Aquaculture / Agricultural'
+        };
+      }
+      if (p.plantationCategory || p.aquaculture_type || p.category_name) {
+        this.selectedUserForView.plantation = {
+          type: p.plantationCategory || p.aquaculture_type || p.category_name || 'Agroforestry Plantation',
+          species: p.plantSpecies || p.fish_name || p.prawn_name || p.species_name || 'Neem (Azadirachta indica)',
+          trees: Number(p.stock_quantity || p.number_of_plants || p.plantCount) || 200000,
+          age: Number(p.plantation_age || p.age) || 6,
+          cultureDays: Number(p.culture_days) || 180
+        };
+      }
+      if (p.totalCarbonCredits || p.carbonCredits) {
+        this.selectedUserForView.carbonCredits = parseFloat(String(p.totalCarbonCredits || p.carbonCredits));
+      }
+    }
+
+    // Fetch 100% accurate database records for newly registered users or DB profiles
+    if (user.user_id && this.valuatorService) {
+      this.valuatorService.getRegistrationDetails(user.user_id).subscribe({
+        next: (res: any) => {
+          if (res && res.success && res.data && this.selectedUserForView) {
+            const d = res.data;
+            const reg = d.registration || {};
+            const entity = d.entityDetails || {};
+            const addr = d.addressDetails || {};
+            const land = Array.isArray(d.landDetails) && d.landDetails.length > 0 ? d.landDetails[0] : null;
+            const plant = Array.isArray(d.plantationDetails) && d.plantationDetails.length > 0 ? d.plantationDetails[0] : null;
+            const aqua = Array.isArray(d.aquacultureDetails) && d.aquacultureDetails.length > 0 ? d.aquacultureDetails[0] : null;
+            const carbon = d.carbonCalculation || null;
+
+            if (entity.full_name || entity.organization_name || entity.department_name) {
+              this.selectedUserForView.user_name = entity.full_name || entity.organization_name || entity.department_name;
+            }
+            if (entity.aadhaar_number && entity.aadhaar_number !== 'N/A') {
+              this.selectedUserForView.aadhaar_number = entity.aadhaar_number;
+            }
+            if (entity.pan_number && entity.pan_number !== 'N/A') {
+              this.selectedUserForView.pan_number = entity.pan_number;
+            }
+            if (entity.email || reg.email) {
+              this.selectedUserForView.email = entity.email || reg.email;
+            }
+            if (addr.state_name || addr.district_name || addr.pincode) {
+              this.selectedUserForView.address = {
+                pincode: addr.pincode || this.selectedUserForView.address.pincode,
+                state: addr.state_name || this.selectedUserForView.address.state,
+                district: addr.district_name || this.selectedUserForView.address.district,
+                mandal: addr.mandal_name || this.selectedUserForView.address.mandal,
+                village: addr.village_name || this.selectedUserForView.address.village
+              };
+            }
+            if (land) {
+              let sNo = land.survey_number || '231/2A';
+              let sSub = land.sub_division_number || '2A';
+              if (sNo && sSub && !sNo.includes('/')) sNo = `${sNo}/${sSub}`;
+              this.selectedUserForView.land = {
+                surveyNo: sNo,
+                subDivisionNo: sSub,
+                area: land.total_area ? `${land.total_area} ${land.unit_name || 'Acre'}s` : '10.00 Acres',
+                unit: land.unit_name || 'Acre',
+                landType: land.land_type_name || 'Aquaculture / Agricultural'
+              };
+            }
+            if (plant || aqua) {
+              const activeP = plant || aqua;
+              this.selectedUserForView.plantation = {
+                type: activeP.category_name || activeP.aquaculture_type || 'Agroforestry Plantation',
+                species: activeP.species_name || activeP.fish_species || activeP.prawn_species || 'Neem (Azadirachta indica)',
+                trees: Number(activeP.number_of_plants || activeP.stock_quantity) || 200000,
+                age: Number(activeP.plantation_age) || 6,
+                cultureDays: Number(activeP.culture_days) || 180
+              };
+            }
+            if (carbon && carbon.carbon_credits) {
+              this.selectedUserForView.carbonCredits = Number(carbon.carbon_credits);
+            }
+            this.cdr.detectChanges();
+          }
+        },
+        error: (err: any) => {
+          console.warn('Could not fetch additional registration DB details:', err);
+        }
+      });
+    }
   }
 
   closeFullView(): void {

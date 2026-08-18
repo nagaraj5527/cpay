@@ -434,44 +434,55 @@ export const registerValuator = async (data) => {
         name,
         address,
         licence,
+        licenseNumber,
+        organizationName,
         aadhaarNumber,
         panNumber,
         aadhaarFileName,
         panFileName,
-        licenceFileName
+        licenceFileName,
+        email: customEmail
     } = data;
 
     if (!mobileNumber || !name || !address || !licence) {
         throw new Error("Required registration fields (mobileNumber, name, address, licence) are missing");
     }
 
+    const cleanMobile = mobileNumber.replace(/[^0-9]/g, '');
+    const email = customEmail || `valuator_${cleanMobile}@cpay.com`;
+    let user;
+
     const existingUser = await authRepository.findUserByMobile(mobileNumber);
     if (existingUser) {
-        throw new Error("User with this mobile number is already registered");
+        user = existingUser;
+    } else {
+        const userId = uuidv4();
+        const dummyPassword = uuidv4();
+        const passwordHash = await bcrypt.hash(dummyPassword, 4);
+
+        user = await authRepository.createUser({
+            userId,
+            roleId: 'e89456bc-365a-493e-bc5d-df12b694b8e2', // VALUATOR / AUDITOR role
+            email,
+            mobileNumber,
+            passwordHash,
+            userTypeName: 'Valuator'
+        });
     }
 
-    const userId = uuidv4();
     const valuatorId = uuidv4();
-    const cleanMobile = mobileNumber.replace(/[^0-9]/g, '');
-    const email = `valuator_${cleanMobile}@cpay.com`;
-    const dummyPassword = uuidv4();
-    const passwordHash = await bcrypt.hash(dummyPassword, 4);
-
-    const user = await authRepository.createUser({
-        userId,
-        roleId: 'e89456bc-365a-493e-bc5d-df12b694b8e2', // VALUATOR role
-        email,
-        mobileNumber,
-        passwordHash,
-        userTypeName: 'Valuator'
-    });
-
     const valuatorDetails = await authRepository.createValuatorDetails({
         valuatorId,
-        userId,
+        userId: user.user_id || user.userId,
         name,
-        address,
+        valuatorName: name,
+        auditorName: name,
         licence,
+        licenseNumber: licenseNumber || licence,
+        organizationName: organizationName || name || 'UNFCCC Lead Auditor Agency',
+        mobileNumber,
+        email,
+        address,
         aadhaarNumber,
         panNumber,
         aadhaarFileName,
@@ -483,12 +494,12 @@ export const registerValuator = async (data) => {
         success: true,
         message: "Auditor registration submitted successfully. Pending Super Admin verification.",
         data: {
-            userId: user.user_id,
+            userId: user.user_id || user.userId,
             valuatorId: valuatorDetails.valuator_id,
             name: valuatorDetails.name,
-            mobileNumber: user.mobile_number,
+            mobileNumber: user.mobile_number || mobileNumber,
             licence: valuatorDetails.licence,
-            isApproved: valuatorDetails.is_approved
+            isApproved: valuatorDetails.is_approved || false
         }
     };
 };

@@ -199,6 +199,9 @@ export class ValuatorRegistrationComponent {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
   }
 
+  showSuccessModal: boolean = false;
+  registrationRefId: string = '';
+
   onSubmit(): void {
     this.errorMessage = '';
     this.successMessage = '';
@@ -214,20 +217,6 @@ export class ValuatorRegistrationComponent {
     }
 
     const fullMobile = this.countryCode + this.mobileNumber;
-    try {
-      const existingStr = localStorage.getItem('cpay_valuators_list');
-      const vList = existingStr ? JSON.parse(existingStr) : [];
-      const exists = vList.some((v: any) => {
-        const clean = (s: string) => (s || '').replace(/[^0-9]/g, '');
-        return clean(v.mobile_number) === clean(fullMobile);
-      });
-      if (exists) {
-        alert('The provided details are already existed.');
-        return;
-      }
-    } catch (e) {
-      console.error(e);
-    }
 
     if (!this.isAadhaarValid) {
       this.errorMessage = 'Please enter a valid 12-digit Aadhaar Card Number';
@@ -309,21 +298,24 @@ export class ValuatorRegistrationComponent {
 
     this.authService.registerValuator(payload).subscribe({
       next: (res: any) => {
-        this.successMessage = 'Auditor registration submitted successfully! Pending Super Admin verification. Redirecting to Auditor login...';
-        setTimeout(() => {
-          this.isSubmitting = false;
-          this.router.navigate(['/login/valuator']);
-        }, 400);
+        this.isSubmitting = false;
+        this.registrationRefId = res?.data?.valuatorId || res?.data?.userId || 'AUD-' + Math.floor(100000 + Math.random() * 900000);
+        this.successMessage = res?.message || 'Auditor registration submitted successfully! Pending Super Admin verification.';
+        this.showSuccessModal = true;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       },
       error: (err: any) => {
         console.error('Valuator registration response:', err);
-        this.successMessage = 'Auditor registration submitted successfully! Pending Super Admin verification. Redirecting to Auditor login...';
-        setTimeout(() => {
-          this.isSubmitting = false;
-          this.router.navigate(['/login/valuator']);
-        }, 400);
+        this.isSubmitting = false;
+        const msg = err?.error?.message || err?.error?.error || 'Registration failed. Please check your details and try again.';
+        this.errorMessage = msg;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     });
+  }
+
+  navigateToLogin(): void {
+    this.router.navigate(['/login/valuator']);
   }
 }
 
