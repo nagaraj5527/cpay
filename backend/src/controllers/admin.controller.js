@@ -12,12 +12,19 @@ export const getUsers = asyncHandler(async (req, res) => {
     const query = `
         SELECT 
             u.user_id, 
-            u.email, 
+            u.username, 
+            (CASE 
+                WHEN ind.email IS NOT NULL AND ind.email NOT LIKE '%@cpay.org' AND ind.email NOT LIKE '%@cpay.com' AND ind.email NOT LIKE 'user_%' AND ind.email NOT LIKE 'valuator_%' THEN ind.email
+                WHEN org.email IS NOT NULL AND org.email NOT LIKE '%@cpay.org' AND org.email NOT LIKE '%@cpay.com' AND org.email NOT LIKE 'user_%' AND org.email NOT LIKE 'valuator_%' THEN org.email
+                WHEN vd.email IS NOT NULL AND vd.email NOT LIKE '%@cpay.org' AND vd.email NOT LIKE '%@cpay.com' AND vd.email NOT LIKE 'user_%' AND vd.email NOT LIKE 'valuator_%' THEN vd.email
+                WHEN u.email IS NOT NULL AND u.email NOT LIKE '%@cpay.org' AND u.email NOT LIKE '%@cpay.com' AND u.email NOT LIKE 'user_%' AND u.email NOT LIKE 'valuator_%' THEN u.email
+                ELSE NULL 
+            END) AS email, 
             u.mobile_number, 
             u.is_active, 
             COALESCE(r.role_name, 'SELLER') AS role_name, 
             u.created_at,
-            COALESCE(ind.full_name, org.organization_name, gov.department_name, vd.name, SPLIT_PART(u.email, '@', 1)) AS entity_name,
+            COALESCE(ind.full_name, org.organization_name, gov.department_name, vd.name, 'User') AS entity_name,
             COALESCE(ind.pan_number, ind.aadhaar_number, vd.licence, 'N/A') AS identity_doc
         FROM cpay.users u 
         LEFT JOIN cpay.roles r ON u.role_id = r.role_id 
@@ -92,10 +99,15 @@ export const getRegistrations = asyncHandler(async (req, res) => {
             r.submitted_at, 
             r.created_at, 
             u.mobile_number, 
-            u.email, 
+            (CASE 
+                WHEN ind.email IS NOT NULL AND ind.email NOT LIKE '%@cpay.org' AND ind.email NOT LIKE '%@cpay.com' AND ind.email NOT LIKE 'user_%' AND ind.email NOT LIKE 'valuator_%' THEN ind.email
+                WHEN org.email IS NOT NULL AND org.email NOT LIKE '%@cpay.org' AND org.email NOT LIKE '%@cpay.com' AND org.email NOT LIKE 'user_%' AND org.email NOT LIKE 'valuator_%' THEN org.email
+                WHEN u.email IS NOT NULL AND u.email NOT LIKE '%@cpay.org' AND u.email NOT LIKE '%@cpay.com' AND u.email NOT LIKE 'user_%' AND u.email NOT LIKE 'valuator_%' THEN u.email
+                ELSE NULL 
+            END) AS email, 
             rt.registration_type_name, 
             ut.user_type_name, 
-            COALESCE(ind.full_name, org.organization_name, gov.department_name) AS entity_name 
+            COALESCE(ind.full_name, org.organization_name, gov.department_name, 'Applicant') AS entity_name 
         FROM cpay.registration r 
         JOIN cpay.users u ON r.user_id = u.user_id 
         JOIN cpay.registration_types rt ON r.registration_type_id = rt.registration_type_id 
@@ -121,8 +133,8 @@ export const updateRegistration = asyncHandler(async (req, res) => {
     const previousStatus = currentRes.rows[0].application_status;
 
     await pool.query(
-        "UPDATE cpay.registration SET application_status = $1, updated_at = CURRENT_TIMESTAMP WHERE registration_id = $2",
-        [applicationStatus, registrationId]
+        "UPDATE cpay.registration SET application_status = $1, remarks = COALESCE($2, remarks), updated_at = CURRENT_TIMESTAMP WHERE registration_id = $3",
+        [applicationStatus, remarks, registrationId]
     );
 
     // Save history
@@ -155,7 +167,20 @@ Valuators Management
 // GET all valuators
 export const getValuators = asyncHandler(async (req, res) => {
     const query = `
-        SELECT vd.valuator_id, vd.name, vd.address, vd.licence, vd.is_approved, u.mobile_number, u.email, vd.created_at, u.user_id AS user_id 
+        SELECT 
+            vd.valuator_id, 
+            COALESCE(vd.name, vd.valuator_name, 'Auditor') AS name, 
+            vd.address, 
+            vd.licence, 
+            vd.is_approved, 
+            u.mobile_number, 
+            (CASE 
+                WHEN vd.email IS NOT NULL AND vd.email NOT LIKE '%@cpay.org' AND vd.email NOT LIKE '%@cpay.com' AND vd.email NOT LIKE 'valuator_%' AND vd.email NOT LIKE 'user_%' THEN vd.email
+                WHEN u.email IS NOT NULL AND u.email NOT LIKE '%@cpay.org' AND u.email NOT LIKE '%@cpay.com' AND u.email NOT LIKE 'valuator_%' AND u.email NOT LIKE 'user_%' THEN u.email
+                ELSE NULL 
+            END) AS email, 
+            vd.created_at, 
+            u.user_id AS user_id 
         FROM cpay.valuator_details vd 
         JOIN cpay.users u ON vd.user_id = u.user_id 
         ORDER BY vd.created_at DESC;
@@ -197,10 +222,15 @@ export const getPendingQueue = asyncHandler(async (req, res) => {
         SELECT 
             r.registration_id AS id,
             'REGISTRATION' AS category,
-            COALESCE(ind.full_name, org.organization_name, gov.department_name, u.email, 'Applicant') AS applicant_name,
+            COALESCE(ind.full_name, org.organization_name, gov.department_name, 'Applicant') AS applicant_name,
             COALESCE(rt.registration_type_name, 'Seller / Farmer') AS applicant_type,
             u.mobile_number,
-            u.email,
+            (CASE 
+                WHEN ind.email IS NOT NULL AND ind.email NOT LIKE '%@cpay.org' AND ind.email NOT LIKE '%@cpay.com' AND ind.email NOT LIKE 'user_%' AND ind.email NOT LIKE 'valuator_%' THEN ind.email
+                WHEN org.email IS NOT NULL AND org.email NOT LIKE '%@cpay.org' AND org.email NOT LIKE '%@cpay.com' AND org.email NOT LIKE 'user_%' AND org.email NOT LIKE 'valuator_%' THEN org.email
+                WHEN u.email IS NOT NULL AND u.email NOT LIKE '%@cpay.org' AND u.email NOT LIKE '%@cpay.com' AND u.email NOT LIKE 'user_%' AND u.email NOT LIKE 'valuator_%' THEN u.email
+                ELSE NULL 
+            END) AS email,
             COALESCE(ind.pan_number, ind.aadhaar_number, 'N/A') AS identity_doc,
             r.application_status AS status,
             TO_CHAR(r.created_at, 'DD Mon YYYY') AS date,
@@ -218,10 +248,14 @@ export const getPendingQueue = asyncHandler(async (req, res) => {
         SELECT 
             vd.valuator_id AS id,
             'VALUATOR' AS category,
-            vd.name AS applicant_name,
+            COALESCE(vd.name, vd.valuator_name, 'Auditor') AS applicant_name,
             'Auditor / Valuator' AS applicant_type,
             u.mobile_number,
-            u.email,
+            (CASE 
+                WHEN vd.email IS NOT NULL AND vd.email NOT LIKE '%@cpay.org' AND vd.email NOT LIKE '%@cpay.com' AND vd.email NOT LIKE 'valuator_%' AND vd.email NOT LIKE 'user_%' THEN vd.email
+                WHEN u.email IS NOT NULL AND u.email NOT LIKE '%@cpay.org' AND u.email NOT LIKE '%@cpay.com' AND u.email NOT LIKE 'valuator_%' AND u.email NOT LIKE 'user_%' THEN u.email
+                ELSE NULL 
+            END) AS email,
             COALESCE(vd.licence, 'Licence Pending') AS identity_doc,
             'PENDING' AS status,
             TO_CHAR(vd.created_at, 'DD Mon YYYY') AS date,

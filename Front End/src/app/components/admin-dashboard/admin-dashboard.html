@@ -522,7 +522,7 @@
                 <tbody>
                   <tr *ngFor="let u of usersList">
                     <td class="fw-bold">{{ u.displayName }}</td>
-                    <td>{{ u.email }}</td>
+                    <td>{{ (u.email && !u.email.includes('@cpay.org') && !u.email.includes('@cpay.com') && !u.email.startsWith('user_') && !u.email.startsWith('valuator_')) ? u.email : 'N/A' }}</td>
                     <td>{{ u.mobile_number }}</td>
                     <td><span class="badge bg-primary-light text-primary px-2 py-1">{{ u.displayRole }}</span></td>
                     <td>{{ u.region }}</td>
@@ -580,7 +580,7 @@
                       </span>
                     </td>
                     <td>{{ item.mobile_number }}</td>
-                    <td>{{ item.email || 'N/A' }}</td>
+                    <td>{{ (item.email && !item.email.includes('@cpay.org') && !item.email.includes('@cpay.com') && !item.email.startsWith('user_') && !item.email.startsWith('valuator_')) ? item.email : 'N/A' }}</td>
                     <td><code>{{ item.identity_doc || 'N/A' }}</code></td>
                     <td class="text-muted small">{{ item.date }}</td>
                     <td>

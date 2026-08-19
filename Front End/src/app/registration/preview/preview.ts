@@ -61,6 +61,8 @@ export class PreviewComponent implements OnInit {
   smallTreeCount: number = 0;
   mediumTreeCount: number = 0;
   largeTreeCount: number = 0;
+  biomassFactor: number = 1.0;
+  mangroveAreaHa: number = 0;
   ponds: any[] = [];
 
   qtyFeedConsumed: number = 0;
@@ -174,7 +176,9 @@ export class PreviewComponent implements OnInit {
       this.age = pld.age || this.age;
       this.smallTreeCount = pld.smallTreeCount !== undefined && pld.smallTreeCount !== null ? Number(pld.smallTreeCount) : 300;
       this.mediumTreeCount = pld.mediumTreeCount !== undefined && pld.mediumTreeCount !== null ? Number(pld.mediumTreeCount) : 120;
-      this.largeTreeCount = pld.largeTreeCount !== undefined && pld.largeTreeCount !== null ? Number(pld.largeTreeCount) : 30;
+      this.largeTreeCount = pld.largeTreeCount !== undefined && pld.largeTreeCount !== null ? Number(pld.largeTreeCount) : 80;
+      this.biomassFactor = pld.biomassFactor !== undefined && pld.biomassFactor !== null ? Number(pld.biomassFactor) : 1.0;
+      this.mangroveAreaHa = pld.mangroveAreaHa !== undefined && pld.mangroveAreaHa !== null ? Number(pld.mangroveAreaHa) : 0;
 
       if (this.landType === 'Open Land' || this.landType === 'Govt Land' || this.landType === 'House' || this.plantationType === 'Tree') {
         const treeSum = (this.smallTreeCount || 0) + (this.mediumTreeCount || 0) + (this.largeTreeCount || 0);
@@ -327,6 +331,11 @@ export class PreviewComponent implements OnInit {
         plantationAge: this.age,
         plantationArea: this.plantationArea,
         areaUnitId: this.plantationUnit,
+        smallTreeCount: this.smallTreeCount || 0,
+        mediumTreeCount: this.mediumTreeCount || 0,
+        largeTreeCount: this.largeTreeCount || 0,
+        biomassFactor: this.biomassFactor || 1.0,
+        mangroveAreaHa: this.mangroveAreaHa || 0,
         remarks: 'Registered via web wizard'
       },
       aquacultureDetails: {
@@ -508,6 +517,11 @@ export class PreviewComponent implements OnInit {
           totalPondArea: `${this.plantationArea || 10.00} Hectares`,
           location: `${this.village || 'Agadalalanka'}, ${this.district || 'Andhra Pradesh'}`,
           trees: this.quantity || 120,
+          smallTreeCount: this.smallTreeCount || 0,
+          mediumTreeCount: this.mediumTreeCount || 0,
+          largeTreeCount: this.largeTreeCount || 0,
+          biomassFactor: this.biomassFactor || 1.0,
+          mangroveAreaHa: this.mangroveAreaHa || 0,
           status: 'Pending',
           auditor: 'Ecosystem Standards Board',
           date: new Date().toLocaleDateString('en-US'),
@@ -551,6 +565,11 @@ export class PreviewComponent implements OnInit {
             age: this.age,
             area: this.plantationArea,
             unit: this.plantationUnit,
+            smallTreeCount: this.smallTreeCount || 0,
+            mediumTreeCount: this.mediumTreeCount || 0,
+            largeTreeCount: this.largeTreeCount || 0,
+            biomassFactor: this.biomassFactor || 1.0,
+            mangroveAreaHa: this.mangroveAreaHa || 0,
             ...this.plantationDataRaw
           },
           latitude: this.latitude || (14.4450 + (Math.random() - 0.5) * 0.01),

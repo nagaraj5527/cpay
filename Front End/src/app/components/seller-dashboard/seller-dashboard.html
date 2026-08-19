@@ -641,14 +641,14 @@
                   </div>
                   <div class="tree-metric-box">
                     <span class="tree-metric-label">CATEGORY TOTAL</span>
-                    <span class="tree-metric-val val-green">{{ ((asset.smallTreeCount || 0) * 0.086) | number:'1.2-2' }} t</span>
+                    <span class="tree-metric-val val-green">{{ ((asset.smallTreeCount || 0) * 0.086 * (asset.biomassFactor || 1.0)) | number:'1.2-2' }} t</span>
                   </div>
                 </div>
               </div>
 
               <!-- Total Carbon Footer Highlight Bar -->
               <div class="tree-total-carbon-bar">
-                TOTAL CARBON: {{ ((asset.smallTreeCount || 0) * 0.086 / 3.667) | number:'1.2-2' }} t C
+                TOTAL CARBON: {{ ((asset.smallTreeCount || 0) * 0.086 * (asset.biomassFactor || 1.0) / 3.667) | number:'1.2-2' }} t C
               </div>
 
               <!-- Micro Footer -->
@@ -701,14 +701,14 @@
                   </div>
                   <div class="tree-metric-box">
                     <span class="tree-metric-label">CATEGORY TOTAL</span>
-                    <span class="tree-metric-val val-blue">{{ ((asset.mediumTreeCount || 0) * 0.871) | number:'1.2-2' }} t</span>
+                    <span class="tree-metric-val val-blue">{{ ((asset.mediumTreeCount || 0) * 0.871 * (asset.biomassFactor || 1.0)) | number:'1.2-2' }} t</span>
                   </div>
                 </div>
               </div>
 
               <!-- Total Carbon Footer Highlight Bar -->
               <div class="tree-total-carbon-bar">
-                TOTAL CARBON: {{ ((asset.mediumTreeCount || 0) * 0.871 / 3.667) | number:'1.2-2' }} t C
+                TOTAL CARBON: {{ ((asset.mediumTreeCount || 0) * 0.871 * (asset.biomassFactor || 1.0) / 3.667) | number:'1.2-2' }} t C
               </div>
 
               <!-- Micro Footer -->
@@ -761,14 +761,14 @@
                   </div>
                   <div class="tree-metric-box">
                     <span class="tree-metric-label">CATEGORY TOTAL</span>
-                    <span class="tree-metric-val val-purple">{{ ((asset.largeTreeCount || 0) * 3.852) | number:'1.2-2' }} t</span>
+                    <span class="tree-metric-val val-purple">{{ ((asset.largeTreeCount || 0) * 3.852 * (asset.biomassFactor || 1.0)) | number:'1.2-2' }} t</span>
                   </div>
                 </div>
               </div>
 
               <!-- Total Carbon Footer Highlight Bar -->
               <div class="tree-total-carbon-bar">
-                TOTAL CARBON: {{ ((asset.largeTreeCount || 0) * 3.852 / 3.667) | number:'1.2-2' }} t C
+                TOTAL CARBON: {{ ((asset.largeTreeCount || 0) * 3.852 * (asset.biomassFactor || 1.0) / 3.667) | number:'1.2-2' }} t C
               </div>
 
               <!-- Micro Footer -->
@@ -1414,7 +1414,7 @@
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div>
                       <label class="form-label small fw-bold text-dark mb-1" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Total Number of Trees / Plants *</label>
-                      <input type="number" class="form-control" [(ngModel)]="newLandPlantation.quantity" placeholder="e.g. 500" style="border-radius: 14px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                      <input type="number" class="form-control" [(ngModel)]="newLandPlantation.quantity" (ngModelChange)="onNewLandQuantityChange()" placeholder="e.g. 500" style="border-radius: 14px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
                     </div>
                     <div>
                       <label class="form-label small fw-bold text-dark mb-1" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Average Age (Years) *</label>
@@ -1439,17 +1439,17 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                       <div>
                         <label class="form-label small fw-bold text-dark mb-1" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Small Trees (DBH &lt; 15 cm)</label>
-                        <input type="number" min="0" [(ngModel)]="newLandPlantation.smallTreeCount" placeholder="300" class="form-control" style="border-radius: 14px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                        <input type="number" min="0" [(ngModel)]="newLandPlantation.smallTreeCount" (ngModelChange)="onNewLandTreeCountChange()" placeholder="300" class="form-control" style="border-radius: 14px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
                       </div>
                       <div>
                         <label class="form-label small fw-bold text-dark mb-1" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Medium Trees (DBH 15–30 cm)</label>
-                        <input type="number" min="0" [(ngModel)]="newLandPlantation.mediumTreeCount" placeholder="120" class="form-control" style="border-radius: 14px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                        <input type="number" min="0" [(ngModel)]="newLandPlantation.mediumTreeCount" (ngModelChange)="onNewLandTreeCountChange()" placeholder="120" class="form-control" style="border-radius: 14px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
                       </div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                       <div>
                         <label class="form-label small fw-bold text-dark mb-1" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Large Trees (DBH &gt; 30 cm)</label>
-                        <input type="number" min="0" [(ngModel)]="newLandPlantation.largeTreeCount" placeholder="30" class="form-control" style="border-radius: 14px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                        <input type="number" min="0" [(ngModel)]="newLandPlantation.largeTreeCount" (ngModelChange)="onNewLandTreeCountChange()" placeholder="80" class="form-control" style="border-radius: 14px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
                       </div>
                       <div>
                         <label class="form-label small fw-bold text-dark mb-1" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Existing Mangrove Area (Hectares)</label>

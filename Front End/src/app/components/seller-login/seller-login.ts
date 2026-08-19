@@ -71,6 +71,13 @@ export class SellerLogin implements OnInit {
       this.parseMobileNumber(loginMobile);
       localStorage.removeItem('loginMobile');
     }
+
+    if (localStorage.getItem('registrationSuccess') === 'true') {
+      this.successMessage = this.isValuatorOnly
+        ? 'Auditor registration submitted successfully! Enter your OTP to login.'
+        : 'Registration submitted successfully! Enter your OTP to login.';
+      localStorage.removeItem('registrationSuccess');
+    }
   }
 
   parseMobileNumber(fullNumber: string): void {
@@ -163,8 +170,8 @@ export class SellerLogin implements OnInit {
         if (backendMessage) {
           if (backendMessage.includes('register') || backendMessage.includes('register first')) {
             this.errorMessage = 'firstly u need to register then only login';
-          } else if (backendMessage.includes('processing') || backendMessage.includes('wait until') || backendMessage.includes('approval')) {
-            this.errorMessage = 'Your Valuator/Auditor account is pending approval by the Super Admin.';
+          } else if (backendMessage.includes('processing') || backendMessage.includes('wait until') || backendMessage.includes('approval') || backendMessage.includes('Auditor account') || backendMessage.includes('Valuator')) {
+            this.errorMessage = 'Your Auditor account is pending Super Admin approval. Please wait until approval before logging in.';
           } else {
             this.errorMessage = backendMessage;
           }
@@ -267,8 +274,8 @@ export class SellerLogin implements OnInit {
         const errStr = err.error?.message || '';
 
         if (this.loginType.toLowerCase() === 'valuator') {
-          if (errStr.includes('processing') || errStr.includes('process') || errStr.includes('approval') || errStr.includes('wait until') || errStr.includes('Valuator details not found')) {
-            this.errorMessage = 'Your Valuator/Auditor account is pending approval by the Super Admin.';
+          if (errStr.includes('processing') || errStr.includes('process') || errStr.includes('approval') || errStr.includes('wait until') || errStr.includes('Auditor account') || errStr.includes('Valuator')) {
+            this.errorMessage = 'Your Auditor account is pending Super Admin approval. Please wait until approval before logging in.';
           } else {
             this.errorMessage = errStr || 'Invalid OTP. Please try again.';
           }

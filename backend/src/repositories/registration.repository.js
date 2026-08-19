@@ -682,9 +682,26 @@ export const savePlantationDetails = async (data) => {
 
         remarks,
 
-        plantSpeciesId
+        plantSpeciesId,
+
+        smallTreeCount = 0,
+        mediumTreeCount = 0,
+        largeTreeCount = 0,
+        biomassFactor = 1.00,
+        mangroveAreaHa = 0,
+        small_tree_count,
+        medium_tree_count,
+        large_tree_count,
+        biomass_factor,
+        mangrove_area_ha
 
     } = data;
+
+    const finalSmall = small_tree_count !== undefined && small_tree_count !== null ? Number(small_tree_count) : Number(smallTreeCount || 0);
+    const finalMed = medium_tree_count !== undefined && medium_tree_count !== null ? Number(medium_tree_count) : Number(mediumTreeCount || 0);
+    const finalLg = large_tree_count !== undefined && large_tree_count !== null ? Number(large_tree_count) : Number(largeTreeCount || 0);
+    const finalBiomass = biomass_factor !== undefined && biomass_factor !== null ? Number(biomass_factor) : Number(biomassFactor || 1.00);
+    const finalMangrove = mangrove_area_ha !== undefined && mangrove_area_ha !== null ? Number(mangrove_area_ha) : Number(mangroveAreaHa || 0);
 
     // Delete existing records first to prevent constraint issues on one-to-many schema
     await pool.query("DELETE FROM cpay.plantation_details WHERE registration_id = $1", [registrationId]);
@@ -714,6 +731,16 @@ export const savePlantationDetails = async (data) => {
 
             plant_species_id,
 
+            small_tree_count,
+
+            medium_tree_count,
+
+            large_tree_count,
+
+            biomass_factor,
+
+            mangrove_area_ha,
+
             created_at,
 
             updated_at
@@ -742,6 +769,16 @@ export const savePlantationDetails = async (data) => {
             $9,
 
             $10,
+
+            $11,
+
+            $12,
+
+            $13,
+
+            $14,
+
+            $15,
 
             CURRENT_TIMESTAMP,
 
@@ -776,7 +813,17 @@ export const savePlantationDetails = async (data) => {
 
             remarks,
 
-            plantSpeciesId
+            plantSpeciesId,
+
+            finalSmall,
+
+            finalMed,
+
+            finalLg,
+
+            finalBiomass,
+
+            finalMangrove
 
         ]
 

@@ -84,12 +84,12 @@ export const sendOtp = async (data) => {
     }
 
     if (userType.toLowerCase() === 'valuator') {
-        const valuator = await authRepository.findValuatorByUserId(user.user_id);
+        const valuator = await authRepository.findValuatorByUserId(user.user_id, mobileNumber);
         if (!valuator) {
-            throw new Error("Valuator details not found. Please contact support.");
+            throw new Error("firstly u need to register then only login");
         }
         if (!valuator.is_approved) {
-            throw new Error("you are in processing ,wait until Super Admin Approval");
+            throw new Error("Your Auditor account is pending Super Admin approval. Please wait until approval before logging in.");
         }
     }
 
@@ -293,8 +293,12 @@ export const verifyOtp = async (data) => {
     await authRepository.updateLastLogin(
 
         user.user_id
-
     );
+
+    const valuator = await authRepository.findValuatorByUserId(user.user_id, mobileNumber);
+    if (valuator && !valuator.is_approved) {
+        throw new Error("Your Auditor account is pending Super Admin approval. Please wait until approval before logging in.");
+    }
 
     /*
     ============================================
@@ -449,7 +453,7 @@ export const registerValuator = async (data) => {
     }
 
     const cleanMobile = mobileNumber.replace(/[^0-9]/g, '');
-    const email = customEmail || `valuator_${cleanMobile}@cpay.com`;
+    const realEmail = (customEmail && !customEmail.includes('@cpay.com') && !customEmail.includes('@cpay.org') && !customEmail.startsWith('valuator_') && !customEmail.startsWith('user_')) ? customEmail : null;
     let user;
 
     const existingUser = await authRepository.findUserByMobile(mobileNumber);
@@ -463,7 +467,7 @@ export const registerValuator = async (data) => {
         user = await authRepository.createUser({
             userId,
             roleId: 'e89456bc-365a-493e-bc5d-df12b694b8e2', // VALUATOR / AUDITOR role
-            email,
+            email: realEmail,
             mobileNumber,
             passwordHash,
             userTypeName: 'Valuator'
@@ -481,7 +485,7 @@ export const registerValuator = async (data) => {
         licenseNumber: licenseNumber || licence,
         organizationName: organizationName || name || 'UNFCCC Lead Auditor Agency',
         mobileNumber,
-        email,
+        email: realEmail,
         address,
         aadhaarNumber,
         panNumber,

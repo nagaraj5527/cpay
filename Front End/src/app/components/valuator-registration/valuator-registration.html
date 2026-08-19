@@ -80,6 +80,14 @@
       <form *ngIf="!showSuccessModal" (ngSubmit)="onSubmit()" #regForm="ngForm" class="registration-form">
         
         <!-- Alerts -->
+        <div *ngIf="successMessage" class="alert alert-success py-3 px-4 mb-4 rounded-3 d-flex align-items-center shadow-sm" role="alert">
+          <i class="bi bi-check-circle-fill me-3 fs-4 text-success"></i>
+          <div>
+            <strong>Success:</strong>
+            <div class="small mt-1">{{ successMessage }}</div>
+          </div>
+        </div>
+
         <div *ngIf="errorMessage" class="alert alert-danger py-3 px-4 mb-4 rounded-3 d-flex align-items-center shadow-sm" role="alert">
           <i class="bi bi-exclamation-triangle-fill me-3 fs-4"></i>
           <div>

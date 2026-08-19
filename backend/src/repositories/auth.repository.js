@@ -1,4 +1,5 @@
 import pool from '../config/postgres.js';
+import { v4 as uuidv4 } from 'uuid';
 
 /*
 ====================================================
@@ -316,9 +317,7 @@ export const createValuatorDetails = async (data) => {
     const finalRegistrationId = uuidv4();
     const finalValuatorName = valuatorName || auditorName || name || 'Auditor';
     const finalLicenseNumber = licenseNumber || licence || 'N/A';
-    const finalOrgName = organizationName || (name ? `${name} Audit Agency` : 'UNFCCC Lead Auditor Agency');
-    const cleanMobile = mobileNumber ? mobileNumber.trim() : null;
-    const finalEmail = email || (cleanMobile ? `valuator_${cleanMobile.replace(/[^0-9]/g, '')}@cpay.com` : null);
+    const finalEmail = (email && !email.includes('@cpay.com') && !email.includes('@cpay.org') && !email.startsWith('valuator_') && !email.startsWith('user_')) ? email : null;
 
     // Check if valuator details already exist for this user or mobile number
     const checkQuery = `

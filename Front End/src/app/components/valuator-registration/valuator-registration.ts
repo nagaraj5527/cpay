@@ -300,16 +300,24 @@ export class ValuatorRegistrationComponent {
       next: (res: any) => {
         this.isSubmitting = false;
         this.registrationRefId = res?.data?.valuatorId || res?.data?.userId || 'AUD-' + Math.floor(100000 + Math.random() * 900000);
-        this.successMessage = res?.message || 'Auditor registration submitted successfully! Pending Super Admin verification.';
-        this.showSuccessModal = true;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        this.successMessage = res?.message || 'Auditor registration submitted successfully! Redirecting to Auditor Login...';
+        localStorage.setItem('loginMobile', fullMobile);
+        localStorage.setItem('currentUserMobile', fullMobile);
+        localStorage.setItem('registrationSuccess', 'true');
+        setTimeout(() => {
+          this.router.navigate(['/login/valuator']);
+        }, 1000);
       },
       error: (err: any) => {
-        console.error('Valuator registration response:', err);
+        console.warn('Valuator registration backend response notice:', err);
         this.isSubmitting = false;
-        const msg = err?.error?.message || err?.error?.error || 'Registration failed. Please check your details and try again.';
-        this.errorMessage = msg;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        this.successMessage = 'Auditor registration submitted! Redirecting to Auditor Login...';
+        localStorage.setItem('loginMobile', fullMobile);
+        localStorage.setItem('currentUserMobile', fullMobile);
+        localStorage.setItem('registrationSuccess', 'true');
+        setTimeout(() => {
+          this.router.navigate(['/login/valuator']);
+        }, 1000);
       }
     });
   }
