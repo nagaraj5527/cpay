@@ -23,6 +23,13 @@ interface ActivityLog {
   timestamp: string;
 }
 
+export interface UploadedPdfItem {
+  id: string;
+  name: string;
+  url: string | ArrayBuffer | null;
+  fileSize?: string;
+}
+
 @Component({
   selector: 'app-seller-dashboard',
   standalone: true,
@@ -110,6 +117,80 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
   cashWalletBalance: number = 0;
   walletTransactions: any[] = [];
   isSyncingWithDB: boolean = false;
+
+  // PDF Upload properties for Seller Dashboard (N-numbers supported)
+  uploadedPdfs: UploadedPdfItem[] = [];
+  isUploadingPdf: boolean = false;
+  pdfUploadSuccessMsg: string = '';
+  private pdfMsgTimeoutId: any = null;
+
+  onPdfUpload(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = input?.files;
+    if (files && files.length > 0) {
+      const fileList: File[] = Array.from(files);
+      let validAdded = 0;
+
+      fileList.forEach((file) => {
+        if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
+          alert(`File "${file.name}" is not a valid PDF file.`);
+          return;
+        }
+
+        let objectUrl: string | null = null;
+        try {
+          objectUrl = URL.createObjectURL(file);
+        } catch (e) {
+          objectUrl = null;
+        }
+
+        const sizeKb = (file.size / 1024).toFixed(1);
+        const item: UploadedPdfItem = {
+          id: `pdf_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          name: file.name,
+          url: objectUrl,
+          fileSize: `${sizeKb} KB`
+        };
+
+        // INSTANT UI UPDATE (0ms latency)
+        this.uploadedPdfs = [...this.uploadedPdfs, item];
+        validAdded++;
+
+        // Read data URL asynchronously for background storage
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          if (e.target?.result) {
+            item.url = e.target.result as string;
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+
+      if (validAdded > 0) {
+        this.pdfUploadSuccessMsg = validAdded > 1
+          ? `${validAdded} PDF files added!`
+          : `PDF "${fileList[0].name}" added!`;
+
+        if (this.pdfMsgTimeoutId) {
+          clearTimeout(this.pdfMsgTimeoutId);
+        }
+        this.pdfMsgTimeoutId = setTimeout(() => {
+          this.pdfUploadSuccessMsg = '';
+          this.pdfMsgTimeoutId = null;
+          this.cdr.detectChanges();
+        }, 3000);
+      }
+
+      input.value = '';
+      this.cdr.detectChanges();
+    }
+  }
+
+  removeUploadedPdf(pdfId: string): void {
+    this.uploadedPdfs = this.uploadedPdfs.filter(pdf => pdf.id !== pdfId);
+    this.pdfUploadSuccessMsg = '';
+    this.cdr.detectChanges();
+  }
 
   // Trade fields
   tradeType: 'BUY' | 'SELL' = 'SELL';
@@ -203,6 +284,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
   newLandAddressError: string = '';
   newLandLatitude: number | null = null;
   newLandLongitude: number | null = null;
+  newLandCapturedTimestamp: string = '';
   newLandImagePreview: string | ArrayBuffer | null = null;
   newLandCameraStream: MediaStream | null = null;
   isNewLandCameraActive: boolean = false;
@@ -3631,6 +3713,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     if (!input.files || input.files.length === 0) return;
     const file = input.files[0];
     this.newLandPhotoSource = 'gallery';
+    this.newLandCapturedTimestamp = new Date().toLocaleString();
 
     const reader = new FileReader();
     reader.onload = (e: any) => {
@@ -3717,6 +3800,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     this.newLandImagePreview = canvas.toDataURL('image/png');
     this.newLandPhotoSource = 'camera';
+    this.newLandCapturedTimestamp = new Date().toLocaleString();
     this.stopNewLandCamera();
     this.fetchGpsForPhoto();
     this.cdr.detectChanges();

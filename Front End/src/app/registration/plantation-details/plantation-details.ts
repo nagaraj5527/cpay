@@ -70,6 +70,13 @@ export interface PondData {
   area: number;
 }
 
+export interface UploadedPdfItem {
+  id: string;
+  name: string;
+  url: string | ArrayBuffer | null;
+  fileSize?: string;
+}
+
 export function createDefaultPond(pondIndex: number, aquaType: string = 'Fish', species: string = 'IMC'): PondData {
   const specDefaults = SPECIES_DEFAULTS[species] || SPECIES_DEFAULTS['IMC'];
   return {
@@ -230,6 +237,92 @@ export class PlantationDetailsComponent implements OnInit, OnDestroy {
   activePondIndex: number = 0;
   validationErrors: string[] = [];
 
+  // PDF Upload properties (N-numbers of PDFs supported)
+  uploadedPdfs: UploadedPdfItem[] = [];
+  isUploadingPdf: boolean = false;
+  pdfUploadSuccessMsg: string = '';
+  private pdfMsgTimeoutId: any = null;
+
+  onPdfUpload(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = input?.files;
+    if (files && files.length > 0) {
+      const fileList: File[] = Array.from(files);
+      let validAdded = 0;
+
+      fileList.forEach((file) => {
+        if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
+          alert(`File "${file.name}" is not a valid PDF file.`);
+          return;
+        }
+
+        // Instant Object URL (0ms latency)
+        let objectUrl: string | null = null;
+        try {
+          objectUrl = URL.createObjectURL(file);
+        } catch (e) {
+          objectUrl = null;
+        }
+
+        const sizeKb = (file.size / 1024).toFixed(1);
+        const item: UploadedPdfItem = {
+          id: `pdf_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          name: file.name,
+          url: objectUrl,
+          fileSize: `${sizeKb} KB`
+        };
+
+        // INSTANT UI UPDATE - render chip immediately in 0ms!
+        this.uploadedPdfs = [...this.uploadedPdfs, item];
+        validAdded++;
+
+        // Async draft sync in background so UI never blocks
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          if (e.target?.result) {
+            item.url = e.target.result as string;
+            this.syncPdfDraftData();
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+
+      if (validAdded > 0) {
+        this.pdfUploadSuccessMsg = validAdded > 1
+          ? `${validAdded} PDF files added!`
+          : `PDF "${fileList[0].name}" added!`;
+
+        this.syncPdfDraftData();
+
+        if (this.pdfMsgTimeoutId) {
+          clearTimeout(this.pdfMsgTimeoutId);
+        }
+        this.pdfMsgTimeoutId = setTimeout(() => {
+          this.pdfUploadSuccessMsg = '';
+          this.pdfMsgTimeoutId = null;
+        }, 3000);
+      }
+
+      input.value = '';
+    }
+  }
+
+  removeUploadedPdf(pdfId: string): void {
+    this.uploadedPdfs = this.uploadedPdfs.filter(pdf => pdf.id !== pdfId);
+    this.pdfUploadSuccessMsg = '';
+    this.syncPdfDraftData();
+  }
+
+  private syncPdfDraftData(): void {
+    const currentDraft = this.registrationService.getDraftData('SellerPlantationDetails') || {};
+    this.registrationService.setDraftData('SellerPlantationDetails', {
+      ...currentDraft,
+      uploadedPdfs: this.uploadedPdfs,
+      uploadedPdfName: this.uploadedPdfs.length > 0 ? this.uploadedPdfs[0].name : '',
+      uploadedPdfUrl: this.uploadedPdfs.length > 0 ? this.uploadedPdfs[0].url : null
+    });
+  }
+
   constructor(
     private router: Router,
     private calculatorService: CalculatorService,
@@ -260,6 +353,18 @@ export class PlantationDetailsComponent implements OnInit, OnDestroy {
       this.biomassFactor = details.biomassFactor ?? null;
       this.biomassFactorDisplay = this.getBiomassFactorLabel(this.biomassFactor);
 
+      if (details.uploadedPdfs && Array.isArray(details.uploadedPdfs)) {
+        this.uploadedPdfs = details.uploadedPdfs;
+      } else if (details.uploadedPdfName) {
+        this.uploadedPdfs = [{
+          id: 'pdf_legacy_1',
+          name: details.uploadedPdfName,
+          url: details.uploadedPdfUrl || null
+        }];
+      } else {
+        this.uploadedPdfs = [];
+      }
+
       if (details.ponds && Array.isArray(details.ponds) && details.ponds.length > 0) {
         this.ponds = details.ponds;
         this.activePondIndex = 0;
@@ -277,6 +382,7 @@ export class PlantationDetailsComponent implements OnInit, OnDestroy {
       this.mangroveAreaHa = null;
       this.biomassFactor = null;
       this.biomassFactorDisplay = '';
+      this.uploadedPdfs = [];
     }
 
     if (this.selectedLandType === 'Fish Pond' && (this.selectedPlantationType === 'Fish' || this.selectedPlantationType === 'Prawns')) {
@@ -293,6 +399,9 @@ export class PlantationDetailsComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.pollingIntervalId) {
       clearInterval(this.pollingIntervalId);
+    }
+    if (this.pdfMsgTimeoutId) {
+      clearTimeout(this.pdfMsgTimeoutId);
     }
   }
 
@@ -572,7 +681,10 @@ export class PlantationDetailsComponent implements OnInit, OnDestroy {
         otherCosts: p1.otherCosts,
         salePrice: p1.salePrice,
         biomassCarbonPct: p1.biomassCarbonPct,
-        interventions: p1.interventions
+        interventions: p1.interventions,
+        uploadedPdfs: this.uploadedPdfs,
+        uploadedPdfName: this.uploadedPdfs.length > 0 ? this.uploadedPdfs[0].name : '',
+        uploadedPdfUrl: this.uploadedPdfs.length > 0 ? this.uploadedPdfs[0].url : null
       };
       this.registrationService.setDraftData('SellerPlantationDetails', aquaPayload);
     } else {
@@ -608,7 +720,10 @@ export class PlantationDetailsComponent implements OnInit, OnDestroy {
         mediumTreeCount: this.mediumTreeCount || 0,
         largeTreeCount: this.largeTreeCount || 0,
         mangroveAreaHa: this.mangroveAreaHa || 0,
-        biomassFactor: this.biomassFactor || 1.00
+        biomassFactor: this.biomassFactor || 1.00,
+        uploadedPdfs: this.uploadedPdfs,
+        uploadedPdfName: this.uploadedPdfs.length > 0 ? this.uploadedPdfs[0].name : '',
+        uploadedPdfUrl: this.uploadedPdfs.length > 0 ? this.uploadedPdfs[0].url : null
       });
     }
 

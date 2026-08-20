@@ -309,6 +309,12 @@
 
         </div>
 
+        <!-- Helper Note when Category / Plantation Type is not yet selected -->
+        <div *ngIf="selectedLandType && !selectedPlantationType" style="background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 12px; padding: 20px; text-align: center; color: #64748b; font-size: 13.5px; margin-top: 20px;">
+          <i class="bi bi-info-circle-fill me-1" style="color: var(--primary-teal);"></i>
+          Please select a <strong>Category / Plantation Type</strong> above to view species, pond registration, and field inputs.
+        </div>
+
         <!-- ================= MULTI-POND AQUACULTURE MANAGEMENT SECTION ================= -->
         <div *ngIf="selectedLandType === 'Fish Pond' && (selectedPlantationType === 'Fish' || selectedPlantationType === 'Prawns')" class="mt-4">
 
@@ -360,9 +366,41 @@
                     <span class="badge px-4 py-2 text-white" style="background-color: #047857; border-radius: 20px; font-weight: 700; font-size: 15px; letter-spacing: 0.5px;">
                         🌊 {{ getActivePond().name }} Details ({{ getActivePond().aquacultureType }})
                     </span>
-                    <span class="text-muted fw-semibold" style="font-size: 13px;">
-                        Active Pond {{ activePondIndex + 1 }} of {{ ponds.length }}
-                    </span>
+
+                    <div class="d-flex align-items-center gap-3 flex-wrap justify-content-end">
+                        <span class="text-muted fw-semibold" style="font-size: 13px;">
+                            Active Pond {{ activePondIndex + 1 }} of {{ ponds.length }}
+                        </span>
+
+                        <!-- Upload PDF Button & N-Numbers of PDFs List (Fish Pond Right Corner) -->
+                        <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+                            <input type="file" #fishPondPdfInput (change)="onPdfUpload($event)" accept=".pdf" multiple style="display: none;">
+                            
+                            <button type="button" 
+                                    class="btn-upload-pdf-openland d-flex align-items-center gap-2"
+                                    (click)="fishPondPdfInput.click()"
+                                    title="Upload PDF Documents"
+                                    style="background: #ffffff; color: #0f172a; border: 1.5px solid #d8e6e2; border-radius: 12px; padding: 7px 18px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04); outline: none;">
+                                <i class="bi bi-file-earmark-pdf-fill text-danger me-1" style="color: #e11d48 !important; font-size: 18px;"></i>
+                                <span style="color: #0f172a; font-weight: 700;">Upload PDF</span>
+                            </button>
+
+                            <!-- N-Numbers of Uploaded PDF Pills/Chips -->
+                            <div *ngFor="let pdf of uploadedPdfs" class="pdf-uploaded-badge d-flex align-items-center gap-2 px-3 py-1.5 rounded-pill bg-light border" style="border-radius: 20px; border: 1px solid #cbd5e1; background-color: #f8fafc;">
+                                <i class="bi bi-file-earmark-check-fill text-success" style="font-size: 15px;"></i>
+                                <span class="fw-semibold text-dark text-truncate" style="max-width: 150px; font-size: 12.5px;" [title]="pdf.name">{{ pdf.name }}</span>
+                                <span class="text-danger fw-bold ms-1" style="cursor: pointer; font-size: 15px; line-height: 1;" (click)="removeUploadedPdf(pdf.id)" title="Remove PDF">×</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div *ngIf="pdfUploadSuccessMsg" class="alert alert-success d-flex align-items-center justify-content-between p-3 mb-3 rounded-3" style="background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; font-size: 13.5px;">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+                        <span>{{ pdfUploadSuccessMsg }}</span>
+                    </div>
+                    <button type="button" class="btn-close border-0 bg-transparent text-secondary p-0" (click)="pdfUploadSuccessMsg = ''" aria-label="Close">✕</button>
                 </div>
 
                 <!-- Species Selection for Active Pond -->
@@ -624,76 +662,117 @@
         </div>
 
         <!-- Standard Fields (shown for Standard Land Types e.g. Tree, Crop, Mangrove, Garden) -->
-        <div class="form-grid mt-4" *ngIf="selectedPlantationType && selectedLandType !== 'Fish Pond'">
+        <div *ngIf="selectedPlantationType && selectedLandType !== 'Fish Pond'" 
+             class="open-land-container p-4 border rounded-3 mt-4 mb-4 text-start" 
+             style="background-color: #ffffff; border: 2px solid #00a499 !important; border-radius: 16px; box-shadow: 0 10px 25px rgba(0, 164, 153, 0.08);">
 
-            <!-- Number of Stocked Units / Trees -->
-            <div class="form-group">
-                <label>
-                    Total Number of Trees / Plants *
-                </label>
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                <span class="badge px-4 py-2 text-white" style="background-color: #047857; border-radius: 20px; font-weight: 700; font-size: 15px; letter-spacing: 0.5px;">
+                    🌱 {{ selectedLandType || 'Open Land' }} Details ({{ selectedPlantationType }})
+                </span>
 
-                <input
-                    type="number"
-                    name="quantity"
-                    [(ngModel)]="quantity"
-                    placeholder="Enter total quantity">
+                <!-- Upload PDF Button & N-Numbers of PDFs List (Straight across on right side corner) -->
+                <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+                    <input type="file" #openLandPdfInput (change)="onPdfUpload($event)" accept=".pdf" multiple style="display: none;">
+                    
+                    <button type="button" 
+                            class="btn-upload-pdf-openland d-flex align-items-center gap-2"
+                            (click)="openLandPdfInput.click()"
+                            title="Upload PDF Documents"
+                            style="background: #ffffff; color: #0f172a; border: 1.5px solid #d8e6e2; border-radius: 12px; padding: 7px 18px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04); outline: none;">
+                        <i class="bi bi-file-earmark-pdf-fill text-danger me-1" style="color: #e11d48 !important; font-size: 18px;"></i>
+                        <span style="color: #0f172a; font-weight: 700;">Upload PDF</span>
+                    </button>
+
+                    <!-- N-Numbers of Uploaded PDF Pills/Chips -->
+                    <div *ngFor="let pdf of uploadedPdfs" class="pdf-uploaded-badge d-flex align-items-center gap-2 px-3 py-1.5 rounded-pill bg-light border" style="border-radius: 20px; border: 1px solid #cbd5e1; background-color: #f8fafc;">
+                        <i class="bi bi-file-earmark-check-fill text-success" style="font-size: 15px;"></i>
+                        <span class="fw-semibold text-dark text-truncate" style="max-width: 150px; font-size: 12.5px;" [title]="pdf.name">{{ pdf.name }}</span>
+                        <span class="text-danger fw-bold ms-1" style="cursor: pointer; font-size: 15px; line-height: 1;" (click)="removeUploadedPdf(pdf.id)" title="Remove PDF">×</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- Age / Culture Period -->
-            <div class="form-group">
-                <label>
-                    Average Age (Years) *
-                </label>
-
-                <input
-                    type="number"
-                    name="age"
-                    [(ngModel)]="age"
-                    placeholder="Enter age in years">
+            <div *ngIf="pdfUploadSuccessMsg" class="alert alert-success d-flex align-items-center justify-content-between p-3 mb-3 rounded-3" style="background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; font-size: 13.5px;">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+                    <span>{{ pdfUploadSuccessMsg }}</span>
+                </div>
+                <button type="button" class="btn-close border-0 bg-transparent text-secondary p-0" (click)="pdfUploadSuccessMsg = ''" aria-label="Close">✕</button>
             </div>
 
-            <!-- Area -->
-            <div class="form-group">
-                <label>
-                    Plantation Area *
-                </label>
+            <div class="form-grid">
 
-                <input
-                    type="number"
-                    name="area"
-                    [(ngModel)]="area"
-                    placeholder="Enter area size">
+                <!-- Number of Stocked Units / Trees -->
+                <div class="form-group">
+                    <label>
+                        Total Number of Trees / Plants *
+                    </label>
+
+                    <input
+                        type="number"
+                        name="quantity"
+                        [(ngModel)]="quantity"
+                        placeholder="Enter total quantity">
+                </div>
+
+                <!-- Age / Culture Period -->
+                <div class="form-group">
+                    <label>
+                        Average Age (Years) *
+                    </label>
+
+                    <input
+                        type="number"
+                        name="age"
+                        [(ngModel)]="age"
+                        placeholder="Enter age in years">
+                </div>
+
+                <!-- Area -->
+                <div class="form-group">
+                    <label>
+                        Plantation Area *
+                    </label>
+
+                    <input
+                        type="number"
+                        name="area"
+                        [(ngModel)]="area"
+                        placeholder="Enter area size">
+                </div>
+
+                <!-- Unit -->
+                <div class="form-group">
+                    <label>Unit *</label>
+                    <app-custom-select [options]="['Acre', 'Hectare', 'Sq.ft', 'Guntha', 'Sq.Yards']" [(ngModel)]="unit" name="unit" placeholder="Select Unit"></app-custom-select>
+                </div>
+
+                <!-- Simple Tree & Mangrove Inputs (For Open Land, Govt Land, House) -->
+                <ng-container *ngIf="selectedLandType === 'Open Land' || selectedLandType === 'Govt Land' || selectedLandType === 'House'">
+                    <div class="form-group">
+                        <label>Small Trees (DBH &lt; 15 cm)</label>
+                        <input type="number" min="0" name="smallTreeCount" [(ngModel)]="smallTreeCount" placeholder="300">
+                    </div>
+                    <div class="form-group">
+                        <label>Medium Trees (DBH 15–30 cm)</label>
+                        <input type="number" min="0" name="mediumTreeCount" [(ngModel)]="mediumTreeCount" placeholder="120">
+                    </div>
+                    <div class="form-group">
+                        <label>Large Trees (DBH &gt; 30 cm)</label>
+                        <input type="number" min="0" name="largeTreeCount" [(ngModel)]="largeTreeCount" placeholder="30">
+                    </div>
+                    <div class="form-group">
+                        <label>Existing Mangrove Area (Hectares)</label>
+                        <input type="number" step="0.1" min="0" name="mangroveAreaHa" [(ngModel)]="mangroveAreaHa" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Biomass Factor</label>
+                        <app-custom-select [options]="biomassFactorOptions" [(ngModel)]="biomassFactorDisplay" name="biomassFactorDisplay" placeholder="Select Biomass Factor" (ngModelChange)="onBiomassFactorSelect($event)"></app-custom-select>
+                    </div>
+                </ng-container>
+
             </div>
-
-            <!-- Unit -->
-            <div class="form-group">
-                <label>Unit *</label>
-                <app-custom-select [options]="['Acre', 'Hectare', 'Sq.ft', 'Guntha', 'Sq.Yards']" [(ngModel)]="unit" name="unit" placeholder="Select Unit"></app-custom-select>
-            </div>
-
-            <!-- Simple Tree & Mangrove Inputs (For Open Land, Govt Land, House) -->
-            <ng-container *ngIf="selectedLandType === 'Open Land' || selectedLandType === 'Govt Land' || selectedLandType === 'House'">
-                <div class="form-group">
-                    <label>Small Trees (DBH &lt; 15 cm)</label>
-                    <input type="number" min="0" name="smallTreeCount" [(ngModel)]="smallTreeCount" placeholder="300">
-                </div>
-                <div class="form-group">
-                    <label>Medium Trees (DBH 15–30 cm)</label>
-                    <input type="number" min="0" name="mediumTreeCount" [(ngModel)]="mediumTreeCount" placeholder="120">
-                </div>
-                <div class="form-group">
-                    <label>Large Trees (DBH &gt; 30 cm)</label>
-                    <input type="number" min="0" name="largeTreeCount" [(ngModel)]="largeTreeCount" placeholder="30">
-                </div>
-                <div class="form-group">
-                    <label>Existing Mangrove Area (Hectares)</label>
-                    <input type="number" step="0.1" min="0" name="mangroveAreaHa" [(ngModel)]="mangroveAreaHa" placeholder="0">
-                </div>
-                <div class="form-group">
-                    <label>Biomass Factor</label>
-                    <app-custom-select [options]="biomassFactorOptions" [(ngModel)]="biomassFactorDisplay" name="biomassFactorDisplay" placeholder="Select Biomass Factor" (ngModelChange)="onBiomassFactorSelect($event)"></app-custom-select>
-                </div>
-            </ng-container>
 
         </div>
 

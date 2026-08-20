@@ -677,3 +677,10 @@ body{
         width:100%;
     }
 }
+
+.btn-upload-pdf-openland:hover {
+    border-color: #00a499 !important;
+    background-color: #f0fdff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 164, 153, 0.15) !important;
+}

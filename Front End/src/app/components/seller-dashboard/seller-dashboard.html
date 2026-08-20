@@ -995,26 +995,37 @@
                   </div>
 
                   <!-- ================= IMAGE PREVIEW ================= -->
-                  <div *ngIf="newLandImagePreview && !isNewLandCameraActive" class="preview-card" style="margin-top: 16px; text-align: center; width: 100%;">
-                    <h5 style="margin-bottom: 12px; font-size: 15px; font-weight: 800; color: #0f172a;">Captured Land Photograph (GPS Watermarked)</h5>
-                    <div style="position: relative; width: 100%; max-width: 480px; margin: 0 auto; border-radius: 16px; overflow: hidden; border: 2px solid #7bc043; background: #000000;">
-                      <img [src]="newLandImagePreview" alt="Captured Land Photo" style="width: 100%; height: 280px; object-fit: contain; display: block; background: #000000;">
-                      <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(15, 23, 42, 0.88); padding: 10px 14px; text-align: left; border-left: 4px solid #00a499; display: flex; flex-direction: column; gap: 2px;">
-                        <div style="color: #ffffff; font-size: 13px; font-weight: 700;">📍 GPS Watermark</div>
-                        <div style="color: #cbd5e1; font-size: 11.5px;">Lat: {{ newLandLatitude || 17.492677 }}, Long: {{ newLandLongitude || 78.402428 }}</div>
+                  <div *ngIf="newLandImagePreview && !isNewLandCameraActive" class="preview-card" style="margin-top: 16px; text-align: center; display: flex; flex-direction: column; align-items: center; width: 100%;">
+                    <h5 style="margin-bottom: 12px; font-size: 15px; font-weight: 800; color: #0f172a; letter-spacing: -0.2px;">Captured Land Photograph (GPS Watermarked)</h5>
+                    <div style="position: relative; width: 100%; max-width: 480px; margin: 0 auto; border-radius: 16px; overflow: hidden; border: 2px solid #7bc043; box-shadow: 0 8px 24px rgba(123, 192, 67, 0.15); background: #000000;">
+                      <img [src]="newLandImagePreview" alt="Captured Land Photo" style="width: 100%; height: 300px; object-fit: cover; display: block; border: none;">
+                      
+                      <!-- GPS Watermark Banner Overlay (Matching Image 2) -->
+                      <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(15, 23, 42, 0.88); padding: 10px 14px; text-align: left; border-left: 4px solid #00a499; display: flex; flex-direction: column; gap: 3px; z-index: 2;">
+                        <div style="color: #ffffff; font-size: 13.5px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                          <span>📍</span>
+                          <span>Latitude: {{ (newLandLatitude || 17.287505) | number:'1.6-6' }} | Longitude: {{ (newLandLongitude || 78.608930) | number:'1.6-6' }}</span>
+                        </div>
+                        <div style="color: #cbd5e1; font-size: 11.5px; font-weight: 500; display: flex; align-items: center; gap: 6px;">
+                          <span>🗓️</span>
+                          <span>{{ newLandCapturedTimestamp || '8/18/2026, 12:21:57 PM' }} • C-PAY Land Verification</span>
+                        </div>
                       </div>
                     </div>
+
+                    <!-- Action Buttons matching Image 2 -->
                     <div style="margin-top: 14px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
-                      <button type="button" (click)="retakeNewLandPhoto()" style="height: 40px; padding: 0 20px; border-radius: 10px; background: #ffffff; color: var(--primary-teal); border: 1.5px solid var(--primary-teal); font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                        🔄 Retake Photo
+                      <button type="button" (click)="retakeNewLandPhoto()" style="height: 42px; padding: 0 18px; font-size: 13px; color: var(--primary-teal); font-weight: 700; background: #ffffff; border: 1.5px solid var(--primary-teal); border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+                        📷 Retake with Camera
                       </button>
-                      <button type="button" (click)="removeNewLandPhoto()" style="height: 40px; padding: 0 20px; border-radius: 10px; background: #ffffff; color: #ef4444; border: 1.5px solid #fca5a5; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                        ❌ Cancel / Remove Photo
+                      <button type="button" (click)="dashNewLandFileInput.click()" style="height: 42px; padding: 0 18px; font-size: 13px; color: #475569; font-weight: 700; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+                        📁 Choose Different File
                       </button>
+                      <input type="file" #dashNewLandFileInput (change)="onNewLandPhotoSelected($event)" accept="image/*" style="display: none;">
                     </div>
                   </div>
 
-                  <div class="security-note">
+                  <div class="security-note" style="color: #ef4444 !important; font-weight: 600; margin-top: 12px;">
                     🔒 Location will be used only for verification and is 100% secure.
                   </div>
                 </div>
@@ -1080,8 +1091,14 @@
                   </div>
                 </div>
 
-                <!-- Multi-Pond Management Bar (For Fish Pond) -->
-                <div *ngIf="newLandPlantation.landType === 'Fish Pond'" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                <!-- Helper Note when Category / Plantation Type is not yet selected -->
+                <div *ngIf="newLandPlantation.landType && !newLandPlantation.plantationType" style="background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 12px; padding: 18px; text-align: center; color: #64748b; font-size: 12.5px; margin-top: 8px;">
+                  <i class="bi bi-info-circle-fill me-1" style="color: var(--primary-teal);"></i>
+                  Please select a <strong>Category / Plantation Type</strong> above to view species, pond registration, and field inputs.
+                </div>
+
+                <!-- Multi-Pond Management Bar (For Fish Pond - ONLY when Fish or Prawns is selected) -->
+                <div *ngIf="newLandPlantation.landType === 'Fish Pond' && (newLandPlantation.plantationType === 'Fish' || newLandPlantation.plantationType === 'Prawns')" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
                   <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                     <span style="font-size: 13px; font-weight: 700; color: #1e293b;">🌊 Ponds Registered:</span>
                     <div *ngFor="let pond of newLandPonds; let idx = index"
@@ -1102,16 +1119,48 @@
                   </button>
                 </div>
 
-                <!-- Active Pond Details Card (For Fish Pond) -->
-                <div *ngIf="newLandPlantation.landType === 'Fish Pond' && getActiveNewLandPond()" class="p-4 border rounded-3 mb-3" style="background-color: #ffffff; border: 2px solid #00a499 !important; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,164,153,0.06); display: flex; flex-direction: column; gap: 14px;">
+                <!-- Active Pond Details Card (For Fish Pond - ONLY when Fish or Prawns is selected) -->
+                <div *ngIf="newLandPlantation.landType === 'Fish Pond' && (newLandPlantation.plantationType === 'Fish' || newLandPlantation.plantationType === 'Prawns') && getActiveNewLandPond()" class="p-4 border rounded-3 mb-3" style="background-color: #ffffff; border: 2px solid #00a499 !important; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,164,153,0.06); display: flex; flex-direction: column; gap: 14px;">
                   
-                  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; flex-wrap: wrap; gap: 8px;">
                     <span style="font-weight: 800; font-size: 14px; color: var(--primary-teal); display: flex; align-items: center; gap: 6px;">
                       🌊 {{ getActiveNewLandPond().name }} Details ({{ newLandPlantation.plantationType || 'Fish' }})
                     </span>
-                    <span style="font-size: 11.5px; font-weight: 600; color: #64748b;">
-                      Active Pond {{ activeNewLandPondIndex + 1 }} of {{ newLandPonds.length }}
-                    </span>
+
+                    <div class="d-flex align-items-center gap-3 flex-wrap justify-content-end">
+                      <span style="font-size: 11.5px; font-weight: 600; color: #64748b;">
+                        Active Pond {{ activeNewLandPondIndex + 1 }} of {{ newLandPonds.length }}
+                      </span>
+
+                      <!-- Upload PDF Button & N-Numbers of PDFs List (Fish Pond Seller Dashboard Right Corner) -->
+                      <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+                        <input type="file" #dashFishPondPdfInput (change)="onPdfUpload($event)" accept=".pdf" multiple style="display: none;">
+                        
+                        <button type="button" 
+                                class="btn d-flex align-items-center gap-2"
+                                (click)="dashFishPondPdfInput.click()"
+                                title="Upload PDF Documents"
+                                style="background: #ffffff; color: #0f172a; border: 1.5px solid #d8e6e2; border-radius: 12px; padding: 7px 18px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04); outline: none;">
+                          <i class="bi bi-file-earmark-pdf-fill text-danger me-1" style="color: #e11d48 !important; font-size: 18px;"></i>
+                          <span style="color: #0f172a; font-weight: 700;">Upload PDF</span>
+                        </button>
+
+                        <!-- N-Numbers of Uploaded PDF Pills/Chips -->
+                        <div *ngFor="let pdf of uploadedPdfs" class="d-flex align-items-center gap-2 px-3 py-1.5 rounded-pill bg-light border" style="border-radius: 20px; border: 1px solid #cbd5e1; background-color: #f8fafc;">
+                          <i class="bi bi-file-earmark-check-fill text-success" style="font-size: 15px;"></i>
+                          <span class="fw-semibold text-dark text-truncate" style="max-width: 150px; font-size: 12.5px;" [title]="pdf.name">{{ pdf.name }}</span>
+                          <span class="text-danger fw-bold ms-1" style="cursor: pointer; font-size: 15px; line-height: 1;" (click)="removeUploadedPdf(pdf.id)" title="Remove PDF">×</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div *ngIf="pdfUploadSuccessMsg" class="alert alert-success d-flex align-items-center justify-content-between p-3 rounded-3 mb-0" style="background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; font-size: 13.5px;">
+                    <div class="d-flex align-items-center gap-2">
+                      <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+                      <span>{{ pdfUploadSuccessMsg }}</span>
+                    </div>
+                    <button type="button" class="btn-close border-0 bg-transparent text-secondary p-0" (click)="pdfUploadSuccessMsg = ''" aria-label="Close">✕</button>
                   </div>
 
                   <!-- Species Selection Pills for Active Pond -->
@@ -1403,7 +1452,44 @@
                 </div>
 
                 <!-- Standard & Tree/Mangrove Fields for Open Land, Govt Land, and House -->
-                <div *ngIf="newLandPlantation.landType && newLandPlantation.landType !== 'Fish Pond' && newLandPlantation.plantationType" style="display: flex; flex-direction: column; gap: 14px;">
+                <div *ngIf="newLandPlantation.landType && newLandPlantation.landType !== 'Fish Pond' && newLandPlantation.plantationType" 
+                     class="p-4 border rounded-3 text-start mt-2" 
+                     style="background-color: #ffffff; border: 2px solid #00a499 !important; border-radius: 16px; box-shadow: 0 10px 25px rgba(0, 164, 153, 0.08); display: flex; flex-direction: column; gap: 14px;">
+                  
+                  <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                    <span class="badge px-4 py-2 text-white" style="background-color: #047857; border-radius: 20px; font-weight: 700; font-size: 15px; letter-spacing: 0.5px;">
+                      🌱 {{ newLandPlantation.landType || 'Open Land' }} Details ({{ newLandPlantation.plantationType }})
+                    </span>
+
+                    <!-- Upload PDF Button & N-Numbers of PDFs List (Straight across on right side corner) -->
+                    <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+                      <input type="file" #dashOpenLandPdfInput (change)="onPdfUpload($event)" accept=".pdf" multiple style="display: none;">
+                      
+                      <button type="button" 
+                              class="btn d-flex align-items-center gap-2"
+                              (click)="dashOpenLandPdfInput.click()"
+                              title="Upload PDF Documents"
+                              style="background: #ffffff; color: #0f172a; border: 1.5px solid #d8e6e2; border-radius: 12px; padding: 7px 18px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04); outline: none;">
+                        <i class="bi bi-file-earmark-pdf-fill text-danger me-1" style="color: #e11d48 !important; font-size: 18px;"></i>
+                        <span style="color: #0f172a; font-weight: 700;">Upload PDF</span>
+                      </button>
+
+                      <!-- N-Numbers of Uploaded PDF Pills/Chips -->
+                      <div *ngFor="let pdf of uploadedPdfs" class="d-flex align-items-center gap-2 px-3 py-1.5 rounded-pill bg-light border" style="border-radius: 20px; border: 1px solid #cbd5e1; background-color: #f8fafc;">
+                        <i class="bi bi-file-earmark-check-fill text-success" style="font-size: 15px;"></i>
+                        <span class="fw-semibold text-dark text-truncate" style="max-width: 150px; font-size: 12.5px;" [title]="pdf.name">{{ pdf.name }}</span>
+                        <span class="text-danger fw-bold ms-1" style="cursor: pointer; font-size: 15px; line-height: 1;" (click)="removeUploadedPdf(pdf.id)" title="Remove PDF">×</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div *ngIf="pdfUploadSuccessMsg" class="alert alert-success d-flex align-items-center justify-content-between p-3 rounded-3 mb-0" style="background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; font-size: 13.5px;">
+                    <div class="d-flex align-items-center gap-2">
+                      <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+                      <span>{{ pdfUploadSuccessMsg }}</span>
+                    </div>
+                    <button type="button" class="btn-close border-0 bg-transparent text-secondary p-0" (click)="pdfUploadSuccessMsg = ''" aria-label="Close">✕</button>
+                  </div>
                   <!-- Custom SubCategory -->
                   <div>
                     <label class="form-label small fw-bold text-dark mb-1" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Biomass/Crop Sub-Category (Optional)</label>
