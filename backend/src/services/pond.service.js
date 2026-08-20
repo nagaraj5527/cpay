@@ -30,6 +30,9 @@ export async function createOrUpdatePonds(landId, pondsData = [], client = null)
     const improvedFcr = Number(p.improvedFcr || p.improvedFcrTarget || 2.5);
     const paddlewheelUnits = Number(p.paddlewheelUnits || 4);
 
+    const detailsJson = JSON.stringify(p);
+    const pdfsJson = JSON.stringify(p.pdf_attachments || p.uploadedPdfs || []);
+
     const upsertSql = `
       INSERT INTO cpay.ponds (
         pond_id,
@@ -48,12 +51,14 @@ export async function createOrUpdatePonds(landId, pondsData = [], client = null)
         actual_fcr,
         improved_fcr,
         paddlewheel_units,
+        details,
+        pdf_attachments,
         status,
         created_at,
         updated_at
       ) VALUES (
         uuid_generate_v4(),
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'PENDING', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 'PENDING', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
       )
       ON CONFLICT (land_id, pond_number) DO UPDATE SET
         pond_name = EXCLUDED.pond_name,
@@ -69,6 +74,8 @@ export async function createOrUpdatePonds(landId, pondsData = [], client = null)
         actual_fcr = EXCLUDED.actual_fcr,
         improved_fcr = EXCLUDED.improved_fcr,
         paddlewheel_units = EXCLUDED.paddlewheel_units,
+        details = EXCLUDED.details,
+        pdf_attachments = EXCLUDED.pdf_attachments,
         updated_at = CURRENT_TIMESTAMP
       RETURNING *
     `;
@@ -88,14 +95,17 @@ export async function createOrUpdatePonds(landId, pondsData = [], client = null)
       survivalFraction,
       actualFcr,
       improvedFcr,
-      paddlewheelUnits
+      paddlewheelUnits,
+      detailsJson,
+      pdfsJson
     ];
 
     const res = client ? await client.query(upsertSql, values) : await query(upsertSql, values);
     const savedPond = res.rows[0];
 
-    // Calculate & persist pond carbon calculation
+    // Calculate & persist pond carbon calculation with all 60 parameters
     const calcResult = calculateAquacultureCarbon({
+      ...p,
       species_name: speciesName,
       culture_type: cultureType,
       pond_area_ha: pondAreaHa,

@@ -2181,6 +2181,7 @@ export const submitFullRegistration = async (user, data) => {
                 let pCalc = null;
                 try {
                     pCalc = calculateAquacultureCarbon({
+                        ...pond,
                         pond_area_ha: pArea,
                         species_name: pSpeciesStr,
                         crops_per_year: pond.cropsPerYear || 1.5,
@@ -3125,6 +3126,7 @@ export const addAsset = async (user, data) => {
                 let pCalc = null;
                 try {
                     pCalc = calculateAquacultureCarbon({
+                        ...pond,
                         pond_area_ha: pArea,
                         species_name: pSpecies,
                         crops_per_year: pond.cropsPerYear || 1.5,
@@ -3396,7 +3398,7 @@ export const addAsset = async (user, data) => {
 
 export const getReportData = async (user, registrationIdParam) => {
     let registrationId = registrationIdParam;
-    if (!registrationId) {
+    if (!registrationId && user) {
         const activeReg = await getUserRegistrationStatus(user);
         if (activeReg && activeReg.data) {
             registrationId = activeReg.data.registration_id || activeReg.data.registrationId;
@@ -3408,13 +3410,12 @@ export const getReportData = async (user, registrationIdParam) => {
         const client = await pool.connect();
         try {
             const query = `
-                SELECT aq.*, cc.*, ld.area, ld.land_type_id, lt.land_type_name
-                FROM cpay.registrations r
+                SELECT aq.*, ld.total_area as area, ld.land_type_id
+                FROM cpay.registration r
                 LEFT JOIN cpay.land_details ld ON r.registration_id = ld.registration_id
-                LEFT JOIN cpay.land_types lt ON ld.land_type_id = lt.land_type_id
                 LEFT JOIN cpay.aquaculture_details aq ON r.registration_id = aq.registration_id
-                LEFT JOIN cpay.carbon_calculations cc ON r.registration_id = cc.registration_id
                 WHERE r.registration_id = $1
+                ORDER BY aq.created_at DESC
                 LIMIT 1
             `;
             const res = await client.query(query, [registrationId]);
@@ -3428,13 +3429,26 @@ export const getReportData = async (user, registrationIdParam) => {
                     actual_fcr_used: Number(row.fcr || 3.0),
                     crops_per_year: Number(row.crops_per_year || 1.5),
                     total_feed_required_kg: Number(row.feed_consumed || 0),
-                    baselineAnaerobicFraction: Number(row.baseline_anaerobic_fraction || 0.20),
-                    improvedAnaerobicFraction: Number(row.improved_anaerobic_fraction || 0.08),
-                    fcrImprovement: Number(row.fcr_improvement || 0.10),
-                    measuredCH4Baseline: row.measured_ch4_baseline,
-                    measuredCH4Improved: row.measured_ch4_improved,
-                    measuredN2OBaseline: row.measured_n2o_baseline,
-                    measuredN2OImproved: row.measured_n2o_improved
+                    pre_stocking_soc: Number(row.pre_stocking_soc || 1.20),
+                    post_harvest_soc: Number(row.post_harvest_soc || 1.45),
+                    total_soil_nitrogen: Number(row.total_soil_nitrogen || 0.15),
+                    soil_cn_ratio: Number(row.soil_cn_ratio || 12.0),
+                    bulk_density: Number(row.bulk_density || 1.25),
+                    sampling_depth: Number(row.sampling_depth || 0.15),
+                    q_dob: Number(row.q_dob || 0),
+                    q_gnc: Number(row.q_gnc || 0),
+                    q_sbm: Number(row.q_sbm || 0),
+                    q_ddgs: Number(row.q_ddgs || 0),
+                    punch_bag_feeding: !!row.punch_bag_feeding,
+                    pre_dawn_do: Number(row.pre_dawn_do || 4.5),
+                    h2s_detected: !!row.h2s_detected,
+                    cyanobacteria_avg: Number(row.cyanobacteria_avg || 15.0),
+                    water_ph: Number(row.water_ph || 7.5),
+                    tan_mg_l: Number(row.tan_mg_l || 0.5),
+                    secchi_depth_cm: Number(row.secchi_depth_cm || 35),
+                    diatoms_pct: Number(row.diatoms_pct || 40.0),
+                    green_algae_pct: Number(row.green_algae_pct || 35.0),
+                    zooplankton_score: Number(row.zooplankton_score || 2)
                 };
             }
         } catch (e) {
@@ -3444,10 +3458,10 @@ export const getReportData = async (user, registrationIdParam) => {
         }
     }
 
-    const reportData = syncExcelWithInputs(userInputs);
+    const calcResult = calculateAquacultureCarbon(userInputs);
     return {
         success: true,
-        data: reportData
+        data: calcResult
     };
 };
 

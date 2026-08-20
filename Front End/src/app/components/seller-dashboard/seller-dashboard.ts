@@ -11,6 +11,7 @@ import { RegistrationService } from '../../services/registration.service';
 import { CalculatorService, CarbonCalculatorInputs, CalculatorResults } from '../../services/calculator.service';
 import { WalletService } from '../../services/wallet.service';
 import { CustomSelectComponent } from '../custom-select/custom-select';
+import { createDefaultPond } from '../../registration/plantation-details/plantation-details';
 import { environment } from '../../../environments/environment';
 import html2pdf from 'html2pdf.js';
 
@@ -4062,52 +4063,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     this.newLandPlantation.subCategory = '';
     if (type === 'Fish Pond' && (!this.newLandPonds || this.newLandPonds.length === 0)) {
       this.newLandPonds = [
-        {
-          id: 'pond_new_1',
-          name: 'POND 1',
-          aquacultureType: 'Fish',
-          selectedSpecies: 'IMC',
-          stockingDensity: 6250,
-          stockingWeightG: 150,
-          partialHarvestWeightG: 1000,
-          finalHarvestWeightG: 1500,
-          cultureDurationDays: 240,
-          survivalFraction: 0.80,
-          averageFcr: 3.0,
-          improvedFcrTarget: 2.5,
-          pondAreaHa: 1.0,
-          unit: 'Acre',
-          waterDepthM: 1.5,
-          cropsPerYear: 1.5,
-          gwpFramework: 'AR5',
-          farmReportedFcr: 3.0,
-          growthCurveType: 'Exponential',
-          mortalityFeedFactor: 0.5,
-          eventDay: 200,
-          eventPctHarvested: 0.20,
-          anaerobicFraction: 0.20,
-          anaerobicAdjustmentFactor: 1.0,
-          sedimentBurialFraction: 0.20,
-          ch4OxidationFraction: 0.25,
-          limeAppliedKg: 200,
-          fertilizerNKg: 0,
-          idleDays: 20,
-          paddlewheelHp: 2,
-          paddlewheelUnits: 4,
-          paddlewheelHours: 8,
-          dieselL: 1500,
-          gridKwh: 500,
-          feedPrice: 45,
-          electricityTariff: 7.0,
-          dieselPrice: 92,
-          seedPrice: 3.5,
-          labourCost: 60000,
-          probioticsCost: 25000,
-          otherCosts: 20000,
-          salePrice: 130,
-          biomassCarbonPct: 0.08,
-          edibleYieldFraction: 0.65
-        }
+        createDefaultPond(1, 'Fish', 'IMC')
       ];
       this.activeNewLandPondIndex = 0;
     }
@@ -4148,19 +4104,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     const nextNum = this.newLandPonds.length + 1;
     const aquaType = this.newLandPlantation.plantationType || 'Fish';
     const spec = aquaType === 'Prawns' ? 'Vannamei' : 'IMC';
-    this.newLandPonds.push({
-      id: `pond_new_${Date.now()}_${nextNum}`,
-      name: `POND ${nextNum}`,
-      aquacultureType: aquaType,
-      selectedSpecies: spec,
-      stockingDensity: 6250,
-      stockingWeightG: 150,
-      partialHarvestWeightG: 1000,
-      finalHarvestWeightG: 1500,
-      cultureDurationDays: 240,
-      pondAreaHa: 1.0,
-      unit: 'Acre'
-    });
+    this.newLandPonds.push(createDefaultPond(nextNum, aquaType, spec));
     this.activeNewLandPondIndex = this.newLandPonds.length - 1;
   }
 
@@ -4175,6 +4119,16 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
 
   selectActiveNewLandPond(index: number): void {
     this.activeNewLandPondIndex = index;
+  }
+
+  toggleNewLandPondIntervention(measureKey: string): void {
+    const pond = this.getActiveNewLandPond();
+    if (pond) {
+      if (!pond.interventions) {
+        pond.interventions = {};
+      }
+      pond.interventions[measureKey] = !pond.interventions[measureKey];
+    }
   }
 
   submitAddLand() {

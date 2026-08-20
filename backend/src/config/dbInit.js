@@ -316,7 +316,18 @@ export const initializeDatabase = async (poolParam) => {
                 const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
                 await pool.query(migrationSQL);
             } catch (migrationErr) {
-                // Ignore errors if columns already exist (which they will for fresh schema.sql runs)
+                // Ignore errors if columns already exist
+            }
+        }
+
+        const migrationV2Path = path.join(dbDir, 'update_aquaculture_schema_v2.sql');
+        if (fs.existsSync(migrationV2Path)) {
+            try {
+                const migrationV2SQL = fs.readFileSync(migrationV2Path, 'utf8');
+                await pool.query(migrationV2SQL);
+                console.log('   ✅ Aquaculture v2 60 PDF fields & PDF attachments migration applied.');
+            } catch (migrationV2Err) {
+                // Ignore errors if columns already exist
             }
         }
 

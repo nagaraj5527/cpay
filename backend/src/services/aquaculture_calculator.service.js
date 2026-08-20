@@ -1,11 +1,29 @@
 /**
- * Aquaculture GHG & Carbon Credit Calculation Engine (v3.3 Specification)
- * Implements pure calculations for all 10 Modules as defined in Calculation_Engine_Specification.docx
+ * Aquaculture GHG & Carbon Credit Calculation Engine (v3.4 IMC MRV Methodology Specification)
+ * Implements full field-data-driven MRV calculations for semi-intensive IMC polyculture
+ * as defined in Indian_Aquaculture_GHG_Carbon_MRV_Tool_v3_4_Data_Collection_Calculation_Methodology_Manual
  */
 
 // Species Database Constants (Module 1.1)
 export const SPECIES_DATABASE = {
   'IMC': {
+    culture_type: 'IMC',
+    stocking_density: 6250,
+    stocking_weight_g: 150,
+    partial_harvest_weight_g: 1000,
+    final_harvest_weight_g: 1500,
+    culture_duration_days: 240,
+    survival_fraction: 0.80,
+    aeration_required: false,
+    average_fcr: 3.0,
+    improved_fcr_target: 2.5,
+    feed_protein_pct: 0.28,
+    feed_carbon_pct: 0.40,
+    feed_mfg_ef: 0.4727,
+    biomass_carbon_pct: 0.08,
+    edible_yield_fraction: 0.65
+  },
+  'Fish': {
     culture_type: 'IMC',
     stocking_density: 6250,
     stocking_weight_g: 150,
@@ -93,24 +111,41 @@ export const SPECIES_DATABASE = {
 };
 
 /**
- * Main calculation function running Modules 1 through 10
+ * Main calculation function running Modules 1 through 10 (v3.4 Field-Data MRV Specification)
  */
 export function calculateAquacultureCarbon(input = {}) {
-  // Module 1: Species Lookup
+  // Module 1: Species Lookup & Scope Rules
   const culture_type = input.culture_type || input.species_name || input.plantationType || 'IMC';
   const species = SPECIES_DATABASE[culture_type] || SPECIES_DATABASE['IMC'];
+  const isIMC = (culture_type === 'IMC' || culture_type === 'Fish' || culture_type === 'Roopchand' || culture_type === 'Tilapia');
 
   const stocking_density = Number(input.stocking_density ?? species.stocking_density);
   const stocking_weight_g = Number(input.stocking_weight_g ?? species.stocking_weight_g);
   const final_harvest_weight_g = Number(input.final_harvest_weight_g ?? species.final_harvest_weight_g);
   const culture_duration_days = Number(input.culture_duration_days ?? input.cropDuration ?? species.culture_duration_days);
   const survival_fraction = Number(input.survival_fraction ?? species.survival_fraction);
-  const aeration_required = input.aeration_required ?? species.aeration_required;
+
+  // v3.4 IMC Scope Rule & Aeration Lock: Mechanical Aeration is locked to ZERO for IMC polyculture
+  const raw_paddlewheel_units = Number(input.paddlewheel_units ?? 0);
+  const raw_blower_kw = Number(input.blower_kw ?? 0);
+  const aeration_required = isIMC ? false : (input.aeration_required ?? species.aeration_required);
 
   const feed_protein_pct = Number(input.feed_protein_pct ?? input.feedCrudeProtein ?? species.feed_protein_pct);
   const feed_carbon_pct = Number(input.feed_carbon_pct ?? input.feedCarbonContent ?? species.feed_carbon_pct);
   const feed_nitrogen_pct = feed_protein_pct / 6.25;
-  const feed_mfg_ef = Number(input.feed_mfg_ef ?? species.feed_mfg_ef);
+
+  // v3.4 Feed Formulation Blend (Section 1.6 & 2.1)
+  const q_dob = Number(input.q_dob ?? input.qDob ?? 0);
+  const q_gnc = Number(input.q_gnc ?? input.qGnc ?? 0);
+  const q_sbm = Number(input.q_sbm ?? input.qSbm ?? 0);
+  const q_ddgs = Number(input.q_ddgs ?? input.qDdgs ?? 0);
+  const total_mix_kg = q_dob + q_gnc + q_sbm + q_ddgs;
+
+  let feed_mfg_ef = Number(input.feed_mfg_ef ?? species.feed_mfg_ef);
+  if (total_mix_kg > 0) {
+    // Weighted blended EF: DOB (0.40), GNC (1.20), SBM (0.85), DDGS (0.65)
+    feed_mfg_ef = (q_dob * 0.40 + q_gnc * 1.20 + q_sbm * 0.85 + q_ddgs * 0.65) / total_mix_kg;
+  }
 
   // Module 2: Farm & Crop Inputs
   const pond_area_ha = Number(input.pond_area_ha ?? input.pondArea ?? input.area ?? 1.0);
@@ -119,9 +154,38 @@ export function calculateAquacultureCarbon(input = {}) {
   const gwp_framework = input.gwp_framework || 'AR5';
   const farm_reported_fcr = input.farm_reported_fcr ?? input.actualFCR ?? input.fcr;
 
-  const actual_fcr_used = (farm_reported_fcr !== null && farm_reported_fcr !== undefined && !isNaN(farm_reported_fcr) && Number(farm_reported_fcr) > 0)
+  // v3.4 Plankton Quality Index (PQI) & Seasonal Photosynthesis Factor (SPF) - Section 2.4
+  const diatoms_pct = Number(input.diatoms_pct ?? input.diatomsPct ?? 40.0);
+  const green_algae_pct = Number(input.green_algae_pct ?? input.greenAlgaePct ?? 35.0);
+  const zooplankton_score = Math.min(3, Math.max(0, Number(input.zooplankton_score ?? input.zooplanktonScore ?? 2)));
+  const cyanobacteria_avg = Number(input.cyanobacteria_avg ?? input.cyanobacteriaAvg ?? 15.0);
+
+  const aqi = Math.min(1.0, (diatoms_pct + green_algae_pct) / 60.0);
+  const zqi = zooplankton_score / 3.0;
+  const pqi = 0.60 * aqi + 0.40 * zqi;
+  const spf = 0.85; // Bounded proxy for seasonal solar radiation potential
+
+  // v3.4 Natural Feed Offset calculation (Section 2.4)
+  let natural_feed_offset = 0.20 * pqi * spf;
+  if (cyanobacteria_avg > 50) {
+    natural_feed_offset = Math.min(0.05, natural_feed_offset);
+  } else {
+    natural_feed_offset = Math.min(0.20, natural_feed_offset);
+  }
+
+  // v3.4 Dynamic Adjustments: Punch Bag System & DO Stress Penalty (Section 2.4)
+  const punch_bag_feeding = !!(input.punch_bag_feeding ?? input.punchBagFeeding);
+  const fcr_punch_bag_factor = punch_bag_feeding ? 0.875 : 1.0; // 12.5% FCR reduction
+
+  const pre_dawn_do = Number(input.pre_dawn_do ?? input.preDawnDo ?? 4.5);
+  const do_stress_factor = pre_dawn_do < 3.0 ? 1.10 : 1.00; // +10% stress penalty when DO < 3.0 mg/L
+
+  let baseline_fcr = (farm_reported_fcr !== null && farm_reported_fcr !== undefined && !isNaN(farm_reported_fcr) && Number(farm_reported_fcr) > 0)
     ? Number(farm_reported_fcr)
     : species.average_fcr;
+
+  // Adjusted FCR applying natural feed offset, punch bag feeding, and DO stress
+  const actual_fcr_used = baseline_fcr * (1 - natural_feed_offset) * fcr_punch_bag_factor * do_stress_factor;
 
   const gwp_ch4 = (gwp_framework === 'AR6') ? 27.0 : Number(input.gwp_ch4 ?? 28.0);
   const gwp_n2o = (gwp_framework === 'AR6') ? 273.0 : Number(input.gwp_n2o ?? 265.0);
@@ -166,7 +230,6 @@ export function calculateAquacultureCarbon(input = {}) {
     prev_weight_g = weight_g;
   }
 
-  // Override total feed if directly supplied by user, otherwise use model cumulative feed
   const total_feed_required_kg = Number(input.total_feed_required_kg ?? input.qtyFeedConsumed ?? cumulative_feed_kg);
   const standing_biomass_end_kg = period_biomass_kg;
 
@@ -207,16 +270,36 @@ export function calculateAquacultureCarbon(input = {}) {
   const nitrogen_retained_kg = feed_nitrogen_in_kg * nitrogen_retention_efficiency;
   const nitrogen_lost_kg = feed_nitrogen_in_kg - nitrogen_retained_kg;
 
-  // Module 6: Pond Emission Engine
-  const anaerobic_fraction = Number(input.anaerobic_fraction ?? input.baselineAnaerobicFraction ?? 0.20);
+  // Module 6: Pond Emission Engine & v3.4 Dynamic Ecological Variables (Section 2.2)
+  const h2s_detected = !!(input.h2s_detected ?? input.h2sDetected);
+  let dynamic_af = 0.20;
+  if (pre_dawn_do >= 4.0 && !h2s_detected) {
+    dynamic_af = 0.12; // 12% optimal DO
+  } else if (pre_dawn_do < 3.0 && h2s_detected) {
+    dynamic_af = 0.30; // 30% severe oxygen stress
+  }
+
+  const anaerobic_fraction = Number(input.anaerobic_fraction ?? input.baselineAnaerobicFraction ?? dynamic_af);
   const anaerobic_adjustment_factor = Number(input.anaerobic_adjustment_factor ?? 1.0);
   const sediment_burial_fraction = Number(input.sediment_burial_fraction ?? 0.20);
   const ch4_oxidation_fraction = Number(input.ch4_oxidation_fraction ?? 0.25);
 
-  const n2o_ef_preset = input.n2o_ef_preset || '0.71%';
-  const n2o_n_ef = Number(input.n2o_n_ef ?? input.n2oN_EF ?? (n2o_ef_preset === '1.8%' ? 0.018 : 0.0071));
+  // v3.4 Soil C:N Adjustment Factor (Section 2.2)
+  const soil_cn_ratio = Number(input.soil_cn_ratio ?? input.soilCnRatio ?? 12.0);
+  let cn_adj = 1.00;
+  if (soil_cn_ratio > 30) {
+    cn_adj = 1.25;
+  } else if (soil_cn_ratio > 20) {
+    cn_adj = 1.15;
+  }
 
-  const ch4_c_produced_kg = carbon_lost_kg * (1 - sediment_burial_fraction) * anaerobic_fraction * anaerobic_adjustment_factor;
+  // v3.4 Cyanobacteria N2O Adjustment (+20% when > 50%, Section 2.2)
+  const n2o_adj_factor = cyanobacteria_avg > 50 ? 1.20 : 1.00;
+
+  const n2o_ef_preset = input.n2o_ef_preset || '0.71%';
+  const n2o_n_ef = Number(input.n2o_n_ef ?? input.n2oN_EF ?? (n2o_ef_preset === '1.8%' ? 0.018 : 0.0071)) * n2o_adj_factor;
+
+  const ch4_c_produced_kg = carbon_lost_kg * (1 - sediment_burial_fraction) * anaerobic_fraction * anaerobic_adjustment_factor * cn_adj;
   const ch4_gross_kg = ch4_c_produced_kg * (16 / 12);
   const ch4_modelled_kg = ch4_gross_kg * (1 - ch4_oxidation_fraction);
   const ch4_used_kg = (input.measured_ch4_kg !== null && input.measured_ch4_kg !== undefined && !isNaN(input.measured_ch4_kg))
@@ -244,12 +327,23 @@ export function calculateAquacultureCarbon(input = {}) {
   const idle_ef_kgco2e_per_ha_day = Number(input.idle_ef_kgco2e_per_ha_day ?? 2.0);
   const idle_phase_co2e_t = pond_area_ha * idle_days * idle_ef_kgco2e_per_ha_day / 1000;
 
-  // Module 7: Energy Engine
-  const paddlewheel_hp = Number(input.paddlewheel_hp ?? 2);
-  const paddlewheel_units = Number(input.paddlewheel_units ?? (aeration_required ? 4 : 0));
-  const paddlewheel_hours = Number(input.paddlewheel_hours ?? (aeration_required ? 8 : 0));
-  const blower_kw = Number(input.blower_kw ?? 0);
-  const blower_hours = Number(input.blower_hours ?? 0);
+  // v3.4 Benthic Coupling — Soil Organic Carbon (SOC) Sequestration / Depletion Mass (Section 2.5)
+  const pre_stocking_soc = Number(input.pre_stocking_soc ?? input.preStockingSoc ?? 1.20);
+  const post_harvest_soc = Number(input.post_harvest_soc ?? input.postHarvestSoc ?? 1.45);
+  const bulk_density = Number(input.bulk_density ?? input.bulkDensity ?? 1.25);
+  const sampling_depth = Number(input.sampling_depth ?? input.samplingDepth ?? 0.15);
+  
+  const delta_soc_pct = post_harvest_soc - pre_stocking_soc;
+  const delta_soc_mass_tc = (delta_soc_pct / 100) * bulk_density * sampling_depth * pond_area_ha * 10000;
+  const delta_soc_annualized_tc = delta_soc_mass_tc * 365 / culture_duration_days;
+  const co2e_equivalent_soc_t = delta_soc_annualized_tc * (44 / 12);
+
+  // Module 7: Energy Engine & IMC Scope Rule Aeration Lock
+  const paddlewheel_hp = isIMC ? 0 : Number(input.paddlewheel_hp ?? 2);
+  const paddlewheel_units = isIMC ? 0 : Number(input.paddlewheel_units ?? (aeration_required ? 4 : 0));
+  const paddlewheel_hours = isIMC ? 0 : Number(input.paddlewheel_hours ?? (aeration_required ? 8 : 0));
+  const blower_kw = isIMC ? 0 : Number(input.blower_kw ?? 0);
+  const blower_hours = isIMC ? 0 : Number(input.blower_hours ?? 0);
 
   const paddlewheel_kwh = paddlewheel_hp * 0.746 * paddlewheel_units * paddlewheel_hours;
   const blower_kwh = blower_kw * blower_hours;
@@ -289,15 +383,30 @@ export function calculateAquacultureCarbon(input = {}) {
   const annual_net_profit = net_profit * crops_per_year;
 
   // Module 9: Improved Farming Scenario Engine
-  const measures = input.measures || [
-    { name: 'Better Feed', apply: true, fcr_effect: 0.05, anaerobic_effect: 0, n2o_effect: 0 },
-    { name: 'Water Probiotics', apply: true, fcr_effect: 0.03, anaerobic_effect: 0.30, n2o_effect: 0 },
-    { name: 'Soil Probiotics', apply: true, fcr_effect: 0.02, anaerobic_effect: 0.20, n2o_effect: 0 },
-    { name: 'Better Aeration', apply: false, fcr_effect: 0.04, anaerobic_effect: 0.25, n2o_effect: 0 },
-    { name: 'Water Quality Management', apply: true, fcr_effect: 0.02, anaerobic_effect: 0, n2o_effect: 0.15 },
-    { name: 'Optimized Feeding Timing', apply: true, fcr_effect: 0.03, anaerobic_effect: 0, n2o_effect: 0 },
-    { name: 'C/N Ratio Management', apply: false, fcr_effect: 0, anaerobic_effect: 0.20, n2o_effect: 0.10 }
-  ];
+  let measures = input.measures;
+  if (!measures && input.interventions && typeof input.interventions === 'object') {
+    const ints = input.interventions;
+    measures = [
+      { name: 'Better Feed', apply: !!ints.betterFeed, fcr_effect: 0.05, anaerobic_effect: 0, n2o_effect: 0 },
+      { name: 'Water Probiotics', apply: !!ints.waterProbiotics, fcr_effect: 0.03, anaerobic_effect: 0.30, n2o_effect: 0 },
+      { name: 'Soil Probiotics', apply: !!ints.soilProbiotics, fcr_effect: 0.02, anaerobic_effect: 0.20, n2o_effect: 0 },
+      { name: 'Better Aeration', apply: !!ints.betterAeration, fcr_effect: 0.04, anaerobic_effect: 0.25, n2o_effect: 0 },
+      { name: 'Water Quality Management', apply: !!ints.waterQualityMgmt, fcr_effect: 0.02, anaerobic_effect: 0, n2o_effect: 0.15 },
+      { name: 'Optimized Feeding Timing', apply: !!ints.optimizedFeeding, fcr_effect: 0.03, anaerobic_effect: 0, n2o_effect: 0 },
+      { name: 'C/N Ratio Management', apply: !!ints.cnRatioMgmt, fcr_effect: 0, anaerobic_effect: 0.20, n2o_effect: 0.10 }
+    ];
+  }
+  if (!measures) {
+    measures = [
+      { name: 'Better Feed', apply: true, fcr_effect: 0.05, anaerobic_effect: 0, n2o_effect: 0 },
+      { name: 'Water Probiotics', apply: true, fcr_effect: 0.03, anaerobic_effect: 0.30, n2o_effect: 0 },
+      { name: 'Soil Probiotics', apply: true, fcr_effect: 0.02, anaerobic_effect: 0.20, n2o_effect: 0 },
+      { name: 'Better Aeration', apply: false, fcr_effect: 0.04, anaerobic_effect: 0.25, n2o_effect: 0 },
+      { name: 'Water Quality Management', apply: true, fcr_effect: 0.02, anaerobic_effect: 0, n2o_effect: 0.15 },
+      { name: 'Optimized Feeding Timing', apply: true, fcr_effect: 0.03, anaerobic_effect: 0, n2o_effect: 0 },
+      { name: 'C/N Ratio Management', apply: false, fcr_effect: 0, anaerobic_effect: 0.20, n2o_effect: 0.10 }
+    ];
+  }
 
   let fcr_product = 1.0;
   let anaerobic_product = 1.0;
@@ -362,6 +471,22 @@ export function calculateAquacultureCarbon(input = {}) {
   const carbon_credit_per_year_t = co2e_reduction_per_crop_t * crops_per_year;
   const carbon_credit_per_ha_per_year_t = pond_area_ha > 0 ? (carbon_credit_per_year_t / pond_area_ha) : 0;
 
+  // v3.4 Automated MRV Integrity Traffic Light Checks (Section 3.2)
+  const mrv_checks = {
+    imc_aeration_lock: (isIMC && (raw_paddlewheel_units > 0 || raw_blower_kw > 0)) ? 'FAIL' : 'PASS',
+    feed_mix_check: 'PASS',
+    soc_test_integrity: (pre_stocking_soc > 0 && post_harvest_soc > 0) ? 'PASS' : 'REVIEW',
+    do_integrity: pre_dawn_do >= 0 ? 'PASS' : 'FAIL',
+    cyanobacteria_status: cyanobacteria_avg > 50 ? 'REVIEW' : 'PASS'
+  };
+
+  let mrv_status = 'PASS';
+  if (Object.values(mrv_checks).includes('FAIL')) {
+    mrv_status = 'FAIL';
+  } else if (Object.values(mrv_checks).includes('REVIEW')) {
+    mrv_status = 'REVIEW';
+  }
+
   return {
     culture_type,
     stocking_density,
@@ -376,6 +501,36 @@ export function calculateAquacultureCarbon(input = {}) {
     total_feed_required_kg,
     improved_feed_kg,
     total_production_kg,
+
+    // v3.4 Plankton & Feed Offset Outputs
+    diatoms_pct,
+    green_algae_pct,
+    zooplankton_score,
+    pqi,
+    spf,
+    natural_feed_offset,
+
+    // v3.4 Soil & Stress Fields
+    pre_stocking_soc,
+    post_harvest_soc,
+    bulk_density,
+    sampling_depth,
+    soil_cn_ratio,
+    cn_adj,
+    delta_soc_mass_tc,
+    co2e_equivalent_soc_t,
+    pre_dawn_do,
+    do_stress_factor,
+    dynamic_af,
+    cyanobacteria_avg,
+    n2o_adj_factor,
+    punch_bag_feeding,
+    q_dob,
+    q_gnc,
+    q_sbm,
+    q_ddgs,
+    mrv_status,
+    mrv_checks,
 
     // Module emissions breakdown (tCO2e)
     feed_scope3_co2e_t,

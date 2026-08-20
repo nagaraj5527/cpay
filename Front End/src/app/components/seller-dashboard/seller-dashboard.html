@@ -1237,12 +1237,25 @@
 
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Aeration Required</label>
+                      <select class="form-select" [ngModel]="getActiveNewLandPond().aerationRequired ? 'Yes' : 'No'" (ngModelChange)="getActiveNewLandPond().aerationRequired = ($event === 'Yes')" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; outline: none;">
+                        <option value="No">No</option>
+                        <option value="Yes">Yes</option>
+                      </select>
+                    </div>
+                    <div>
                       <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Baseline FCR (average_fcr) *</label>
                       <input type="number" step="0.1" class="form-control" [(ngModel)]="getActiveNewLandPond().averageFcr" placeholder="e.g. 3.0" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
                     </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div>
                       <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Improved FCR Target</label>
                       <input type="number" step="0.1" class="form-control" [(ngModel)]="getActiveNewLandPond().improvedFcrTarget" placeholder="e.g. 2.5" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                    <div>
+                      <!-- spacer -->
                     </div>
                   </div>
 
@@ -1306,8 +1319,18 @@
                       <input type="number" class="form-control" [(ngModel)]="getActiveNewLandPond().eventDay" placeholder="e.g. 200" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
                     </div>
                     <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Shrimp Count Stage Harvests (pcs/kg)</label>
+                      <input type="number" class="form-control" [(ngModel)]="getActiveNewLandPond().eventCountPerKg" placeholder="e.g. 80" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
                       <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Event Harvest Share (fraction 0-1)</label>
                       <input type="number" step="0.05" class="form-control" [(ngModel)]="getActiveNewLandPond().eventPctHarvested" placeholder="e.g. 0.2" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                    <div>
+                      <!-- spacer -->
                     </div>
                   </div>
 
@@ -1337,12 +1360,49 @@
 
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">N2O Emission Preset</label>
+                      <select class="form-select" [(ngModel)]="getActiveNewLandPond().n2oEfPreset" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; outline: none;">
+                        <option value="0.71%">0.71% (Default)</option>
+                        <option value="1.8%">1.8% (High Input)</option>
+                        <option value="Custom">Custom Override</option>
+                      </select>
+                    </div>
+                    <div *ngIf="getActiveNewLandPond().n2oEfPreset === 'Custom'">
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Custom N2O EF</label>
+                      <input type="number" step="0.001" class="form-control" [(ngModel)]="getActiveNewLandPond().n2oEfCustom" placeholder="e.g. 0.008" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Chamber Measured CH4 (kg) [Lab Override]</label>
+                      <input type="number" step="0.01" class="form-control" [(ngModel)]="getActiveNewLandPond().measuredCh4Kg" placeholder="Leave blank if unmeasured" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Chamber Measured N2O (kg) [Lab Override]</label>
+                      <input type="number" step="0.01" class="form-control" [(ngModel)]="getActiveNewLandPond().measuredN2oKg" placeholder="Leave blank if unmeasured" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
                       <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Lime Applied per Crop (kg)</label>
                       <input type="number" class="form-control" [(ngModel)]="getActiveNewLandPond().limeAppliedKg" placeholder="e.g. 200" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
                     </div>
                     <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Lime EF (tCO2/t lime)</label>
+                      <input type="number" step="0.01" class="form-control" [(ngModel)]="getActiveNewLandPond().limeEf" placeholder="e.g. 0.12" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
                       <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Synthetic Fertilizer N (kg)</label>
                       <input type="number" class="form-control" [(ngModel)]="getActiveNewLandPond().fertilizerNKg" placeholder="e.g. 0" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Synthetic Fertilizer N2O EF</label>
+                      <input type="number" step="0.001" class="form-control" [(ngModel)]="getActiveNewLandPond().fertilizerN2oEf" placeholder="e.g. 0.01" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
                     </div>
                   </div>
 
@@ -1352,7 +1412,8 @@
                       <input type="number" class="form-control" [(ngModel)]="getActiveNewLandPond().idleDays" placeholder="e.g. 20" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
                     </div>
                     <div>
-                      <!-- spacer -->
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Idle Soil EF (kgCO2e/ha/day)</label>
+                      <input type="number" step="0.1" class="form-control" [(ngModel)]="getActiveNewLandPond().idleEfKgco2ePerHaDay" placeholder="e.g. 2.0" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
                     </div>
                   </div>
 
@@ -1375,15 +1436,48 @@
                       <input type="number" class="form-control" [(ngModel)]="getActiveNewLandPond().paddlewheelHours" placeholder="e.g. 8" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
                     </div>
                     <div>
-                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Diesel Fuel Baseline (L/crop)</label>
-                      <input type="number" class="form-control" [(ngModel)]="getActiveNewLandPond().dieselL" placeholder="e.g. 1500" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Blower Rating (kW)</label>
+                      <input type="number" step="0.1" class="form-control" [(ngModel)]="getActiveNewLandPond().blowerKw" placeholder="e.g. 0" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
                     </div>
                   </div>
 
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Blower Operating Hours/Day</label>
+                      <input type="number" class="form-control" [(ngModel)]="getActiveNewLandPond().blowerHours" placeholder="e.g. 0" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Diesel Fuel Baseline (L/crop)</label>
+                      <input type="number" class="form-control" [(ngModel)]="getActiveNewLandPond().dieselL" placeholder="e.g. 500" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Generator Diesel (L/crop)</label>
+                      <input type="number" class="form-control" [(ngModel)]="getActiveNewLandPond().generatorDieselL" placeholder="e.g. 200" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                    <div>
                       <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Grid Electricity (kWh/crop)</label>
                       <input type="number" class="form-control" [(ngModel)]="getActiveNewLandPond().gridKwh" placeholder="e.g. 500" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Solar Renewable Offset (kWh/crop)</label>
+                      <input type="number" class="form-control" [(ngModel)]="getActiveNewLandPond().solarOffsetKwh" placeholder="e.g. 0" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Diesel Emission Factor (kgCO2e/L)</label>
+                      <input type="number" step="0.1" class="form-control" [(ngModel)]="getActiveNewLandPond().dieselEf" placeholder="e.g. 3.0" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Grid Electricity EF (kgCO2e/kWh)</label>
+                      <input type="number" step="0.001" class="form-control" [(ngModel)]="getActiveNewLandPond().gridEf" placeholder="e.g. 0.710" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
                     </div>
                     <div>
                       <!-- spacer -->
@@ -1436,8 +1530,45 @@
                     </div>
                   </div>
 
-                  <!-- Module 7. Biomass Carbon & Dressing Yield Parameters -->
-                  <h6 class="fw-bold mb-2 border-bottom pb-2 text-start mt-2" style="color: #047857; font-size: 13px;"><i class="bi bi-pie-chart me-2"></i>7. Biomass Carbon & Dressing Yield Parameters</h6>
+                  <!-- Module 7. Mitigation Measures & Interventions Table -->
+                  <h6 class="fw-bold mb-2 border-bottom pb-2 text-start mt-2" style="color: #047857; font-size: 13px;"><i class="bi bi-sliders me-2"></i>7. Mitigation Measures & Climate Interventions (Module 9.1)</h6>
+                  <div class="table-responsive mb-3" style="border-radius: 10px; border: 1px solid #d8e6e2; overflow: hidden;">
+                    <table class="table table-hover align-middle mb-0" style="font-size: 12.5px;">
+                      <thead style="background-color: #f1f5f9; color: #1e293b; font-weight: 700;">
+                        <tr>
+                          <th style="width: 40%;">Mitigation Measure</th>
+                          <th style="width: 20%; text-align: center;">Apply Measure</th>
+                          <th style="width: 20%; text-align: center;">FCR Reduction</th>
+                          <th style="width: 20%; text-align: center;">Anaerobic Effect</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let m of [
+                          { key: 'betterFeed', name: 'Better Feed Quality' },
+                          { key: 'waterProbiotics', name: 'Water Probiotics' },
+                          { key: 'soilProbiotics', name: 'Soil Probiotics' },
+                          { key: 'betterAeration', name: 'Better Aeration' },
+                          { key: 'waterQualityMgmt', name: 'Water Quality Management' },
+                          { key: 'optimizedFeeding', name: 'Optimized Feeding Timing' },
+                          { key: 'cnRatioMgmt', name: 'C/N Ratio Management' }
+                        ]">
+                          <td class="fw-semibold text-dark">{{ m.name }}</td>
+                          <td class="text-center">
+                            <input type="checkbox" 
+                                   class="form-check-input"
+                                   style="width: 18px; height: 18px; cursor: pointer;"
+                                   [checked]="getActiveNewLandPond().interventions && getActiveNewLandPond().interventions[m.key]" 
+                                   (change)="toggleNewLandPondIntervention(m.key)">
+                          </td>
+                          <td class="text-center"><span class="badge bg-light text-dark border px-2 py-1">0.05</span></td>
+                          <td class="text-center"><span class="badge bg-light text-dark border px-2 py-1">0.30</span></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <!-- Module 8. Biomass Carbon & Dressing Yield Parameters -->
+                  <h6 class="fw-bold mb-2 border-bottom pb-2 text-start mt-2" style="color: #047857; font-size: 13px;"><i class="bi bi-pie-chart me-2"></i>8. Biomass Carbon & Dressing Yield Parameters</h6>
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div>
                       <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Harvested Biomass Carbon Content (fraction 0-1)</label>
@@ -1446,6 +1577,130 @@
                     <div>
                       <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Edible Dressing Yield Fraction (fraction 0-1)</label>
                       <input type="number" step="0.01" class="form-control" [(ngModel)]="getActiveNewLandPond().edibleYieldFraction" placeholder="e.g. 0.65" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                  </div>
+
+                  <!-- v3.4 Feed Formulation Ingredients (Invoice-Derived Blends) -->
+                  <h6 class="fw-bold mb-2 border-bottom pb-2 text-start mt-2" style="color: #047857; font-size: 13px;"><i class="bi bi-box-seam me-2"></i>9. Feed Formulation & Ingredient Blends (v3.4 Invoice-Derived)</h6>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Deoiled Rice Bran (DOB) Purchased (kg)</label>
+                      <input type="number" class="form-control" [(ngModel)]="getActiveNewLandPond().qDob" placeholder="e.g. 500" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Groundnut Cake (GNC) Purchased (kg)</label>
+                      <input type="number" class="form-control" [(ngModel)]="getActiveNewLandPond().qGnc" placeholder="e.g. 200" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Soybean Meal (SBM) Purchased (kg)</label>
+                      <input type="number" class="form-control" [(ngModel)]="getActiveNewLandPond().qSbm" placeholder="e.g. 150" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">DDGS Purchased Quantity (kg)</label>
+                      <input type="number" class="form-control" [(ngModel)]="getActiveNewLandPond().qDdgs" placeholder="e.g. 100" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                  </div>
+
+                  <!-- v3.4 Soil Baseline & Benthic Coupling -->
+                  <h6 class="fw-bold mb-2 border-bottom pb-2 text-start mt-2" style="color: #047857; font-size: 13px;"><i class="bi bi-layers me-2"></i>10. Soil Baseline & Benthic Coupling (v3.4 Manual)</h6>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Pre-Stocking Soil Organic Carbon (SOC %)</label>
+                      <input type="number" step="0.01" class="form-control" [(ngModel)]="getActiveNewLandPond().preStockingSoc" placeholder="e.g. 1.20" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Post-Harvest Soil Organic Carbon (SOC %)</label>
+                      <input type="number" step="0.01" class="form-control" [(ngModel)]="getActiveNewLandPond().postHarvestSoc" placeholder="e.g. 1.45" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Total Soil Nitrogen (%)</label>
+                      <input type="number" step="0.01" class="form-control" [(ngModel)]="getActiveNewLandPond().totalSoilNitrogen" placeholder="e.g. 0.15" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Soil C:N Ratio</label>
+                      <input type="number" step="0.1" class="form-control" [(ngModel)]="getActiveNewLandPond().soilCnRatio" placeholder="e.g. 12.0" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Soil Bulk Density (g/cm³)</label>
+                      <input type="number" step="0.01" class="form-control" [(ngModel)]="getActiveNewLandPond().bulkDensity" placeholder="e.g. 1.25" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Sampling Depth (meters)</label>
+                      <input type="number" step="0.01" class="form-control" [(ngModel)]="getActiveNewLandPond().samplingDepth" placeholder="e.g. 0.15" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                  </div>
+
+                  <!-- v3.4 Ecological Adjustments & DO Stress -->
+                  <h6 class="fw-bold mb-2 border-bottom pb-2 text-start mt-2" style="color: #047857; font-size: 13px;"><i class="bi bi-activity me-2"></i>11. Ecological Adjustments & Stress Parameters (v3.4 Manual)</h6>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Punch Bag Feeding System</label>
+                      <select class="form-select" [ngModel]="getActiveNewLandPond().punchBagFeeding ? 'Yes' : 'No'" (ngModelChange)="getActiveNewLandPond().punchBagFeeding = ($event === 'Yes')" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; outline: none;">
+                        <option value="No">No</option>
+                        <option value="Yes">Yes</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Average Pre-dawn Dissolved Oxygen (mg/L)</label>
+                      <input type="number" step="0.1" class="form-control" [(ngModel)]="getActiveNewLandPond().preDawnDo" placeholder="e.g. 4.5" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">H2S Detection Status</label>
+                      <select class="form-select" [ngModel]="getActiveNewLandPond().h2sDetected ? 'Yes' : 'No'" (ngModelChange)="getActiveNewLandPond().h2sDetected = ($event === 'Yes')" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; outline: none;">
+                        <option value="No">No (Optimal DO)</option>
+                        <option value="Yes">Yes (Severe Stress H2S)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Cyanobacteria Average (%)</label>
+                      <input type="number" step="0.1" class="form-control" [(ngModel)]="getActiveNewLandPond().cyanobacteriaAvg" placeholder="e.g. 15.0" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                  </div>
+
+                  <!-- v3.4 Water Quality & Plankton Chemistry Log -->
+                  <h6 class="fw-bold mb-2 border-bottom pb-2 text-start mt-2" style="color: #047857; font-size: 13px;"><i class="bi bi-droplet-half me-2"></i>12. Water Quality & Plankton Log (v3.4 Section 1.3)</h6>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Water pH</label>
+                      <input type="number" step="0.1" class="form-control" [(ngModel)]="getActiveNewLandPond().waterPh" placeholder="e.g. 7.5" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Total Ammonia Nitrogen (TAN mg/L)</label>
+                      <input type="number" step="0.01" class="form-control" [(ngModel)]="getActiveNewLandPond().tanMgL" placeholder="e.g. 0.5" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Secchi Disc Depth (cm)</label>
+                      <input type="number" class="form-control" [(ngModel)]="getActiveNewLandPond().secchiDepthCm" placeholder="e.g. 35" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Diatoms (%)</label>
+                      <input type="number" step="0.1" class="form-control" [(ngModel)]="getActiveNewLandPond().diatomsPct" placeholder="e.g. 40.0" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Green Algae (%)</label>
+                      <input type="number" step="0.1" class="form-control" [(ngModel)]="getActiveNewLandPond().greenAlgaePct" placeholder="e.g. 35.0" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Zooplankton Score (0-3)</label>
+                      <input type="number" min="0" max="3" class="form-control" [(ngModel)]="getActiveNewLandPond().zooplanktonScore" placeholder="e.g. 2" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
                     </div>
                   </div>
 

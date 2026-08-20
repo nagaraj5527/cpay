@@ -16,6 +16,7 @@ export interface PondData {
   finalHarvestWeightG: number;
   cultureDurationDays: number;
   survivalFraction: number;
+  aerationRequired?: boolean;
   averageFcr: number;
   improvedFcrTarget: number;
   pondAreaHa: number;
@@ -65,6 +66,32 @@ export interface PondData {
   interventions: Record<string, boolean>;
   biomassCarbonPct: number;
   edibleYieldFraction: number;
+  // v3.4 IMC Field-Data MRV Specification Parameters
+  preStockingSoc?: number;
+  postHarvestSoc?: number;
+  totalSoilNitrogen?: number;
+  soilCnRatio?: number;
+  bulkDensity?: number;
+  samplingDepth?: number;
+  qDob?: number;
+  qGnc?: number;
+  qSbm?: number;
+  qDdgs?: number;
+  punchBagFeeding?: boolean;
+  preDawnDo?: number;
+  h2sDetected?: boolean;
+  cyanobacteriaAvg?: number;
+  waterPh?: number;
+  tanMgL?: number;
+  secchiDepthCm?: number;
+  diatomsPct?: number;
+  greenAlgaePct?: number;
+  zooplanktonScore?: number;
+  latitude?: number;
+  longitude?: number;
+  farmId?: string;
+  operatorName?: string;
+  mrvStatus?: string;
   quantity: number;
   daysOfCulture: number;
   area: number;
@@ -90,6 +117,7 @@ export function createDefaultPond(pondIndex: number, aquaType: string = 'Fish', 
     finalHarvestWeightG: specDefaults.finalHarvestWeightG || 1500,
     cultureDurationDays: specDefaults.cultureDurationDays || 240,
     survivalFraction: specDefaults.survivalFraction || 0.80,
+    aerationRequired: false,
     averageFcr: specDefaults.fcrBaseline || 3.0,
     improvedFcrTarget: 2.5,
     pondAreaHa: 1.0,
@@ -147,6 +175,31 @@ export function createDefaultPond(pondIndex: number, aquaType: string = 'Fish', 
     },
     biomassCarbonPct: 0.08,
     edibleYieldFraction: 0.65,
+    preStockingSoc: 1.20,
+    postHarvestSoc: 1.45,
+    totalSoilNitrogen: 0.15,
+    soilCnRatio: 12.0,
+    bulkDensity: 1.25,
+    samplingDepth: 0.15,
+    qDob: 0,
+    qGnc: 0,
+    qSbm: 0,
+    qDdgs: 0,
+    punchBagFeeding: false,
+    preDawnDo: 4.5,
+    h2sDetected: false,
+    cyanobacteriaAvg: 15.0,
+    waterPh: 7.5,
+    tanMgL: 0.5,
+    secchiDepthCm: 35,
+    diatomsPct: 40.0,
+    greenAlgaePct: 35.0,
+    zooplanktonScore: 2,
+    latitude: 16.5062,
+    longitude: 80.6480,
+    farmId: '',
+    operatorName: '',
+    mrvStatus: 'PASS',
     quantity: specDefaults.stockingDensity || 6250,
     daysOfCulture: specDefaults.cultureDurationDays || 240,
     area: 1.0
@@ -197,6 +250,19 @@ export class PlantationDetailsComponent implements OnInit, OnDestroy {
   largeTreeCount: number | null = null;
   mangroveAreaHa: number | null = null;
   biomassFactor: number | null = null;
+
+  gwpOptionsList: string[] = ['AR5', 'AR6'];
+  growthCurveOptionsList: string[] = ['Exponential', 'Logistic'];
+  n2oEfPresetOptionsList: string[] = ['0.71%', '1.8%', 'Custom'];
+  yesNoOptions: string[] = ['No', 'Yes'];
+
+  toggleIntervention(measureKey: string): void {
+    const pond = this.getActivePond();
+    if (!pond.interventions) {
+      pond.interventions = {};
+    }
+    pond.interventions[measureKey] = !pond.interventions[measureKey];
+  }
 
   biomassFactorOptions: string[] = [
     '1.00 - Standard Average Tropical Tree (Default)',

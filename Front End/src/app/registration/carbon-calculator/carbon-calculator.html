@@ -357,7 +357,7 @@
                             {{ (selectedLandType === 'Open Land' || selectedLandType === 'Govt Land' || selectedLandType === 'House' || (selectedLandType !== 'Fish Pond' && (!ponds || ponds.length === 0))) ? 'TOTAL EXISTING CO2e STORED' : 'TOTAL CARBON CREDITS' }}
                         </span>
                         <h4 class="mb-0 text-white fw-bold mt-1" style="font-size: 20px;">
-                            {{ overallSummary.totalCO2Reduction | number:'1.2-2' }} <span style="font-size: 13px; font-weight: 500;">{{ (selectedLandType === 'Open Land' || selectedLandType === 'Govt Land' || selectedLandType === 'House') ? 'tCO2e' : 'tCO2e/yr' }}</span>
+                            {{ ((selectedLandType === 'Open Land' || selectedLandType === 'Govt Land' || selectedLandType === 'House') ? overallSummary.totalCO2Reduction : overallSummary.totalCarbonCredits) | number:'1.2-2' }} <span style="font-size: 13px; font-weight: 500;">{{ (selectedLandType === 'Open Land' || selectedLandType === 'Govt Land' || selectedLandType === 'House') ? 'tCO2e' : 'tCO2e/yr' }}</span>
                         </h4>
                     </div>
                 </div>

@@ -494,6 +494,10 @@
                         <input type="number" step="0.01" name="survivalFraction" [(ngModel)]="getActivePond().survivalFraction" (ngModelChange)="validateActivePond()" placeholder="e.g. 0.80">
                     </div>
                     <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Aeration Required</label>
+                        <app-custom-select [options]="yesNoOptions" [ngModel]="getActivePond().aerationRequired ? 'Yes' : 'No'" (ngModelChange)="getActivePond().aerationRequired = ($event === 'Yes')" name="aerationRequired" placeholder="Select Aeration Required"></app-custom-select>
+                    </div>
+                    <div class="form-group text-start">
                         <label class="fw-semibold text-dark">Baseline FCR (average_fcr) *</label>
                         <input type="number" step="0.1" name="averageFcr" [(ngModel)]="getActivePond().averageFcr" (ngModelChange)="validateActivePond()" placeholder="e.g. 3.0">
                     </div>
@@ -528,7 +532,7 @@
                     </div>
                 </div>
 
-                <!-- Module 3.1 & 4.1: Growth Model & Harvest Event Inputs -->
+                <!-- Module 3.1 & 4.1: Growth Model & Harvest Event Options -->
                 <h6 class="fw-bold mb-3 border-bottom pb-2 text-teal" style="color: #047857;"><i class="bi bi-graph-up me-2"></i>3. Growth Curve & Harvest Event Options</h6>
                 <div class="form-grid mb-4">
                     <div class="form-group text-start">
@@ -542,6 +546,10 @@
                     <div class="form-group text-start">
                         <label class="fw-semibold text-dark">Harvest Event Day (Days)</label>
                         <input type="number" name="eventDay" [(ngModel)]="getActivePond().eventDay" placeholder="e.g. 200">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Shrimp Count Stage Harvests (pcs/kg)</label>
+                        <input type="number" name="eventCountPerKg" [(ngModel)]="getActivePond().eventCountPerKg" placeholder="e.g. 80">
                     </div>
                     <div class="form-group text-start">
                         <label class="fw-semibold text-dark">Event Harvest Share (fraction 0-1)</label>
@@ -569,16 +577,44 @@
                         <input type="number" step="0.01" name="ch4OxidationFraction" [(ngModel)]="getActivePond().ch4OxidationFraction" placeholder="e.g. 0.25">
                     </div>
                     <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">N2O Emission Preset</label>
+                        <app-custom-select [options]="n2oEfPresetOptions" [(ngModel)]="getActivePond().n2oEfPreset" name="n2oEfPreset" placeholder="Select Preset"></app-custom-select>
+                    </div>
+                    <div class="form-group text-start" *ngIf="getActivePond().n2oEfPreset === 'Custom'">
+                        <label class="fw-semibold text-dark">Custom N2O Emission Factor</label>
+                        <input type="number" step="0.001" name="n2oEfCustom" [(ngModel)]="getActivePond().n2oEfCustom" placeholder="e.g. 0.008">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Chamber Measured CH4 (kg) [Lab Override]</label>
+                        <input type="number" step="0.01" name="measuredCh4Kg" [(ngModel)]="getActivePond().measuredCh4Kg" placeholder="Leave blank if unmeasured">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Chamber Measured N2O (kg) [Lab Override]</label>
+                        <input type="number" step="0.01" name="measuredN2oKg" [(ngModel)]="getActivePond().measuredN2oKg" placeholder="Leave blank if unmeasured">
+                    </div>
+                    <div class="form-group text-start">
                         <label class="fw-semibold text-dark">Lime Applied per Crop (kg)</label>
                         <input type="number" name="limeAppliedKg" [(ngModel)]="getActivePond().limeAppliedKg" placeholder="e.g. 200">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Lime Emission Factor (tCO2/t lime)</label>
+                        <input type="number" step="0.01" name="limeEf" [(ngModel)]="getActivePond().limeEf" placeholder="e.g. 0.12">
                     </div>
                     <div class="form-group text-start">
                         <label class="fw-semibold text-dark">Synthetic Fertilizer N (kg)</label>
                         <input type="number" name="fertilizerNKg" [(ngModel)]="getActivePond().fertilizerNKg" placeholder="e.g. 0">
                     </div>
                     <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Synthetic Fertilizer N2O EF</label>
+                        <input type="number" step="0.001" name="fertilizerN2oEf" [(ngModel)]="getActivePond().fertilizerN2oEf" placeholder="e.g. 0.01">
+                    </div>
+                    <div class="form-group text-start">
                         <label class="fw-semibold text-dark">Pond Idle Bottom Exposure (Days)</label>
                         <input type="number" name="idleDays" [(ngModel)]="getActivePond().idleDays" placeholder="e.g. 20">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Idle Soil EF (kgCO2e/ha/day)</label>
+                        <input type="number" step="0.1" name="idleEfKgco2ePerHaDay" [(ngModel)]="getActivePond().idleEfKgco2ePerHaDay" placeholder="e.g. 2.0">
                     </div>
                 </div>
 
@@ -598,12 +634,36 @@
                         <input type="number" name="paddlewheelHours" [(ngModel)]="getActivePond().paddlewheelHours" placeholder="e.g. 8">
                     </div>
                     <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Blower Rating (kW)</label>
+                        <input type="number" step="0.1" name="blowerKw" [(ngModel)]="getActivePond().blowerKw" placeholder="e.g. 0">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Blower Operating Hours/Day</label>
+                        <input type="number" name="blowerHours" [(ngModel)]="getActivePond().blowerHours" placeholder="e.g. 0">
+                    </div>
+                    <div class="form-group text-start">
                         <label class="fw-semibold text-dark">Diesel Fuel Baseline (L/crop)</label>
                         <input type="number" name="dieselL" [(ngModel)]="getActivePond().dieselL" placeholder="e.g. 500">
                     </div>
                     <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Generator Diesel (L/crop)</label>
+                        <input type="number" name="generatorDieselL" [(ngModel)]="getActivePond().generatorDieselL" placeholder="e.g. 200">
+                    </div>
+                    <div class="form-group text-start">
                         <label class="fw-semibold text-dark">Grid Electricity (kWh/crop)</label>
                         <input type="number" name="gridKwh" [(ngModel)]="getActivePond().gridKwh" placeholder="e.g. 500">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Solar Renewable Offset (kWh/crop)</label>
+                        <input type="number" name="solarOffsetKwh" [(ngModel)]="getActivePond().solarOffsetKwh" placeholder="e.g. 0">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Diesel Emission Factor (kgCO2e/L)</label>
+                        <input type="number" step="0.1" name="dieselEf" [(ngModel)]="getActivePond().dieselEf" placeholder="e.g. 3.0">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Grid Electricity EF (kgCO2e/kWh)</label>
+                        <input type="number" step="0.001" name="gridEf" [(ngModel)]="getActivePond().gridEf" placeholder="e.g. 0.710">
                     </div>
                 </div>
 
@@ -644,9 +704,46 @@
                     </div>
                 </div>
 
+                <!-- Module 9.1: Mitigation Measures & Interventions Table -->
+                <h6 class="fw-bold mb-3 border-bottom pb-2 text-teal" style="color: #047857;"><i class="bi bi-sliders me-2"></i>7. Mitigation Measures & Climate Interventions (Module 9.1)</h6>
+                <div class="table-responsive mb-4" style="border-radius: 12px; border: 1px solid #cbd5e1; overflow: hidden;">
+                    <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+                        <thead style="background-color: #f1f5f9; color: #1e293b; font-weight: 700;">
+                            <tr>
+                                <th style="width: 30%;">Mitigation Measure</th>
+                                <th style="width: 20%; text-align: center;">Apply Measure</th>
+                                <th style="width: 25%; text-align: center;">FCR Reduction</th>
+                                <th style="width: 25%; text-align: center;">Anaerobic Effect</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let m of [
+                                { key: 'betterFeed', name: 'Better Feed Quality' },
+                                { key: 'waterProbiotics', name: 'Water Probiotics' },
+                                { key: 'soilProbiotics', name: 'Soil Probiotics' },
+                                { key: 'betterAeration', name: 'Better Aeration' },
+                                { key: 'waterQualityMgmt', name: 'Water Quality Management' },
+                                { key: 'optimizedFeeding', name: 'Optimized Feeding Timing' },
+                                { key: 'cnRatioMgmt', name: 'C/N Ratio Management' }
+                            ]">
+                                <td class="fw-semibold text-dark">{{ m.name }}</td>
+                                <td class="text-center">
+                                    <input type="checkbox" 
+                                           class="form-check-input"
+                                           style="width: 20px; height: 20px; cursor: pointer;"
+                                           [checked]="getActivePond().interventions && getActivePond().interventions[m.key]" 
+                                           (change)="toggleIntervention(m.key)">
+                                </td>
+                                <td class="text-center"><span class="badge bg-light text-dark border px-2 py-1">0.05</span></td>
+                                <td class="text-center"><span class="badge bg-light text-dark border px-2 py-1">0.30</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
                 <!-- Module 10.1: Biomass Carbon Inputs -->
-                <h6 class="fw-bold mb-3 border-bottom pb-2 text-teal" style="color: #047857;"><i class="bi bi-pie-chart me-2"></i>7. Biomass Carbon & Dressing Yield Parameters</h6>
-                <div class="form-grid">
+                <h6 class="fw-bold mb-3 border-bottom pb-2 text-teal" style="color: #047857;"><i class="bi bi-pie-chart me-2"></i>8. Biomass Carbon & Dressing Yield Parameters</h6>
+                <div class="form-grid mb-4">
                     <div class="form-group text-start">
                         <label class="fw-semibold text-dark">Harvested Biomass Carbon Content (fraction 0-1)</label>
                         <input type="number" step="0.01" name="biomassCarbonPct" [(ngModel)]="getActivePond().biomassCarbonPct" placeholder="e.g. 0.08">
@@ -654,6 +751,106 @@
                     <div class="form-group text-start">
                         <label class="fw-semibold text-dark">Edible Dressing Yield Fraction (fraction 0-1)</label>
                         <input type="number" step="0.01" name="edibleYieldFraction" [(ngModel)]="getActivePond().edibleYieldFraction" placeholder="e.g. 0.65">
+                    </div>
+                </div>
+
+                <!-- v3.4 Feed Formulation Ingredients (Invoice-Derived Blends) -->
+                <h6 class="fw-bold mb-3 border-bottom pb-2 text-teal" style="color: #047857;"><i class="bi bi-box-seam me-2"></i>9. Feed Formulation & Ingredient Blends (v3.4 Invoice-Derived)</h6>
+                <div class="form-grid mb-4">
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Deoiled Rice Bran (DOB) Purchased (kg)</label>
+                        <input type="number" name="qDob" [(ngModel)]="getActivePond().qDob" placeholder="e.g. 500">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Groundnut Cake (GNC) Purchased (kg)</label>
+                        <input type="number" name="qGnc" [(ngModel)]="getActivePond().qGnc" placeholder="e.g. 200">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Soybean Meal (SBM) Purchased (kg)</label>
+                        <input type="number" name="qSbm" [(ngModel)]="getActivePond().qSbm" placeholder="e.g. 150">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">DDGS Purchased Quantity (kg)</label>
+                        <input type="number" name="qDdgs" [(ngModel)]="getActivePond().qDdgs" placeholder="e.g. 100">
+                    </div>
+                </div>
+
+                <!-- v3.4 Soil Baseline & Benthic Coupling -->
+                <h6 class="fw-bold mb-3 border-bottom pb-2 text-teal" style="color: #047857;"><i class="bi bi-layers me-2"></i>10. Soil Baseline & Benthic Coupling (v3.4 Manual)</h6>
+                <div class="form-grid mb-4">
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Pre-Stocking Soil Organic Carbon (SOC %)</label>
+                        <input type="number" step="0.01" name="preStockingSoc" [(ngModel)]="getActivePond().preStockingSoc" placeholder="e.g. 1.20">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Post-Harvest Soil Organic Carbon (SOC %)</label>
+                        <input type="number" step="0.01" name="postHarvestSoc" [(ngModel)]="getActivePond().postHarvestSoc" placeholder="e.g. 1.45">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Total Soil Nitrogen (%)</label>
+                        <input type="number" step="0.01" name="totalSoilNitrogen" [(ngModel)]="getActivePond().totalSoilNitrogen" placeholder="e.g. 0.15">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Soil C:N Ratio</label>
+                        <input type="number" step="0.1" name="soilCnRatio" [(ngModel)]="getActivePond().soilCnRatio" placeholder="e.g. 12.0">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Soil Bulk Density (g/cm³)</label>
+                        <input type="number" step="0.01" name="bulkDensity" [(ngModel)]="getActivePond().bulkDensity" placeholder="e.g. 1.25">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Sampling Depth (meters)</label>
+                        <input type="number" step="0.01" name="samplingDepth" [(ngModel)]="getActivePond().samplingDepth" placeholder="e.g. 0.15">
+                    </div>
+                </div>
+
+                <!-- v3.4 Ecological Adjustments & DO Stress -->
+                <h6 class="fw-bold mb-3 border-bottom pb-2 text-teal" style="color: #047857;"><i class="bi bi-activity me-2"></i>11. Ecological Adjustments & Stress Parameters (v3.4 Manual)</h6>
+                <div class="form-grid mb-4">
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Punch Bag Feeding System</label>
+                        <app-custom-select [options]="yesNoOptions" [ngModel]="getActivePond().punchBagFeeding ? 'Yes' : 'No'" (ngModelChange)="getActivePond().punchBagFeeding = ($event === 'Yes')" name="punchBagFeeding" placeholder="Select Punch Bag"></app-custom-select>
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Average Pre-dawn Dissolved Oxygen (mg/L)</label>
+                        <input type="number" step="0.1" name="preDawnDo" [(ngModel)]="getActivePond().preDawnDo" placeholder="e.g. 4.5">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">H2S Detection Status</label>
+                        <app-custom-select [options]="yesNoOptions" [ngModel]="getActivePond().h2sDetected ? 'Yes' : 'No'" (ngModelChange)="getActivePond().h2sDetected = ($event === 'Yes')" name="h2sDetected" placeholder="Select H2S Status"></app-custom-select>
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Cyanobacteria Average (%)</label>
+                        <input type="number" step="0.1" name="cyanobacteriaAvg" [(ngModel)]="getActivePond().cyanobacteriaAvg" placeholder="e.g. 15.0">
+                    </div>
+                </div>
+
+                <!-- v3.4 Water Quality & Plankton Chemistry Log -->
+                <h6 class="fw-bold mb-3 border-bottom pb-2 text-teal" style="color: #047857;"><i class="bi bi-droplet-half me-2"></i>12. Water Quality & Plankton Log (v3.4 Section 1.3)</h6>
+                <div class="form-grid">
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Water pH</label>
+                        <input type="number" step="0.1" name="waterPh" [(ngModel)]="getActivePond().waterPh" placeholder="e.g. 7.5">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Total Ammonia Nitrogen (TAN mg/L)</label>
+                        <input type="number" step="0.01" name="tanMgL" [(ngModel)]="getActivePond().tanMgL" placeholder="e.g. 0.5">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Secchi Disc Depth (cm)</label>
+                        <input type="number" name="secchiDepthCm" [(ngModel)]="getActivePond().secchiDepthCm" placeholder="e.g. 35">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Diatoms (%)</label>
+                        <input type="number" step="0.1" name="diatomsPct" [(ngModel)]="getActivePond().diatomsPct" placeholder="e.g. 40.0">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Green Algae (%)</label>
+                        <input type="number" step="0.1" name="greenAlgaePct" [(ngModel)]="getActivePond().greenAlgaePct" placeholder="e.g. 35.0">
+                    </div>
+                    <div class="form-group text-start">
+                        <label class="fw-semibold text-dark">Zooplankton Score (0-3)</label>
+                        <input type="number" min="0" max="3" name="zooplanktonScore" [(ngModel)]="getActivePond().zooplanktonScore" placeholder="e.g. 2">
                     </div>
                 </div>
 
