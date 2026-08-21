@@ -1292,38 +1292,19 @@ export const calculateCarbonLive = async (user, data) => {
             calculatedPondArea = Number(area) * 0.404686;
         }
 
-        const report = calculateDetailedAquacultureCarbon({
-            pondArea: calculatedPondArea,
-            cropDuration: Number(data.daysOfCulture || data.age * 30 || 200.0),
-            cropsPerYear: Number(data.cropsPerYear !== undefined ? data.cropsPerYear : 1.5),
-            netBiomassGain: Number(data.netBiomassGain !== undefined ? data.netBiomassGain : 198.0),
-            feedCrudeProtein: Number(data.feedCrudeProtein !== undefined ? data.feedCrudeProtein : 0.28),
-            feedCarbonContent: Number(data.feedCarbonContent !== undefined ? data.feedCarbonContent : 0.40),
-            dobProportion: Number(data.dobProportion !== undefined ? data.dobProportion : 0.9091),
-            dobEF: Number(data.dobEF !== undefined ? data.dobEF : 0.4),
-            gncEF: Number(data.gncEF !== undefined ? data.gncEF : 1.2),
-            nRetentionEfficiency: Number(data.nRetentionEfficiency !== undefined ? data.nRetentionEfficiency : 0.25),
-            cRetentionEfficiency: Number(data.cRetentionEfficiency !== undefined ? data.cRetentionEfficiency : 0.22),
-            n2oN_EF: Number(data.n2oN_EF !== undefined ? data.n2oN_EF : 0.0060),
-            gwpCH4: Number(data.gwpCH4 !== undefined ? data.gwpCH4 : 28.0),
-            gwpN2O: Number(data.gwpN2O !== undefined ? data.gwpN2O : 265.0),
-            dieselEF: Number(data.dieselEF !== undefined ? data.dieselEF : 3.0),
-            dieselBaseline: Number(data.dieselBaseline !== undefined ? data.dieselBaseline : 2000.0),
-            dieselImproved: Number(data.dieselImproved !== undefined ? data.dieselImproved : 1600.0),
-            baselineAnaerobicFraction: Number(data.baselineAnaerobicFraction !== undefined ? data.baselineAnaerobicFraction : 0.20),
-            improvedAnaerobicFraction: Number(data.improvedAnaerobicFraction !== undefined ? data.improvedAnaerobicFraction : 0.08),
-            baselineFCR: Number(data.fcr !== undefined ? data.fcr : 2.90),
-            fcrImprovement: Number(data.fcrImprovement !== undefined ? data.fcrImprovement : 0.10),
-            measuredCH4Baseline: data.measuredCH4Baseline !== undefined ? data.measuredCH4Baseline : null,
-            measuredCH4Improved: data.measuredCH4Improved !== undefined ? data.measuredCH4Improved : null,
-            measuredN2OBaseline: data.measuredN2OBaseline !== undefined ? data.measuredN2OBaseline : null,
-            measuredN2OImproved: data.measuredN2OImproved !== undefined ? data.measuredN2OImproved : null,
+        const aquaResult = calculateAquacultureCarbon({
+            ...data,
+            pond_area_ha: calculatedPondArea,
+            culture_type: data.cultureType || data.selectedSpecies || data.subCategory || 'IMC',
             carbonPrice: carbonPrice
         });
 
         return {
             success: true,
-            ...report
+            estimatedCO2: aquaResult.carbon_credit_per_year_t,
+            carbonCredits: aquaResult.carbon_credit_per_year_t,
+            marketValue: aquaResult.carbon_credit_per_year_t * carbonPrice,
+            ...aquaResult
         };
     } else {
         const report = calculateCarbonReport(

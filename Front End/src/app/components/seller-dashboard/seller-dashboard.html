@@ -1200,6 +1200,57 @@
                     </div>
                   </div>
 
+                  <!-- Module 0: Farm Identity, Geospatial & Crop Dates (v3.4 Section 1.1) -->
+                  <h6 class="fw-bold mb-2 border-bottom pb-2 text-start mt-3" style="color: #047857; font-size: 13px;"><i class="bi bi-geo-alt-fill me-2"></i>0. Farm Identity, Geospatial & Crop Dates (v3.4 Section 1.1)</h6>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Farm ID *</label>
+                      <input type="text" class="form-control" [(ngModel)]="getActiveNewLandPond().farmId" placeholder="e.g. FARM-001" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Pond ID *</label>
+                      <input type="text" class="form-control" [(ngModel)]="getActiveNewLandPond().pondId" placeholder="e.g. POND-001" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Farmer / Operator Name *</label>
+                      <input type="text" class="form-control" [(ngModel)]="getActiveNewLandPond().operatorName" placeholder="e.g. Farmer Name" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Stocked Seed Quantity (pcs)</label>
+                      <input type="number" class="form-control" [(ngModel)]="getActiveNewLandPond().seedQuantity" placeholder="e.g. 6250" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Latitude (Decimal Degrees) *</label>
+                      <input type="number" step="0.0001" class="form-control" [(ngModel)]="getActiveNewLandPond().latitude" placeholder="e.g. 16.5062" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Longitude (Decimal Degrees) *</label>
+                      <input type="number" step="0.0001" class="form-control" [(ngModel)]="getActiveNewLandPond().longitude" placeholder="e.g. 80.6480" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Stocking Date</label>
+                      <input type="date" class="form-control" [(ngModel)]="getActiveNewLandPond().stockingDate" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Planned Harvest Date</label>
+                      <input type="date" class="form-control" [(ngModel)]="getActiveNewLandPond().plannedHarvestDate" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                    <div>
+                      <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Actual Harvest Date</label>
+                      <input type="date" class="form-control" [(ngModel)]="getActiveNewLandPond().actualHarvestDate" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                    </div>
+                  </div>
+                  <div style="margin-bottom: 12px;">
+                    <label class="form-label small fw-bold text-muted mb-1" style="font-size: 11px; display: block; margin-bottom: 4px;">Actual Harvest Weight (kg)</label>
+                    <input type="number" class="form-control" [(ngModel)]="getActiveNewLandPond().actualHarvestWeightKg" placeholder="e.g. 7500" style="border-radius: 10px; border: 1px solid #d8e6e2; padding: 9px 12px; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;" />
+                  </div>
+
                   <!-- Module 1. Stocking & Species Growth Parameters -->
                   <h6 class="fw-bold mb-2 border-bottom pb-2 text-start mt-3" style="color: #047857; font-size: 13px;"><i class="bi bi-water me-2"></i>1. Stocking & Species Growth Parameters</h6>
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">

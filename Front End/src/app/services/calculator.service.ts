@@ -4,94 +4,73 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface CarbonCalculatorInputs {
+  cultureType?: string;
   pondArea?: number;
-  cropDuration?: number;
   cropsPerYear?: number;
-  netBiomassGain?: number;
+  stockingDensity?: number;
+  stockingWeightG?: number;
+  finalHarvestWeightG?: number;
+  cultureDurationDays?: number;
+  cropDuration?: number;
+  survivalFraction?: number;
+  gwpFramework?: string;
+  averageFcr?: number;
+  farmReportedFcr?: number;
+  fcr?: number;
+  fcrImprovement?: number;
+  feedConsumed?: number;
+  growthCurveType?: string;
+  mortalityFeedFactor?: number;
   feedProtein?: number;
   feedCarbon?: number;
-  dobProportion?: number;
-  dobEF?: number;
-  gncEF?: number;
-  nitrogenRetention?: number;
-  carbonRetention?: number;
-  n2oEF?: number;
-  gwpCH4?: number;
-  gwpN2O?: number;
-  dieselEF?: number;
-  dieselBaseline?: number;
-  dieselImproved?: number;
+  feedMfgEF?: number;
   anaerobicBaseline?: number;
-  anaerobicImproved?: number;
-  fcrBaseline?: number;
-  fcrImprovement?: number;
+  anaerobicAdjustmentFactor?: number;
+  sedimentBurialFraction?: number;
+  ch4OxidationFraction?: number;
+  n2oEF?: number;
   measuredCH4Baseline?: number | null;
-  measuredCH4Improved?: number | null;
   measuredN2OBaseline?: number | null;
-  measuredN2OImproved?: number | null;
-}
-
-export interface ScenarioResult {
-  feedRequired: number;
-  dobQuantity: number;
-  gncQuantity: number;
-  feedScope3: number;
-  feedNInput: number;
-  nRetained: number;
-  n2oEmission: number;
-  n2oCO2e: number;
-  feedCInput: number;
-  cRetained: number;
-  cNotRetained: number;
-  ch4CProduced: number;
-  ch4Emission: number;
-  ch4CO2e: number;
-  dieselCO2e: number;
-  totalFootprint: number;
+  limeAppliedKg?: number;
+  limeEf?: number;
+  fertilizerNKg?: number;
+  fertilizerN2oEf?: number;
+  idleDays?: number;
+  idleEfKgco2ePerHaDay?: number;
+  paddlewheelHp?: number;
+  paddlewheelUnits?: number;
+  paddlewheelHours?: number;
+  blowerKw?: number;
+  blowerHours?: number;
+  salePrice?: number;
+  interventions?: {
+    betterFeed?: boolean;
+    waterProbiotics?: boolean;
+    soilProbiotics?: boolean;
+    betterAeration?: boolean;
+    waterQualityMgmt?: boolean;
+    optimizedFeeding?: boolean;
+    cnRatioMgmt?: boolean;
+  };
+  zooplanktonScore?: number;
+  [key: string]: any;
 }
 
 export interface CalculatorResults {
   inputs: any;
+  farmSummary: any;
   baseline: any;
   improved: any;
-  summary: {
-    creditsPerCrop: number;
-    percentReduction: number;
-    creditsPerYear: number;
-    creditsPerHaPerYear: number;
-  };
+  summary: any;
+  economics: any;
+  mrvChecks?: any;
+  mrvStatus?: string;
 }
 
-export interface SpeciesConfig {
-  cultureType: string;
-  speciesName: string;
-  stockingDensity: number;
-  stockingWeightG: number;
-  finalHarvestWeightG: number;
-  cultureDurationDays: number;
-  survivalFraction: number;
-  fcrBaseline: number;
-  feedProtein: number;
-  feedCarbon: number;
-  feedMfgEF: number;
-  nitrogenRetention: number;
-  carbonRetention: number;
-  anaerobicBaseline: number;
-  n2oEF: number;
-  gridElectricityKwh: number;
-  dieselL: number;
-  seedPrice: number;
-  feedPrice: number;
-  salePrice: number;
-  labourCost: number;
-  probioticsCost: number;
-  otherCosts: number;
-}
-
-export const SPECIES_DEFAULTS: Record<string, SpeciesConfig> = {
+export const SPECIES_DEFAULTS: Record<string, any> = {
   "IMC": {
     cultureType: "IMC",
-    speciesName: "IMC (Indian Major Carp - Polyculture)",
+    speciesName: "Indian Major Carp (Rohu, Catla, Mrigal)",
     stockingDensity: 6250,
     stockingWeightG: 150,
     finalHarvestWeightG: 1500,
@@ -105,8 +84,33 @@ export const SPECIES_DEFAULTS: Record<string, SpeciesConfig> = {
     carbonRetention: 0.22,
     anaerobicBaseline: 0.20,
     n2oEF: 0.0071,
-    gridElectricityKwh: 0,
-    dieselL: 1500,
+    gridElectricityKwh: 500,
+    dieselL: 500,
+    seedPrice: 3.5,
+    feedPrice: 45,
+    salePrice: 130,
+    labourCost: 60000,
+    probioticsCost: 25000,
+    otherCosts: 20000
+  },
+  "Fish": {
+    cultureType: "IMC",
+    speciesName: "Indian Major Carp (Rohu, Catla, Mrigal)",
+    stockingDensity: 6250,
+    stockingWeightG: 150,
+    finalHarvestWeightG: 1500,
+    cultureDurationDays: 240,
+    survivalFraction: 0.80,
+    fcrBaseline: 3.0,
+    feedProtein: 0.28,
+    feedCarbon: 0.40,
+    feedMfgEF: 0.4727,
+    nitrogenRetention: 0.25,
+    carbonRetention: 0.22,
+    anaerobicBaseline: 0.20,
+    n2oEF: 0.0071,
+    gridElectricityKwh: 500,
+    dieselL: 500,
     seedPrice: 3.5,
     feedPrice: 45,
     salePrice: 130,
@@ -130,42 +134,17 @@ export const SPECIES_DEFAULTS: Record<string, SpeciesConfig> = {
     carbonRetention: 0.22,
     anaerobicBaseline: 0.25,
     n2oEF: 0.0071,
-    gridElectricityKwh: 4500,
-    dieselL: 800,
-    seedPrice: 1.5,
+    gridElectricityKwh: 4000,
+    dieselL: 1200,
+    seedPrice: 4.0,
     feedPrice: 48,
     salePrice: 110,
-    labourCost: 75000,
+    labourCost: 70000,
     probioticsCost: 30000,
     otherCosts: 25000
   },
   "Red Pacu": {
     cultureType: "Red Pacu",
-    speciesName: "Red Pacu (Rupchanda)",
-    stockingDensity: 10000,
-    stockingWeightG: 20,
-    finalHarvestWeightG: 800,
-    cultureDurationDays: 210,
-    survivalFraction: 0.80,
-    fcrBaseline: 1.8,
-    feedProtein: 0.28,
-    feedCarbon: 0.40,
-    feedMfgEF: 0.5500,
-    nitrogenRetention: 0.25,
-    carbonRetention: 0.22,
-    anaerobicBaseline: 0.22,
-    n2oEF: 0.0071,
-    gridElectricityKwh: 3000,
-    dieselL: 1000,
-    seedPrice: 2.0,
-    feedPrice: 46,
-    salePrice: 120,
-    labourCost: 65000,
-    probioticsCost: 28000,
-    otherCosts: 22000
-  },
-  "Roopchand": {
-    cultureType: "Red Pacu",
     speciesName: "Roopchand (Red Pacu)",
     stockingDensity: 10000,
     stockingWeightG: 20,
@@ -188,60 +167,10 @@ export const SPECIES_DEFAULTS: Record<string, SpeciesConfig> = {
     labourCost: 65000,
     probioticsCost: 28000,
     otherCosts: 22000
-  },
-  "Rupchanda": {
-    cultureType: "Red Pacu",
-    speciesName: "Roopchand (Red Pacu)",
-    stockingDensity: 10000,
-    stockingWeightG: 20,
-    finalHarvestWeightG: 800,
-    cultureDurationDays: 210,
-    survivalFraction: 0.80,
-    fcrBaseline: 1.8,
-    feedProtein: 0.28,
-    feedCarbon: 0.40,
-    feedMfgEF: 0.5500,
-    nitrogenRetention: 0.25,
-    carbonRetention: 0.22,
-    anaerobicBaseline: 0.22,
-    n2oEF: 0.0071,
-    gridElectricityKwh: 3000,
-    dieselL: 1000,
-    seedPrice: 2.0,
-    feedPrice: 46,
-    salePrice: 120,
-    labourCost: 65000,
-    probioticsCost: 28000,
-    otherCosts: 22000
-  },
-  "Tilapia": {
-    cultureType: "Tilapia",
-    speciesName: "Tilapia (Nile / GIFT)",
-    stockingDensity: 25000,
-    stockingWeightG: 5,
-    finalHarvestWeightG: 600,
-    cultureDurationDays: 180,
-    survivalFraction: 0.88,
-    fcrBaseline: 1.6,
-    feedProtein: 0.28,
-    feedCarbon: 0.40,
-    feedMfgEF: 0.5500,
-    nitrogenRetention: 0.25,
-    carbonRetention: 0.22,
-    anaerobicBaseline: 0.20,
-    n2oEF: 0.0071,
-    gridElectricityKwh: 4000,
-    dieselL: 600,
-    seedPrice: 1.2,
-    feedPrice: 50,
-    salePrice: 135,
-    labourCost: 55000,
-    probioticsCost: 20000,
-    otherCosts: 18000
   },
   "P. vannamei": {
     cultureType: "P. vannamei",
-    speciesName: "P. vannamei (Pacific White Shrimp)",
+    speciesName: "Pacific White Shrimp (P. vannamei)",
     stockingDensity: 400000,
     stockingWeightG: 0.005,
     finalHarvestWeightG: 20,
@@ -251,22 +180,22 @@ export const SPECIES_DEFAULTS: Record<string, SpeciesConfig> = {
     feedProtein: 0.35,
     feedCarbon: 0.45,
     feedMfgEF: 0.8500,
-    nitrogenRetention: 0.25,
-    carbonRetention: 0.22,
+    nitrogenRetention: 0.28,
+    carbonRetention: 0.25,
     anaerobicBaseline: 0.15,
     n2oEF: 0.0071,
     gridElectricityKwh: 12000,
-    dieselL: 1200,
-    seedPrice: 0.4,
+    dieselL: 2500,
+    seedPrice: 0.40,
     feedPrice: 85,
     salePrice: 380,
-    labourCost: 120000,
-    probioticsCost: 65000,
-    otherCosts: 45000
+    labourCost: 90000,
+    probioticsCost: 50000,
+    otherCosts: 35000
   },
   "P. monodon": {
     cultureType: "P. monodon",
-    speciesName: "P. monodon (Giant Tiger Prawn)",
+    speciesName: "Giant Tiger Prawn (P. monodon)",
     stockingDensity: 150000,
     stockingWeightG: 0.005,
     finalHarvestWeightG: 30,
@@ -276,19 +205,26 @@ export const SPECIES_DEFAULTS: Record<string, SpeciesConfig> = {
     feedProtein: 0.38,
     feedCarbon: 0.46,
     feedMfgEF: 0.9000,
-    nitrogenRetention: 0.25,
-    carbonRetention: 0.22,
+    nitrogenRetention: 0.28,
+    carbonRetention: 0.25,
     anaerobicBaseline: 0.18,
     n2oEF: 0.0071,
     gridElectricityKwh: 10000,
-    dieselL: 1400,
-    seedPrice: 0.6,
-    feedPrice: 88,
+    dieselL: 2000,
+    seedPrice: 0.60,
+    feedPrice: 95,
     salePrice: 520,
-    labourCost: 110000,
-    probioticsCost: 60000,
-    otherCosts: 40000
+    labourCost: 85000,
+    probioticsCost: 45000,
+    otherCosts: 30000
   }
+};
+
+export const INGREDIENT_DEFAULTS: Record<string, any> = {
+  DOB: { name: 'Deoiled Rice Bran', protein_pct: 0.12, carbon_pct: 0.40, nitrogen_pct: 0.0192, ef_kgco2e_per_kg: 0.40 },
+  GNC: { name: 'Groundnut Cake', protein_pct: 0.40, carbon_pct: 0.45, nitrogen_pct: 0.0640, ef_kgco2e_per_kg: 1.20 },
+  SBM: { name: 'Soybean Meal', protein_pct: 0.44, carbon_pct: 0.46, nitrogen_pct: 0.0704, ef_kgco2e_per_kg: 0.85 },
+  DDGS: { name: 'Distillers Dried Grains with Solubles', protein_pct: 0.28, carbon_pct: 0.42, nitrogen_pct: 0.0448, ef_kgco2e_per_kg: 0.65 }
 };
 
 @Injectable({
@@ -308,28 +244,90 @@ export class CalculatorService {
   }
 
   calculateOnFrontend(input: any): any {
-    const culture_type = input.cultureType || input.selectedSpecies || 'IMC';
+    const culture_type = input.cultureType || input.selectedSpecies || input.species_name || 'IMC';
     const species = SPECIES_DEFAULTS[culture_type] || SPECIES_DEFAULTS['IMC'];
+    const isIMC = (culture_type === 'IMC' || culture_type === 'Fish' || culture_type === 'Roopchand' || culture_type === 'Tilapia');
 
     const stocking_density = Number(input.stockingDensity ?? species.stockingDensity ?? 6250);
+    const seed_quantity = Number(input.seed_quantity ?? input.seedQuantity ?? input.quantity ?? (stocking_density * (input.pondArea ?? input.pondAreaHa ?? 1.0)));
     const stocking_weight_g = Number(input.stockingWeightG ?? species.stockingWeightG ?? 150);
     const final_harvest_weight_g = Number(input.finalHarvestWeightG ?? species.finalHarvestWeightG ?? 1500);
     const culture_duration_days = Number(input.cultureDurationDays ?? species.cultureDurationDays ?? 240);
     const survival_fraction = Number(input.survivalFraction ?? species.survivalFraction ?? 0.80);
-
-    const feed_protein_pct = Number(input.feedProtein ?? species.feedProtein ?? 0.28);
-    const feed_carbon_pct = Number(input.feedCarbon ?? species.feedCarbon ?? 0.40);
-    const feed_nitrogen_pct = feed_protein_pct / 6.25;
-    const feed_mfg_ef = Number(input.feedMfgEF ?? species.feedMfgEF ?? 0.4727);
 
     const pond_area_ha = Number(input.pondArea ?? input.pondAreaHa ?? 1.0);
     const crops_per_year = Number(input.cropsPerYear ?? 1.5);
     const gwp_framework = input.gwpFramework || 'AR5';
     const farm_reported_fcr = input.farmReportedFcr ?? input.averageFcr ?? species.fcrBaseline;
 
-    const actual_fcr_used = (farm_reported_fcr !== null && farm_reported_fcr !== undefined && !isNaN(farm_reported_fcr) && Number(farm_reported_fcr) > 0)
+    // Aeration Lock for IMC Configuration
+    const raw_paddlewheel_units = Number(input.paddlewheelUnits ?? 0);
+    const raw_blower_kw = Number(input.blowerKw ?? 0);
+    const aeration_required = isIMC ? false : (input.aeration_required ?? species.aeration_required);
+
+    // v3.4 Feed Ingredients Blend
+    const q_dob = Number(input.qDob ?? input.q_dob ?? 0);
+    const q_gnc = Number(input.qGnc ?? input.q_gnc ?? 0);
+    const q_sbm = Number(input.qSbm ?? input.q_sbm ?? 0);
+    const q_ddgs = Number(input.qDdgs ?? input.q_ddgs ?? 0);
+    const feed_mix_total_kg = q_dob + q_gnc + q_sbm + q_ddgs;
+
+    let feed_protein_pct = Number(input.feedProtein ?? species.feedProtein ?? 0.28);
+    let feed_carbon_pct = Number(input.feedCarbon ?? species.feedCarbon ?? 0.40);
+    let feed_nitrogen_pct = feed_protein_pct / 6.25;
+    let feed_mfg_ef = Number(input.feedMfgEF ?? species.feedMfgEF ?? 0.4727);
+
+    if (feed_mix_total_kg > 0) {
+      feed_protein_pct = (q_dob * INGREDIENT_DEFAULTS['DOB'].protein_pct +
+                          q_gnc * INGREDIENT_DEFAULTS['GNC'].protein_pct +
+                          q_sbm * INGREDIENT_DEFAULTS['SBM'].protein_pct +
+                          q_ddgs * INGREDIENT_DEFAULTS['DDGS'].protein_pct) / feed_mix_total_kg;
+
+      feed_carbon_pct = (q_dob * INGREDIENT_DEFAULTS['DOB'].carbon_pct +
+                         q_gnc * INGREDIENT_DEFAULTS['GNC'].carbon_pct +
+                         q_sbm * INGREDIENT_DEFAULTS['SBM'].carbon_pct +
+                         q_ddgs * INGREDIENT_DEFAULTS['DDGS'].carbon_pct) / feed_mix_total_kg;
+
+      feed_nitrogen_pct = (q_dob * INGREDIENT_DEFAULTS['DOB'].nitrogen_pct +
+                           q_gnc * INGREDIENT_DEFAULTS['GNC'].nitrogen_pct +
+                           q_sbm * INGREDIENT_DEFAULTS['SBM'].nitrogen_pct +
+                           q_ddgs * INGREDIENT_DEFAULTS['DDGS'].nitrogen_pct) / feed_mix_total_kg;
+
+      feed_mfg_ef = (q_dob * INGREDIENT_DEFAULTS['DOB'].ef_kgco2e_per_kg +
+                     q_gnc * INGREDIENT_DEFAULTS['GNC'].ef_kgco2e_per_kg +
+                     q_sbm * INGREDIENT_DEFAULTS['SBM'].ef_kgco2e_per_kg +
+                     q_ddgs * INGREDIENT_DEFAULTS['DDGS'].ef_kgco2e_per_kg) / feed_mix_total_kg;
+    }
+
+    // v3.4 Ecological Adjustments: Plankton, Natural Feed Offset, Punch Bag & DO Stress
+    const punch_bag_feeding = !!(input.punchBagFeeding ?? input.punch_bag_feeding);
+    const fcr_punch_bag_factor = punch_bag_feeding ? 0.875 : 1.0;
+
+    const pre_dawn_do = Number(input.preDawnDo ?? input.pre_dawn_do ?? 4.5);
+    const do_stress_factor = pre_dawn_do < 3.0 ? 1.10 : 1.00;
+
+    const diatoms_pct = Number(input.diatomsPct ?? input.diatoms_pct ?? 40.0);
+    const green_algae_pct = Number(input.greenAlgaePct ?? input.green_algae_pct ?? 35.0);
+    const zooplankton_score = Math.min(3, Math.max(0, Number(input.zooplanktonScore ?? input.zooplankton_score ?? 2)));
+    const cyanobacteria_avg = Number(input.cyanobacteriaAvg ?? input.cyanobacteria_avg ?? 15.0);
+
+    const aqi = Math.min(1.0, (diatoms_pct + green_algae_pct) / 60.0);
+    const zqi = zooplankton_score / 3.0;
+    const pqi = 0.60 * aqi + 0.40 * zqi;
+    const spf = 0.85;
+
+    let natural_feed_offset = 0.20 * pqi * spf;
+    if (cyanobacteria_avg > 50) {
+      natural_feed_offset = Math.min(0.05, natural_feed_offset);
+    } else {
+      natural_feed_offset = Math.min(0.20, natural_feed_offset);
+    }
+
+    let baseline_fcr = (farm_reported_fcr !== null && farm_reported_fcr !== undefined && !isNaN(farm_reported_fcr) && Number(farm_reported_fcr) > 0)
       ? Number(farm_reported_fcr)
       : (species.fcrBaseline || 3.0);
+
+    const actual_fcr_used = baseline_fcr * (1 - natural_feed_offset) * fcr_punch_bag_factor * do_stress_factor;
 
     const gwp_ch4 = (gwp_framework === 'AR6') ? 27.0 : Number(input.gwpCH4 ?? 28.0);
     const gwp_n2o = (gwp_framework === 'AR6') ? 273.0 : Number(input.gwpN2O ?? 265.0);
@@ -337,7 +335,7 @@ export class CalculatorService {
     const growth_curve_type = input.growthCurveType || 'Exponential';
     const mortality_feed_factor = Number(input.mortalityFeedFactor ?? 0.5);
 
-    const total_stocked_number = stocking_density * pond_area_ha;
+    const total_stocked_number = seed_quantity > 0 ? seed_quantity : (stocking_density * pond_area_ha);
     const sgr_k = Math.log(final_harvest_weight_g / stocking_weight_g) / culture_duration_days;
     const logistic_wmax = final_harvest_weight_g / 0.98;
     const logistic_r = -Math.log(((logistic_wmax / final_harvest_weight_g) - 1) * stocking_weight_g / (logistic_wmax - stocking_weight_g)) / culture_duration_days;
@@ -375,38 +373,56 @@ export class CalculatorService {
 
     const total_feed_required_kg = Number(input.total_feed_required_kg ?? input.totalFeedRequiredKg ?? input.qtyFeedConsumed ?? input.feedConsumed ?? cumulative_feed_kg);
     const standing_biomass_end_kg = period_biomass_kg;
+    const total_production_kg = standing_biomass_end_kg;
 
-    let total_production_kg = standing_biomass_end_kg;
-
-    // Feed emissions
-    const carbon_retention_efficiency = Number(input.carbonRetention ?? 0.22);
-    const nitrogen_retention_efficiency = Number(input.nitrogenRetention ?? 0.25);
+    // Mass Balances & Emissions
+    const carbon_retention_efficiency = Number(input.carbonRetention ?? species.carbonRetention ?? 0.22);
+    const nitrogen_retention_efficiency = Number(input.nitrogenRetention ?? species.nitrogenRetention ?? 0.25);
 
     const feed_scope3_co2e_t = (total_feed_required_kg * feed_mfg_ef) / 1000;
-    const feed_carbon_in_kg = total_feed_required_kg * feed_carbon_pct;
-    const carbon_retained_kg = feed_carbon_in_kg * carbon_retention_efficiency;
-    const carbon_lost_kg = feed_carbon_in_kg - carbon_retained_kg;
 
-    const feed_nitrogen_in_kg = total_feed_required_kg * feed_nitrogen_pct;
-    const nitrogen_retained_kg = feed_nitrogen_in_kg * nitrogen_retention_efficiency;
-    const nitrogen_lost_kg = feed_nitrogen_in_kg - nitrogen_retained_kg;
+    const c_feed = total_feed_required_kg * feed_carbon_pct;
+    const c_retained = total_production_kg * (species.fish_biomass_carbon_fraction || 0.08);
+    const c_lost_to_pond = Math.max(0, c_feed - c_retained);
 
-    // Pond emissions
-    const anaerobic_fraction = Number(input.anaerobicBaseline ?? input.anaerobicFraction ?? 0.20);
+    const n_feed = total_feed_required_kg * feed_nitrogen_pct;
+    const n_retained = total_production_kg * (species.fish_biomass_nitrogen_fraction || 0.025);
+    const n_lost_to_pond = Math.max(0, n_feed - n_retained);
+
+    // Dynamic Anaerobic Fraction & Soil C:N
+    const h2s_detected = !!(input.h2sDetected ?? input.h2s_detected);
+    let dynamic_af = 0.20;
+    if (pre_dawn_do >= 4.0 && !h2s_detected) {
+      dynamic_af = 0.12;
+    } else if (pre_dawn_do < 3.0 && h2s_detected) {
+      dynamic_af = 0.30;
+    }
+
+    const anaerobic_fraction = Number(input.anaerobicBaseline ?? input.anaerobicFraction ?? dynamic_af);
     const anaerobic_adjustment_factor = Number(input.anaerobicAdjustmentFactor ?? 1.0);
     const sediment_burial_fraction = Number(input.sedimentBurialFraction ?? 0.20);
     const ch4_oxidation_fraction = Number(input.ch4OxidationFraction ?? 0.25);
 
-    const n2o_n_ef = Number(input.n2oEF ?? 0.0071);
+    const soil_cn_ratio = Number(input.soilCnRatio ?? input.soil_cn_ratio ?? 12.0);
+    let cn_adj = 1.00;
+    if (soil_cn_ratio > 30) {
+      cn_adj = 1.25;
+    } else if (soil_cn_ratio > 20) {
+      cn_adj = 1.15;
+    }
 
-    const ch4_c_produced_kg = carbon_lost_kg * (1 - sediment_burial_fraction) * anaerobic_fraction * anaerobic_adjustment_factor;
-    const ch4_gross_kg = ch4_c_produced_kg * (16 / 12);
-    const ch4_modelled_kg = ch4_gross_kg * (1 - ch4_oxidation_fraction);
-    const ch4_used_kg = Number(input.measuredCH4Baseline ?? ch4_modelled_kg);
+    const cyanobacteria_n2o_adj = cyanobacteria_avg > 50 ? 1.20 : 1.00;
+    const n2o_n_ef = Number(input.n2oEF ?? 0.0071) * cyanobacteria_n2o_adj;
+
+    const c_anaerobic = c_lost_to_pond * anaerobic_fraction * anaerobic_adjustment_factor * cn_adj;
+    const c_available_ch4 = c_anaerobic * (1 - sediment_burial_fraction);
+    const ch4_emitted_kg = c_available_ch4 * 0.50 * (16 / 12) * (1 - ch4_oxidation_fraction);
+
+    const ch4_used_kg = Number(input.measuredCH4Baseline ?? ch4_emitted_kg);
     const ch4_co2e_t = (ch4_used_kg * gwp_ch4) / 1000;
 
-    const n2o_modelled_kg = nitrogen_lost_kg * n2o_n_ef * (44 / 28);
-    const n2o_used_kg = Number(input.measuredN2OBaseline ?? n2o_modelled_kg);
+    const n2o_emitted_kg = n_lost_to_pond * n2o_n_ef * (44 / 28);
+    const n2o_used_kg = Number(input.measuredN2OBaseline ?? n2o_emitted_kg);
     const n2o_co2e_t = (n2o_used_kg * gwp_n2o) / 1000;
 
     const lime_applied_kg = Number(input.limeAppliedKg ?? 200);
@@ -423,14 +439,14 @@ export class CalculatorService {
     const idle_ef_kgco2e_per_ha_day = Number(input.idleEfKgco2ePerHaDay ?? 2.0);
     const idle_phase_co2e_t = (pond_area_ha * idle_days * idle_ef_kgco2e_per_ha_day) / 1000;
 
-    // Energy
-    const paddlewheel_hp = Number(input.paddlewheelHp ?? 2);
-    const paddlewheel_units = Number(input.paddlewheelUnits ?? 4);
-    const paddlewheel_hours = Number(input.paddlewheelHours ?? 8);
+    // Energy (Aeration Locked to 0 for IMC)
+    const paddlewheel_hp = isIMC ? 0 : Number(input.paddlewheelHp ?? 2);
+    const paddlewheel_units = isIMC ? 0 : Number(input.paddlewheelUnits ?? (aeration_required ? 4 : 0));
+    const paddlewheel_hours = isIMC ? 0 : Number(input.paddlewheelHours ?? (aeration_required ? 8 : 0));
     const paddlewheel_kwh = paddlewheel_hp * 0.746 * paddlewheel_units * paddlewheel_hours;
 
-    const blower_kw = Number(input.blowerKw ?? 0);
-    const blower_hours = Number(input.blowerHours ?? 0);
+    const blower_kw = isIMC ? 0 : Number(input.blowerKw ?? 0);
+    const blower_hours = isIMC ? 0 : Number(input.blowerHours ?? 0);
     const blower_kwh = blower_kw * blower_hours;
 
     const grid_kwh = Number(input.gridElectricityKwh ?? input.gridKwh ?? 500);
@@ -444,21 +460,20 @@ export class CalculatorService {
     const generator_diesel_l = Number(input.generatorDieselL ?? 200);
     const diesel_ef = Number(input.dieselEf ?? 3.0);
     const diesel_co2e_t = ((diesel_l + generator_diesel_l) * diesel_ef) / 1000;
-
     const total_energy_co2e_t = electricity_co2e_t + diesel_co2e_t;
 
-    // Interventions (Module 9)
+    // Interventions & Measures (Module 39)
+    // Note: Better Aeration is REMOVED / DISABLED for IMC configuration
     const interventions = input.interventions || {};
     let fcrMultiplier = 1.0;
     let anaerobicMultiplier = 1.0;
     let n2oMultiplier = 1.0;
     let feedEfMultiplier = 1.0;
-    let energyMultiplier = 1.0;
 
     if (interventions.betterFeed) { fcrMultiplier *= 0.95; feedEfMultiplier *= 0.95; }
     if (interventions.waterProbiotics) { fcrMultiplier *= 0.95; anaerobicMultiplier *= 0.80; }
     if (interventions.soilProbiotics) { fcrMultiplier *= 0.95; anaerobicMultiplier *= 0.80; }
-    if (interventions.betterAeration) { fcrMultiplier *= 0.95; anaerobicMultiplier *= 0.70; energyMultiplier *= 1.10; }
+    if (!isIMC && interventions.betterAeration) { fcrMultiplier *= 0.95; anaerobicMultiplier *= 0.70; }
     if (interventions.waterQualityMgmt) { fcrMultiplier *= 0.95; n2oMultiplier *= 0.80; }
     if (interventions.optimizedFeeding) { fcrMultiplier *= 0.95; }
     if (interventions.cnRatioMgmt) { anaerobicMultiplier *= 0.80; n2oMultiplier *= 0.85; }
@@ -468,8 +483,6 @@ export class CalculatorService {
     const combined_n2o_reduction = 1 - n2oMultiplier;
 
     const feed_ef_reduction = interventions.betterFeed ? 0.05 : 0;
-    const energy_co2e_increase = interventions.betterAeration ? 0.10 : 0;
-
     const fcr_imp_factor = Number(input.fcr_improvement ?? input.fcrImprovement ?? 0.10);
     const final_fcr_improvement = Math.max(combined_fcr_improvement, fcr_imp_factor);
 
@@ -478,31 +491,37 @@ export class CalculatorService {
     const improved_feed_ef = feed_mfg_ef * (1 - feed_ef_reduction);
     const improved_feed_co2e_t = (improved_feed_kg * improved_feed_ef) / 1000;
 
-    const improved_carbon_lost_kg = improved_feed_kg * feed_carbon_pct * (1 - carbon_retention_efficiency);
+    const improved_c_feed = improved_feed_kg * feed_carbon_pct;
+    const improved_c_retained = total_production_kg * (species.fish_biomass_carbon_fraction || 0.08);
+    const improved_c_lost_to_pond = Math.max(0, improved_c_feed - improved_c_retained);
+
     const improved_anaerobic_fraction = Number(input.improved_anaerobic_fraction ?? input.improvedAnaerobicFraction ?? (anaerobic_fraction * (1 - combined_anaerobic_reduction) * anaerobic_adjustment_factor));
-    const improved_ch4_kg = improved_carbon_lost_kg * (1 - sediment_burial_fraction) * improved_anaerobic_fraction * (16 / 12) * (1 - ch4_oxidation_fraction);
+    const improved_ch4_kg = improved_c_lost_to_pond * improved_anaerobic_fraction * cn_adj * 0.50 * (16 / 12) * (1 - ch4_oxidation_fraction);
     const improved_ch4_co2e_t = (improved_ch4_kg * gwp_ch4) / 1000;
 
-    const improved_nitrogen_lost_kg = improved_feed_kg * feed_nitrogen_pct * (1 - nitrogen_retention_efficiency);
+    const improved_n_feed = improved_feed_kg * feed_nitrogen_pct;
+    const improved_n_retained = total_production_kg * (species.fish_biomass_nitrogen_fraction || 0.025);
+    const improved_n_lost_to_pond = Math.max(0, improved_n_feed - improved_n_retained);
+
     const improved_n2o_n_ef = n2o_n_ef * (1 - combined_n2o_reduction);
-    const improved_n2o_kg = improved_nitrogen_lost_kg * improved_n2o_n_ef * (44 / 28);
+    const improved_n2o_kg = improved_n_lost_to_pond * improved_n2o_n_ef * (44 / 28);
     const improved_n2o_co2e_t = (improved_n2o_kg * gwp_n2o) / 1000;
 
-    const improved_energy_co2e_t = total_energy_co2e_t * (1 + energy_co2e_increase);
+    const improved_energy_co2e_t = total_energy_co2e_t;
 
-    // Module 10: Accounting & Credits
+    // Carbon Accounting & Reductions
     const gross_emission_baseline_t = feed_scope3_co2e_t + total_energy_co2e_t + ch4_co2e_t + n2o_co2e_t + lime_fertilizer_co2e_t + idle_phase_co2e_t;
     const gross_emission_improved_t = improved_feed_co2e_t + improved_energy_co2e_t + improved_ch4_co2e_t + improved_n2o_co2e_t + lime_fertilizer_co2e_t + idle_phase_co2e_t;
 
     const biomass_carbon_pct = Number(input.biomassCarbonPct ?? 0.08);
     const carbon_stored_biomass_t = (total_production_kg * biomass_carbon_pct * (44 / 12)) / 1000;
 
-    const net_emission_baseline_t = Math.max(0, gross_emission_baseline_t - carbon_stored_biomass_t);
-    const net_emission_improved_t = Math.max(0, gross_emission_improved_t - carbon_stored_biomass_t);
+    const net_emission_baseline_t = gross_emission_baseline_t - carbon_stored_biomass_t;
+    const net_emission_improved_t = gross_emission_improved_t - carbon_stored_biomass_t;
 
     const emission_intensity_baseline = total_production_kg > 0 ? (net_emission_baseline_t * 1000) / total_production_kg : 0;
-    const co2e_reduction_per_crop_t = Math.max(0, net_emission_baseline_t - net_emission_improved_t);
-    const pct_reduction = net_emission_baseline_t > 0 ? (co2e_reduction_per_crop_t / net_emission_baseline_t) * 100 : 0;
+    const co2e_reduction_per_crop_t = Math.max(0, gross_emission_baseline_t - gross_emission_improved_t);
+    const pct_reduction = gross_emission_baseline_t > 0 ? (co2e_reduction_per_crop_t / gross_emission_baseline_t) * 100 : 0;
     const carbon_credit_per_year_t = co2e_reduction_per_crop_t * crops_per_year;
     const carbon_credit_per_ha_per_year_t = pond_area_ha > 0 ? carbon_credit_per_year_t / pond_area_ha : 0;
 
@@ -524,6 +543,22 @@ export class CalculatorService {
     const gross_income = total_production_kg * sale_price;
     const net_profit = gross_income - total_cost;
     const cost_per_kg = total_production_kg > 0 ? total_cost / total_production_kg : 0;
+
+    // MRV Traffic Lights
+    const mrv_checks = {
+      imc_aeration_lock: (isIMC && (raw_paddlewheel_units > 0 || raw_blower_kw > 0)) ? 'FAIL' : 'PASS',
+      feed_mix_check: (feed_mix_total_kg === 0 || Math.abs((q_dob + q_gnc + q_sbm + q_ddgs) - feed_mix_total_kg) <= 0.01) ? 'PASS' : 'FAIL',
+      soc_test_integrity: (Number(input.preStockingSoc ?? 1.20) > 0 && Number(input.postHarvestSoc ?? 1.45) > 0) ? 'PASS' : 'REVIEW',
+      do_integrity: pre_dawn_do >= 0 ? 'PASS' : 'FAIL',
+      cyanobacteria_status: cyanobacteria_avg > 50 ? 'REVIEW' : 'PASS'
+    };
+
+    let mrv_status = 'PASS';
+    if (Object.values(mrv_checks).includes('FAIL')) {
+      mrv_status = 'FAIL';
+    } else if (Object.values(mrv_checks).includes('REVIEW')) {
+      mrv_status = 'REVIEW';
+    }
 
     return {
       inputs: {
@@ -555,8 +590,8 @@ export class CalculatorService {
       improved: {
         feedRequiredKg: improved_feed_kg,
         feedScope3CO2e: improved_feed_co2e_t,
-        electricityCO2e: electricity_co2e_t * energyMultiplier,
-        dieselCO2e: diesel_co2e_t * energyMultiplier,
+        electricityCO2e: electricity_co2e_t,
+        dieselCO2e: diesel_co2e_t,
         ch4CO2e: improved_ch4_co2e_t,
         n2oCO2e: improved_n2o_co2e_t,
         energyCO2e: improved_energy_co2e_t,
@@ -574,7 +609,13 @@ export class CalculatorService {
         biomassCarbonStoredCO2e: carbon_stored_biomass_t,
         netEmissionBaseline: net_emission_baseline_t,
         netEmissionImproved: net_emission_improved_t,
-        emissionIntensityBaseline: emission_intensity_baseline
+        emissionIntensityBaseline: emission_intensity_baseline,
+        emissionIntensityEdible: total_production_kg * (species.edible_yield_fraction || 0.65) > 0 ? (net_emission_baseline_t * 1000) / (total_production_kg * (species.edible_yield_fraction || 0.65)) : 0
+      },
+      growthSummary: {
+        standingBiomassEndKg: standing_biomass_end_kg,
+        harvestVariancePct: standing_biomass_end_kg > 0 ? ((total_production_kg - standing_biomass_end_kg) / standing_biomass_end_kg) * 100 : 0,
+        edibleProductionKg: total_production_kg * (species.edible_yield_fraction || 0.65)
       },
       economics: {
         feedCostBaseline: feed_cost,
@@ -585,7 +626,9 @@ export class CalculatorService {
         grossIncome: gross_income,
         netProfitBaseline: net_profit,
         costPerKgBaseline: cost_per_kg
-      }
+      },
+      mrvChecks: mrv_checks,
+      mrvStatus: mrv_status
     };
   }
 
@@ -710,10 +753,10 @@ export class CalculatorService {
     const totalTreesCO2e = smallTreeCO2e + mediumTreeCO2e + largeTreeCO2e;
 
     // Mangroves (Biomass + Soil)
-    const mangroveBiomassCarbonTonnes = mangroveAreaHa * 150.0 * (1.0 + R_mangrove) * CF; // Area * 97.995 t C
-    const mangroveSoilCarbonTonnes = mangroveAreaHa * 386.0; // Area * 386 t C
-    const mangroveTotalCarbonTonnes = mangroveBiomassCarbonTonnes + mangroveSoilCarbonTonnes; // Area * 483.995 t C
-    const totalMangroveCO2e = mangroveTotalCarbonTonnes * RATIO; // Area * 1774.648 tCO2e
+    const mangroveBiomassCarbonTonnes = mangroveAreaHa * 150.0 * (1.0 + R_mangrove) * CF;
+    const mangroveSoilCarbonTonnes = mangroveAreaHa * 386.0;
+    const mangroveTotalCarbonTonnes = mangroveBiomassCarbonTonnes + mangroveSoilCarbonTonnes;
+    const totalMangroveCO2e = mangroveTotalCarbonTonnes * RATIO;
 
     // Combined Totals
     const totalCO2eStored = totalTreesCO2e + totalMangroveCO2e;
@@ -728,25 +771,23 @@ export class CalculatorService {
           count: smallTreeCount,
           dbhCm: 10,
           agbPerTreeKg: parseFloat(smallAgbKg.toFixed(1)),
-          co2ePerTreeTonnes: parseFloat(smallPerTreeTonnes.toFixed(3)), // 0.086
-          totalCarbonTonnes: parseFloat(((smallAgbKg / 1000.0) * (1.0 + R_tree) * CF * smallTreeCount).toFixed(2)),
+          co2ePerTreeTonnes: parseFloat(smallPerTreeTonnes.toFixed(4)),
           totalCO2eTonnes: parseFloat(smallTreeCO2e.toFixed(2))
         },
         medium: {
           count: mediumTreeCount,
           dbhCm: 25,
           agbPerTreeKg: parseFloat(mediumAgbKg.toFixed(1)),
-          co2ePerTreeTonnes: parseFloat(mediumPerTreeTonnes.toFixed(3)), // 0.871
-          totalCarbonTonnes: parseFloat(((mediumAgbKg / 1000.0) * (1.0 + R_tree) * CF * mediumTreeCount).toFixed(2)),
+          co2ePerTreeTonnes: parseFloat(mediumPerTreeTonnes.toFixed(4)),
           totalCO2eTonnes: parseFloat(mediumTreeCO2e.toFixed(2))
         },
         large: {
           count: largeTreeCount,
           dbhCm: 45,
           agbPerTreeKg: parseFloat(largeAgbKg.toFixed(1)),
-          co2ePerTreeTonnes: parseFloat(largePerTreeTonnes.toFixed(3)), // 3.852
-          totalCarbonTonnes: parseFloat(((largeAgbKg / 1000.0) * (1.0 + R_tree) * CF * largeTreeCount).toFixed(2)),
-          totalCO2eTonnes: parseFloat(largeTreeCO2e.toFixed(2))
+          co2ePerTreeTonnes: parseFloat(largePerTreeTonnes.toFixed(4)),
+          totalCO2eTonnes: parseFloat(largeTreeCO2e.toFixed(2)),
+          totalCarbonTonnes: parseFloat((largeTreeCO2e / RATIO).toFixed(2))
         },
         totalCount: totalTreesCount,
         totalCO2eTonnes: parseFloat(totalTreesCO2e.toFixed(2))
@@ -756,12 +797,10 @@ export class CalculatorService {
         biomassCarbonTonnes: parseFloat(mangroveBiomassCarbonTonnes.toFixed(2)),
         soilCarbonTonnes: parseFloat(mangroveSoilCarbonTonnes.toFixed(2)),
         totalCarbonTonnes: parseFloat(mangroveTotalCarbonTonnes.toFixed(2)),
-        co2ePerHaTonnes: parseFloat((483.995 * RATIO).toFixed(1)), // ~1774.6
-        totalCO2eTonnes: parseFloat(totalMangroveCO2e.toFixed(2))
+        totalCO2eTonnes: parseFloat(totalMangroveCO2e.toFixed(2)),
+        co2ePerHaTonnes: parseFloat((totalMangroveCO2e / (mangroveAreaHa || 1)).toFixed(2))
       },
       summary: {
-        totalTreesCO2eTonnes: parseFloat(totalTreesCO2e.toFixed(2)),
-        totalMangroveCO2eTonnes: parseFloat(totalMangroveCO2e.toFixed(2)),
         totalCO2eStoredTonnes: parseFloat(totalCO2eStored.toFixed(2)),
         totalCarbonCredits: parseFloat(totalCarbonCredits.toFixed(2)),
         creditRateInr,

@@ -90,7 +90,13 @@ export interface PondData {
   latitude?: number;
   longitude?: number;
   farmId?: string;
+  pondId?: string;
   operatorName?: string;
+  stockingDate?: string;
+  plannedHarvestDate?: string;
+  actualHarvestDate?: string;
+  seedQuantity?: number;
+  actualHarvestWeightKg?: number;
   mrvStatus?: string;
   quantity: number;
   daysOfCulture: number;
@@ -197,8 +203,14 @@ export function createDefaultPond(pondIndex: number, aquaType: string = 'Fish', 
     zooplanktonScore: 2,
     latitude: 16.5062,
     longitude: 80.6480,
-    farmId: '',
-    operatorName: '',
+    farmId: 'FARM-001',
+    pondId: `POND-00${pondIndex}`,
+    operatorName: 'Farmer',
+    stockingDate: '',
+    plannedHarvestDate: '',
+    actualHarvestDate: '',
+    seedQuantity: specDefaults.stockingDensity || 6250,
+    actualHarvestWeightKg: 7500,
     mrvStatus: 'PASS',
     quantity: specDefaults.stockingDensity || 6250,
     daysOfCulture: specDefaults.cultureDurationDays || 240,
