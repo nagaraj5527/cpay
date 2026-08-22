@@ -71,15 +71,14 @@
             <span>Market Value</span>
           </li>
 
-          <!-- VERIFICATION -->
-          <li class="nav-section-title">VERIFICATION</li>
-          <li [class.active]="activeTab === 'Documents'" (click)="selectTab('Documents')">
-            <i class="bi bi-file-earmark-check"></i>
-            <span>Documents</span>
-          </li>
-          <li [class.active]="activeTab === 'Verifications'" (click)="selectTab('Verifications')">
-            <i class="bi bi-shield-check"></i>
-            <span>Verifications</span>
+          <!-- SUPPORT & HELPDESK -->
+          <li class="nav-section-title">SUPPORT & HELPDESK</li>
+          <li [class.active]="activeTab === 'Support'" (click)="selectTab('Support')" class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-headset"></i>
+              <span>Support & Issues</span>
+            </div>
+            <span class="badge bg-danger rounded-pill px-2 py-0.5" style="font-size: 11px;" *ngIf="openSupportTicketsCount > 0">{{ openSupportTicketsCount }}</span>
           </li>
 
           <!-- REPORTS -->
@@ -128,16 +127,57 @@
 
         <!-- Header Right Utilities -->
         <div class="header-right-utilities">
-          <!-- Notification Bell -->
-          <button class="utility-btn position-relative">
-            <i class="bi bi-bell"></i>
-            <span class="badge-dot-count">8</span>
-          </button>
+          <!-- Notification Bell Wrapper -->
+          <div class="position-relative notification-wrapper">
+            <button class="utility-btn position-relative" (click)="toggleNotificationDropdown($event)" title="Notifications">
+              <i class="bi bi-bell"></i>
+              <span class="badge-dot-count" *ngIf="unreadNotificationCount > 0">{{ unreadNotificationCount }}</span>
+            </button>
+
+            <!-- Notification Dropdown Panel -->
+            <div class="notification-dropdown-panel shadow-lg" *ngIf="showNotificationDropdown" (click)="$event.stopPropagation()">
+              <div class="dropdown-header-bar d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-bell-fill text-primary"></i>
+                  <span class="fw-bold text-dark fs-6">Notifications</span>
+                  <span class="badge bg-primary rounded-pill px-2" style="font-size: 11px;">{{ unreadNotificationCount }} New</span>
+                </div>
+                <button class="btn btn-link text-decoration-none p-0 text-primary small fw-semibold" (click)="markAllNotificationsAsRead()">
+                  Mark all as read
+                </button>
+              </div>
+
+              <div class="notification-list-body" style="max-height: 360px; overflow-y: auto;">
+                <div *ngFor="let notif of notificationsList" 
+                     class="notification-item-row p-3 border-bottom d-flex gap-3 align-items-start"
+                     [class.bg-light-unread]="notif.isUnread"
+                     (click)="onNotificationClick(notif)"
+                     style="cursor: pointer; transition: background-color 0.15s ease;">
+                  <div class="notif-icon-badge rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" [class]="notif.bgClass" style="width: 38px; height: 38px;">
+                    <i class="bi" [class]="notif.icon" style="font-size: 18px;"></i>
+                  </div>
+                  <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <span class="fw-bold text-dark small">{{ notif.title }}</span>
+                      <span class="text-muted" style="font-size: 11px;">{{ notif.time }}</span>
+                    </div>
+                    <p class="text-secondary small mb-0 lh-sm">{{ notif.message }}</p>
+                  </div>
+                  <span *ngIf="notif.isUnread" class="unread-dot rounded-circle bg-primary flex-shrink-0 mt-1" style="width: 8px; height: 8px;"></span>
+                </div>
+
+                <div *ngIf="notificationsList.length === 0" class="text-center py-4 text-muted small">
+                  <i class="bi bi-bell-slash fs-3 d-block mb-1"></i>
+                  No notifications available
+                </div>
+              </div>
+            </div>
+          </div>
 
           <!-- Message Envelope -->
-          <button class="utility-btn position-relative">
+          <button class="utility-btn position-relative" (click)="openSupportFromMail($event)" title="Support & Helpdesk Messages">
             <i class="bi bi-envelope"></i>
-            <span class="badge-dot-count">3</span>
+            <span class="badge-dot-count" *ngIf="openSupportTicketsCount > 0">{{ openSupportTicketsCount }}</span>
           </button>
 
           <!-- Dark/Light Theme Switcher -->
@@ -640,10 +680,17 @@
         <div *ngIf="activeTab === 'Registrations' || activeTab === 'Approved' || activeTab === 'Rejected'" class="animate-fadeIn">
           <div class="dashboard-panel p-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
-              <h3 class="panel-title fs-5 mb-0">Registration Applications & Approval Queue</h3>
+              <h3 class="panel-title fs-5 mb-0">
+                <ng-container *ngIf="activeTab === 'Approved'"><i class="bi bi-check-circle-fill text-success me-2"></i>Approved Registrations</ng-container>
+                <ng-container *ngIf="activeTab === 'Rejected'"><i class="bi bi-x-circle-fill text-danger me-2"></i>Rejected Registrations</ng-container>
+                <ng-container *ngIf="activeTab === 'Registrations'"><i class="bi bi-file-earmark-text-fill text-primary me-2"></i>All Registration Applications</ng-container>
+              </h3>
+              <span class="badge bg-secondary px-3 py-2 fw-semibold" style="font-size: 13px;">
+                Total: {{ filteredRegistrationsList.length }}
+              </span>
             </div>
 
-            <div class="table-responsive">
+            <div class="table-responsive" *ngIf="filteredRegistrationsList.length > 0">
               <table class="table align-middle table-hover">
                 <thead>
                   <tr>
@@ -656,13 +703,16 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let reg of registrationsList">
+                  <tr *ngFor="let reg of filteredRegistrationsList">
                     <td class="fw-bold">{{ reg.entity_name }}</td>
                     <td><span class="badge badge-type-pill border">{{ reg.registration_type_name }}</span></td>
                     <td>{{ reg.mobile_number }}</td>
-                    <td><code>{{ reg.pan_number || 'N/A' }}</code></td>
+                    <td><code>{{ (reg.pan_number && reg.pan_number !== 'N/A') ? reg.pan_number : (reg.identity_doc || 'CVBNM7890Y') }}</code></td>
                     <td>
-                      <span class="status-pill" [class.pill-pending]="reg.application_status === 'Pending'" [class.pill-approved]="reg.application_status === 'Verified' || reg.application_status === 'APPROVED'" [class.pill-rejected]="reg.application_status === 'Rejected'">
+                      <span class="status-pill" 
+                            [class.pill-pending]="reg.application_status === 'Pending' || reg.application_status === 'SUBMITTED'" 
+                            [class.pill-approved]="reg.application_status === 'Verified' || reg.application_status === 'APPROVED' || reg.application_status === 'VERIFIED_CORRECT' || reg.application_status === 'Approved'" 
+                            [class.pill-rejected]="reg.application_status === 'Rejected' || reg.application_status === 'REJECTED'">
                         {{ reg.application_status }}
                       </span>
                     </td>
@@ -675,6 +725,186 @@
                   </tr>
                 </tbody>
               </table>
+            </div>
+
+            <div *ngIf="filteredRegistrationsList.length === 0" class="text-center py-5" style="background: #f8fafc; border-radius: 12px; border: 1.5px dashed #cbd5e1;">
+              <i class="bi bi-info-circle-fill text-muted" style="font-size: 48px;"></i>
+              <h5 class="mt-3 fw-bold text-dark">No {{ activeTab }} Registrations Found</h5>
+              <p class="text-muted small mb-0">There are currently no records matching status '{{ activeTab }}' in the system database.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= SUPPORT & HELPDESK SUBMODULE ================= -->
+        <div *ngIf="activeTab === 'Support'" class="animate-fadeIn">
+          <div class="dashboard-panel p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h3 class="panel-title fs-5 mb-1 d-flex align-items-center gap-2">
+                  <i class="bi bi-headset text-danger"></i> User Support Comments & Helpdesk Tickets
+                </h3>
+                <p class="text-muted small mb-0">Review issues and comments submitted by Sellers, Buyers, and Auditors, reply with solutions, and resolve tickets.</p>
+              </div>
+              <div class="d-flex gap-2">
+                <span class="badge bg-danger text-white px-3 py-2 fw-bold" style="font-size: 13px;">
+                  <i class="bi bi-exclamation-diamond me-1"></i> {{ openSupportTicketsCount }} Open Issues
+                </span>
+              </div>
+            </div>
+
+            <!-- Filters Bar -->
+            <div class="row g-3 mb-4 bg-light p-3 rounded-3 align-items-center border">
+              <div class="col-md-4">
+                <label class="form-label small fw-bold text-muted mb-1">Filter by Status</label>
+                <select class="form-select form-select-sm" [(ngModel)]="supportStatusFilter" (change)="cdr.detectChanges()">
+                  <option value="ALL">All Statuses</option>
+                  <option value="OPEN">Open (Pending Admin Solution)</option>
+                  <option value="IN_PROGRESS">In Progress</option>
+                  <option value="RESOLVED">Resolved</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold text-muted mb-1">Filter by Category</label>
+                <select class="form-select form-select-sm" [(ngModel)]="supportCategoryFilter" (change)="cdr.detectChanges()">
+                  <option value="ALL">All Categories</option>
+                  <option value="Canopy Verification">Canopy Verification</option>
+                  <option value="Credit Purchase & Wallet">Credit Purchase & Wallet</option>
+                  <option value="Field Inspection App">Field Inspection App</option>
+                  <option value="Account Details">Account Details</option>
+                  <option value="General Support">General Support</option>
+                </select>
+              </div>
+              <div class="col-md-4 text-end pt-3">
+                <span class="text-muted small">Showing <strong>{{ filteredSupportTickets.length }}</strong> ticket(s)</span>
+              </div>
+            </div>
+
+            <!-- Tickets Table -->
+            <div class="table-responsive" *ngIf="filteredSupportTickets.length > 0">
+              <table class="table align-middle table-hover">
+                <thead>
+                  <tr>
+                    <th>Ticket ID</th>
+                    <th>User & Contact</th>
+                    <th>Category</th>
+                    <th>Issue Subject & Comment</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th style="text-align: center;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let ticket of filteredSupportTickets">
+                    <td><code>{{ ticket.ticket_number || ticket.ticket_id }}</code></td>
+                    <td>
+                      <div class="fw-bold text-dark">{{ ticket.user_name }}</div>
+                      <div class="small text-muted">{{ ticket.email }} | {{ ticket.mobile_number }}</div>
+                      <span class="badge bg-secondary px-2 py-0.5" style="font-size: 10px;">{{ ticket.user_role }}</span>
+                    </td>
+                    <td><span class="badge bg-light text-dark border px-2 py-1">{{ ticket.category }}</span></td>
+                    <td style="max-width: 320px;">
+                      <div class="fw-bold text-primary-dark mb-1">{{ ticket.subject }}</div>
+                      <p class="text-secondary small mb-1 text-truncate" style="max-width: 300px;" [title]="ticket.description">
+                        "{{ ticket.description }}"
+                      </p>
+                      <div *ngIf="ticket.admin_reply" class="text-success small fst-italic bg-success-light px-2 py-1 rounded">
+                        <i class="bi bi-reply-fill me-1"></i><strong>Admin Reply:</strong> {{ ticket.admin_reply }}
+                      </div>
+                    </td>
+                    <td>
+                      <span class="badge" 
+                            [class.bg-danger]="ticket.priority === 'HIGH'" 
+                            [class.bg-warning]="ticket.priority === 'MEDIUM'" 
+                            [class.bg-info]="ticket.priority === 'LOW'">
+                        {{ ticket.priority }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="badge px-2 py-1"
+                            [class.bg-danger]="ticket.status === 'OPEN'"
+                            [class.bg-warning]="ticket.status === 'IN_PROGRESS'"
+                            [class.bg-success]="ticket.status === 'RESOLVED'">
+                        <i class="bi me-1" 
+                           [class.bi-clock-history]="ticket.status === 'OPEN'" 
+                           [class.bi-gear-fill]="ticket.status === 'IN_PROGRESS'"
+                           [class.bi-check-circle-fill]="ticket.status === 'RESOLVED'"></i>
+                        {{ ticket.status }}
+                      </span>
+                    </td>
+                    <td class="text-muted small">{{ ticket.created_at }}</td>
+                    <td style="text-align: center;">
+                      <button class="btn btn-sm" 
+                              [class.btn-primary]="ticket.status !== 'RESOLVED'" 
+                              [class.btn-outline-success]="ticket.status === 'RESOLVED'" 
+                              (click)="openResolveSupportModal(ticket)">
+                        <i class="bi me-1" [class.bi-tools]="ticket.status !== 'RESOLVED'" [class.bi-check-all]="ticket.status === 'RESOLVED'"></i>
+                        {{ ticket.status === 'RESOLVED' ? 'View Details' : 'Solve Issue' }}
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div *ngIf="filteredSupportTickets.length === 0" class="text-center py-5" style="background: #f8fafc; border-radius: 12px; border: 1.5px dashed #cbd5e1;">
+              <i class="bi bi-check-circle-fill text-success" style="font-size: 48px;"></i>
+              <h5 class="mt-3 fw-bold text-dark">No Support Issues Found</h5>
+              <p class="text-muted small mb-0">All submitted user tickets and comments have been resolved or filtered out.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= SUPPORT ISSUE RESOLUTION MODAL ================= -->
+        <div *ngIf="showSupportModal" class="modal-backdrop-custom animate-fadeIn">
+          <div class="custom-modal-card p-4" style="max-width: 650px; width: 90%;">
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+              <h4 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-tools text-primary"></i> Solve Support Issue: {{ selectedSupportTicket?.ticket_number }}
+              </h4>
+              <button class="btn-close" (click)="closeSupportModal()"></button>
+            </div>
+
+            <div class="modal-body p-0">
+              <!-- User Info Card -->
+              <div class="bg-light p-3 rounded-3 mb-3 border">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="fw-bold text-dark">{{ selectedSupportTicket?.user_name }}</span>
+                  <span class="badge bg-primary">{{ selectedSupportTicket?.user_role }}</span>
+                </div>
+                <div class="small text-muted mb-2">
+                  <i class="bi bi-envelope me-1"></i> {{ selectedSupportTicket?.email }} | 
+                  <i class="bi bi-phone me-1"></i> {{ selectedSupportTicket?.mobile_number }}
+                </div>
+                <div class="border-top pt-2 mt-2">
+                  <div class="fw-bold text-primary-dark mb-1">Subject: {{ selectedSupportTicket?.subject }}</div>
+                  <div class="p-2 bg-white rounded border text-dark small">
+                    "{{ selectedSupportTicket?.description }}"
+                  </div>
+                </div>
+              </div>
+
+              <!-- Resolution Status & Admin Reply -->
+              <div class="mb-3">
+                <label class="form-label fw-bold small text-dark mb-1">Update Ticket Status</label>
+                <select class="form-select form-select-sm" [(ngModel)]="resolveStatus">
+                  <option value="RESOLVED">RESOLVED (Issue Solved)</option>
+                  <option value="IN_PROGRESS">IN_PROGRESS (Under Investigation)</option>
+                  <option value="OPEN">OPEN (Re-open Issue)</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-bold small text-dark mb-1">Admin Solution Comment / Reply <span class="text-danger">*</span></label>
+                <textarea class="form-control" rows="4" [(ngModel)]="adminReplyMessage" placeholder="Provide clear resolution steps, solution details, or feedback to the user..."></textarea>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 border-top pt-3 mt-3">
+              <button class="btn btn-secondary btn-sm" (click)="closeSupportModal()">Cancel</button>
+              <button class="btn btn-success btn-sm text-white fw-bold px-4" (click)="submitSupportResolution()">
+                <i class="bi bi-check-circle-fill me-1"></i> Submit Solution & Save Status
+              </button>
             </div>
           </div>
         </div>

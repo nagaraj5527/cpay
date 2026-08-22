@@ -132,6 +132,7 @@ export class ValuatorDashboardComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.clearDomainLocalStorage();
     if (!localStorage.getItem('token')) {
       console.warn('No authentication token found. Redirecting to valuator login...');
       this.router.navigate(['/login/valuator']);
@@ -143,11 +144,11 @@ export class ValuatorDashboardComponent implements OnInit {
       this.auditorPincode = savedPin;
       this.hasEnteredPincode = true;
       this.showPincodeModal = false;
-      this.loadUsersForPincode(savedPin);
     } else {
-      this.showPincodeModal = true;
+      this.showPincodeModal = false;
       this.hasEnteredPincode = false;
     }
+    this.loadUsersForPincode(savedPin || '');
   }
 
   loadAuditorDetails(): void {
@@ -334,10 +335,14 @@ export class ValuatorDashboardComponent implements OnInit {
 
             const rowPin = String(row.pincode || cleanPin || '534427').replace(/[^0-9]/g, '').trim();
 
+            let rawName = (row.user_name && !row.user_name.startsWith('user_') && !row.user_name.startsWith('Registered Seller')) 
+              ? row.user_name 
+              : 'Seller';
+
             backendUsers.push({
               user_id: regId,
               mobile_number: fullMob,
-              user_name: row.user_name || 'Registered User',
+              user_name: rawName,
               user_type: isSellerUser ? 'Seller' : 'Buyer',
               aadhaar_number: (row.aadhaar_number && row.aadhaar_number !== 'N/A') ? row.aadhaar_number : 'N/A',
               pan_number: (row.pan_number && row.pan_number !== 'N/A') ? row.pan_number : 'N/A',
@@ -381,7 +386,14 @@ export class ValuatorDashboardComponent implements OnInit {
           });
         }
 
-        this.allPincodeUsers = backendUsers;
+        const seenMap = new Map<string, UserDetailRecord>();
+        backendUsers.forEach(u => {
+          const key = `${u.user_id}_${(u.land?.surveyNo || '').toLowerCase().trim()}`;
+          if (!seenMap.has(key)) {
+            seenMap.set(key, u);
+          }
+        });
+        this.allPincodeUsers = Array.from(seenMap.values());
         this.calculate8KpiMetrics();
         this.filterUsersByKpiCard(this.activeKpiFilter);
         this.isSyncing = false;
@@ -399,6 +411,199 @@ export class ValuatorDashboardComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  clearDomainLocalStorage(): void {
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (
+          k.startsWith('userLandParcels') ||
+          k.startsWith('cpay_valuator_queue') ||
+          k.startsWith('cpay_registered_users') ||
+          k.startsWith('SellerPersonal') ||
+          k.startsWith('SellerAddress') ||
+          k.startsWith('SellerLand') ||
+          k.startsWith('SellerPlantation') ||
+          k.startsWith('SellerCalculation') ||
+          k.startsWith('SellerConsent') ||
+          k.startsWith('SellerDocs') ||
+          k.startsWith('docStatus_')
+        )) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+    } catch (e) {}
+  }
+
+  // Merge Local Valuator Queue and Seller Land Parcels into Auditor Dashboard Records
+  private mergeLocalUsersAndParcels(existingUsers: UserDetailRecord[], cleanPin: string): UserDetailRecord[] {
+    const userMap = new Map<string, UserDetailRecord>();
+
+    existingUsers.forEach(u => {
+      const mob = (u.mobile_number || '').replace(/[^0-9]/g, '');
+      const sNo = (u.land?.surveyNo || '').toLowerCase().trim();
+      const assetId = u.user_id || sNo || 'ext';
+      const key = `${mob}_${assetId}_${sNo}`;
+      userMap.set(key, u);
+    });
+
+    const isPinMatch = (itemPin: string) => {
+      if (!cleanPin || cleanPin.length < 3) return true;
+      const cleanItemPin = String(itemPin || '').replace(/[^0-9]/g, '').trim();
+      if (!cleanItemPin) return true;
+      return cleanItemPin.includes(cleanPin) || cleanPin.includes(cleanItemPin);
+    };
+
+    // 1. Scan cpay_valuator_queue in localStorage
+    try {
+      const queueStr = localStorage.getItem('cpay_valuator_queue');
+      if (queueStr) {
+        const queueItems: any[] = JSON.parse(queueStr);
+        queueItems.forEach((qItem: any) => {
+          if (!qItem) return;
+          const p = qItem.parcel || {};
+          const pAddr = p.address || {};
+          const itemPin = qItem.pincode || pAddr.pincode || p.pincode || '';
+          if (!isPinMatch(itemPin)) return;
+
+          const mobRaw = qItem.mobile_number || p.mobileNumber || '9876543210';
+          const fullMob = mobRaw.startsWith('+') ? mobRaw : '+91 ' + mobRaw;
+          const mobClean = mobRaw.replace(/[^0-9]/g, '');
+
+          const sNo = p.surveyNo || p.survey?.surveyNo || '345';
+          const subNo = p.subDivisionNo || p.survey?.subDivisionNo || '';
+          const fullSurvey = (sNo && subNo && !sNo.includes('/')) ? `${sNo}/${subNo}` : sNo;
+          const assetId = qItem.registration_id || p.registration_id || p.id || fullSurvey;
+          const key = `${mobClean}_${assetId}_${fullSurvey.toLowerCase().trim()}`;
+
+          if (!userMap.has(key)) {
+            const rawStatus = String(p.status || qItem.application_status || qItem.status || 'Pending').toUpperCase();
+            const finalStatus = (rawStatus === 'VERIFIED' || rawStatus === 'APPROVED' || rawStatus === 'VERIFIED_CORRECT') ? 'Verified' : 'Pending';
+
+            const areaStr = p.area || p.totalPondArea || '10.00 Hectares';
+            const creditsVal = parseFloat(String(p.totalCarbonCredits || p.sequestrationRate || 18.60));
+
+            const record: UserDetailRecord = {
+              user_id: qItem.registration_id || p.registration_id || p.id || ('LOC-REG-' + Date.now()),
+              mobile_number: fullMob,
+              user_name: (qItem.entity_name || p.name || 'Registered Seller').replace(/\s*\(Seller\)$|\s*\(Asset Profiling\)$/, ''),
+              user_type: (qItem.registration_type_name || '').toLowerCase().includes('buyer') ? 'Buyer' : 'Seller',
+              aadhaar_number: qItem.aadhaar_number || p.docs?.aadhaarNumber || 'N/A',
+              pan_number: qItem.pan_number || p.docs?.panNumber || 'N/A',
+              pincode: itemPin || cleanPin || '534427',
+              status: finalStatus,
+              email: qItem.email || 'N/A',
+              address: {
+                state: pAddr.state || 'Andhra Pradesh',
+                district: pAddr.district || 'West Godavari',
+                mandal: pAddr.mandal || 'Eluru',
+                village: pAddr.village || 'Agadalalanka',
+                pincode: itemPin || cleanPin || '534427'
+              },
+              land: {
+                surveyNo: fullSurvey,
+                subDivisionNo: subNo || '1A',
+                area: areaStr,
+                unit: p.survey?.unit || 'Hectare',
+                landType: p.cropCategory || 'Agroforestry / Plantation'
+              },
+              plantation: {
+                type: p.cropCategory || 'Agroforestry Plantation',
+                species: p.plantation?.subCategory || p.cropCategory || 'Trees / Aquaculture',
+                trees: Number(p.trees) || 120,
+                age: Number(p.plantation?.age) || 3
+              },
+              carbonCredits: creditsVal,
+              submitted_at: qItem.submitted_at || p.date || new Date().toISOString(),
+              rawParcel: p
+            };
+            userMap.set(key, record);
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Local valuator queue merge notice:', e);
+    }
+
+    // 2. Scan all userLandParcels_* keys in localStorage
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('userLandParcels_')) {
+          const mobFromKey = k.replace('userLandParcels_', '').replace(/[^0-9]/g, '');
+          const str = localStorage.getItem(k);
+          if (!str) continue;
+          let parcels: any[] = [];
+          try { parcels = JSON.parse(str); } catch (e) { parcels = []; }
+          if (!Array.isArray(parcels)) continue;
+
+          parcels.forEach((p: any) => {
+            if (!p) return;
+            const pAddr = p.address || {};
+            const itemPin = pAddr.pincode || p.pincode || '';
+            if (!isPinMatch(itemPin)) return;
+
+            const fullMob = mobFromKey ? `+91 ${mobFromKey.slice(-10)}` : '+91 9876543210';
+            const sNo = p.surveyNo || p.survey?.surveyNo || '345';
+            const subNo = p.subDivisionNo || p.survey?.subDivisionNo || '';
+            const fullSurvey = (sNo && subNo && !sNo.includes('/')) ? `${sNo}/${subNo}` : sNo;
+            const assetId = p.registration_id || p.id || fullSurvey;
+            const key = `${mobFromKey.slice(-10)}_${assetId}_${fullSurvey.toLowerCase().trim()}`;
+
+            if (!userMap.has(key)) {
+              const rawStatus = String(p.status || 'Pending').toUpperCase();
+              const finalStatus = (rawStatus === 'VERIFIED' || rawStatus === 'APPROVED' || rawStatus === 'VERIFIED_CORRECT') ? 'Verified' : 'Pending';
+
+              const areaStr = p.area || p.totalPondArea || '10.00 Hectares';
+              const creditsVal = parseFloat(String(p.totalCarbonCredits || p.sequestrationRate || 18.60));
+
+              const record: UserDetailRecord = {
+                user_id: p.registration_id || p.id || ('LOC-PARCEL-' + Date.now()),
+                mobile_number: fullMob,
+                user_name: 'Registered Seller',
+                user_type: 'Seller',
+                aadhaar_number: p.docs?.aadhaarNumber || 'N/A',
+                pan_number: p.docs?.panNumber || 'N/A',
+                pincode: itemPin || cleanPin || '534427',
+                status: finalStatus,
+                email: 'N/A',
+                address: {
+                  state: pAddr.state || 'Andhra Pradesh',
+                  district: pAddr.district || 'West Godavari',
+                  mandal: pAddr.mandal || 'Eluru',
+                  village: pAddr.village || 'Agadalalanka',
+                  pincode: itemPin || cleanPin || '534427'
+                },
+                land: {
+                  surveyNo: fullSurvey,
+                  subDivisionNo: subNo || '1A',
+                  area: areaStr,
+                  unit: p.survey?.unit || 'Hectare',
+                  landType: p.cropCategory || 'Agroforestry / Plantation'
+                },
+                plantation: {
+                  type: p.cropCategory || 'Agroforestry Plantation',
+                  species: p.plantation?.subCategory || p.cropCategory || 'Trees / Aquaculture',
+                  trees: Number(p.trees) || 120,
+                  age: Number(p.plantation?.age) || 3
+                },
+                carbonCredits: creditsVal,
+                submitted_at: p.date || new Date().toISOString(),
+                rawParcel: p
+              };
+              userMap.set(key, record);
+            }
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Local land parcels merge notice:', e);
+    }
+
+    return Array.from(userMap.values());
   }
 
   // Calculate 8 KPI Metrics for Auditor Dashboard

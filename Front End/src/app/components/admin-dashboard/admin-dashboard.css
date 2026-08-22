@@ -1356,3 +1356,94 @@
 .admin-wrapper.dark-theme .btn-close {
   filter: invert(1) grayscale(100%) brightness(200%) !important;
 }
+
+/* ==========================================================================
+   Notification Dropdown Panel & Support Submodule Styles
+   ========================================================================== */
+.notification-wrapper {
+  position: relative !important;
+}
+
+.notification-dropdown-panel {
+  position: absolute !important;
+  top: 48px !important;
+  right: 0 !important;
+  width: 380px !important;
+  max-width: 90vw !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  z-index: 1050 !important;
+  overflow: hidden !important;
+  animation: fadeInDown 0.2s ease-out forwards !important;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-header-bar {
+  background-color: #f8fafc !important;
+}
+
+.bg-light-unread {
+  background-color: #f0fdf4 !important;
+}
+
+.notification-item-row:hover {
+  background-color: #f1f5f9 !important;
+}
+
+.bg-success-light { background-color: #d1fae5 !important; }
+.bg-warning-light { background-color: #fef3c7 !important; }
+.bg-info-light { background-color: #e0f2fe !important; }
+.bg-purple-light { background-color: #f3e8ff !important; }
+.bg-teal-light { background-color: #ccfbf1 !important; }
+
+.modal-backdrop-custom {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background-color: rgba(15, 23, 42, 0.6) !important;
+  backdrop-filter: blur(4px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 1100 !important;
+}
+
+.custom-modal-card {
+  background: #ffffff !important;
+  border-radius: 16px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Dark mode adjustments for notifications & support */
+.admin-wrapper.dark-theme .notification-dropdown-panel {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #ffffff !important;
+}
+
+.admin-wrapper.dark-theme .dropdown-header-bar {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+.admin-wrapper.dark-theme .bg-light-unread {
+  background-color: #064e3b !important;
+}
+
+.admin-wrapper.dark-theme .notification-item-row:hover {
+  background-color: #334155 !important;
+}

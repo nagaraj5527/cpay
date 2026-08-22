@@ -91,4 +91,17 @@ export class AdminService {
   rejectPendingItem(itemId: string, category: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/pending-queue/${itemId}/reject`, { category });
   }
+
+  // Support & Helpdesk Management APIs
+  getSupportTickets(): Observable<any> {
+    return this.http.get(`${environment.apiUrl}/support/tickets/all`);
+  }
+
+  updateTicketStatus(ticketId: string, status: string): Observable<any> {
+    return this.http.put(`${environment.apiUrl}/support/tickets/${ticketId}/status`, { status });
+  }
+
+  addTicketMessage(ticketId: string, message: string): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/support/tickets/${ticketId}/messages`, { message });
+  }
 }

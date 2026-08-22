@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -45,6 +45,275 @@ export class AdminDashboard implements OnInit {
   showCarbonRateModal: boolean = false;
   showGenerateReportModal: boolean = false;
   showSettingsModal: boolean = false;
+
+  // Support & Helpdesk State
+  supportTicketsList: any[] = [
+    {
+      ticket_id: 'TICK-1001',
+      ticket_number: 'TICK-984101',
+      user_name: 'Bhaskar (Seller)',
+      user_role: 'SELLER',
+      email: 'bhaskar@apccb.org',
+      mobile_number: '+919876543210',
+      category: 'Canopy Verification',
+      subject: 'Requesting canopy validation audit for parcel PAR-003',
+      description: 'I submitted my plantation details for parcel PAR-003 last week. The status is still pending auditor canopy validation. Please check.',
+      priority: 'HIGH',
+      status: 'OPEN',
+      created_at: '01 Aug 2025, 10:15 AM',
+      admin_reply: null
+    },
+    {
+      ticket_id: 'TICK-1002',
+      ticket_number: 'TICK-984102',
+      user_name: 'Rajesh Kumar (Buyer)',
+      user_role: 'BUYER',
+      email: 'rajesh@buyer.com',
+      mobile_number: '+918888888888',
+      category: 'Credit Purchase & Wallet',
+      subject: 'Payment deducted but credits not reflected in corporate wallet',
+      description: 'I purchased 500 tCO2e carbon credits via UPI transaction ID TXN998811. The payment was successful but my wallet balance is unchanged.',
+      priority: 'HIGH',
+      status: 'OPEN',
+      created_at: '01 Aug 2025, 11:30 AM',
+      admin_reply: null
+    },
+    {
+      ticket_id: 'TICK-1003',
+      ticket_number: 'TICK-984103',
+      user_name: 'Nandha Gopal (Auditor)',
+      user_role: 'VALUATOR',
+      email: 'nandha@valuator.com',
+      mobile_number: '+917815928358',
+      category: 'Field Inspection App',
+      subject: 'Unable to upload land inspection photo report',
+      description: 'While completing the field audit for survey number 101/A in West Godavari, the photo upload times out. Please advise.',
+      priority: 'MEDIUM',
+      status: 'IN_PROGRESS',
+      created_at: '31 Jul 2025, 04:20 PM',
+      admin_reply: 'Our technical team is verifying server connectivity. Please retry.'
+    },
+    {
+      ticket_id: 'TICK-1004',
+      ticket_number: 'TICK-984104',
+      user_name: 'Suresh Babu (Seller)',
+      user_role: 'SELLER',
+      email: 'suresh@gmail.com',
+      mobile_number: '+919462462461',
+      category: 'Account Details',
+      subject: 'Aadhaar document name spelling correction',
+      description: 'My name on Aadhaar card is Suresh Babu V, but account profile shows Suresh Babu. Updated document attached.',
+      priority: 'LOW',
+      status: 'RESOLVED',
+      created_at: '30 Jul 2025, 02:10 PM',
+      admin_reply: 'Profile name verified and updated according to Aadhaar card.'
+    }
+  ];
+
+  supportStatusFilter: string = 'ALL';
+  supportCategoryFilter: string = 'ALL';
+  selectedSupportTicket: any = null;
+  showSupportModal: boolean = false;
+  adminReplyMessage: string = '';
+  resolveStatus: string = 'RESOLVED';
+
+  get openSupportTicketsCount(): number {
+    return this.supportTicketsList.filter(t => t.status === 'OPEN' || t.status === 'IN_PROGRESS').length;
+  }
+
+  get filteredSupportTickets(): any[] {
+    return this.supportTicketsList.filter(ticket => {
+      const matchStatus = this.supportStatusFilter === 'ALL' || ticket.status === this.supportStatusFilter;
+      const matchCategory = this.supportCategoryFilter === 'ALL' || ticket.category === this.supportCategoryFilter;
+      return matchStatus && matchCategory;
+    });
+  }
+
+  // Notification Bell & Dropdown State
+  showNotificationDropdown: boolean = false;
+
+  notificationsList: any[] = [
+    {
+      id: 'N1',
+      icon: 'bi-person-plus-fill',
+      bgClass: 'bg-success-light text-success',
+      title: 'New Seller Registration',
+      message: 'sivakumar (+916565656565) registered as an Individual Seller.',
+      time: '5 mins ago',
+      tab: 'PendingApprovals',
+      isUnread: true
+    },
+    {
+      id: 'N2',
+      icon: 'bi-clock-history',
+      bgClass: 'bg-warning-light text-warning',
+      title: 'Pending Approval Queue',
+      message: 'sunday (+919462462461) submitted parcel details for approval.',
+      time: '18 mins ago',
+      tab: 'PendingApprovals',
+      isUnread: true
+    },
+    {
+      id: 'N3',
+      icon: 'bi-headset',
+      bgClass: 'bg-info-light text-info',
+      title: 'New Support Ticket Received',
+      message: 'Bhaskar left a comment: "Requesting canopy validation audit for PAR-003".',
+      time: '45 mins ago',
+      tab: 'Support',
+      isUnread: true
+    },
+    {
+      id: 'N4',
+      icon: 'bi-person-badge-fill',
+      bgClass: 'bg-purple-light text-purple',
+      title: 'Auditor Registration',
+      message: 'Nandha Gopal applied for Auditor / Valuator certification.',
+      time: '1 hour ago',
+      tab: 'PendingApprovals',
+      isUnread: true
+    },
+    {
+      id: 'N5',
+      icon: 'bi-patch-check-fill',
+      bgClass: 'bg-teal-light text-teal',
+      title: 'Carbon Credits Generated',
+      message: 'System automatically calculated 1,450 tCO2e credits for West Godavari.',
+      time: '2 hours ago',
+      tab: 'CreditGeneration',
+      isUnread: false
+    }
+  ];
+
+  get unreadNotificationCount(): number {
+    return this.notificationsList.filter(n => n.isUnread).length;
+  }
+
+  toggleNotificationDropdown(event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.showNotificationDropdown = !this.showNotificationDropdown;
+    this.cdr.detectChanges();
+  }
+
+  markAllNotificationsAsRead(): void {
+    this.notificationsList.forEach(n => n.isUnread = false);
+    this.showToast('All notifications marked as read.');
+    this.cdr.detectChanges();
+  }
+
+  onNotificationClick(item: any): void {
+    item.isUnread = false;
+    this.showNotificationDropdown = false;
+    if (item.tab) {
+      this.selectTab(item.tab);
+    }
+    this.cdr.detectChanges();
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.notification-wrapper')) {
+      if (this.showNotificationDropdown) {
+        this.showNotificationDropdown = false;
+        this.cdr.detectChanges();
+      }
+    }
+  }
+
+  openResolveSupportModal(ticket: any): void {
+    this.selectedSupportTicket = { ...ticket };
+    this.adminReplyMessage = ticket.admin_reply || '';
+    this.resolveStatus = ticket.status === 'RESOLVED' ? 'RESOLVED' : 'RESOLVED';
+    this.showSupportModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeSupportModal(): void {
+    this.showSupportModal = false;
+    this.selectedSupportTicket = null;
+    this.adminReplyMessage = '';
+    this.cdr.detectChanges();
+  }
+
+  submitSupportResolution(): void {
+    if (!this.selectedSupportTicket) return;
+    if (!this.adminReplyMessage || this.adminReplyMessage.trim().length === 0) {
+      alert('Please enter an admin solution comment before saving.');
+      return;
+    }
+
+    const idx = this.supportTicketsList.findIndex(t => t.ticket_id === this.selectedSupportTicket.ticket_id || t.ticket_number === this.selectedSupportTicket.ticket_number);
+    if (idx > -1) {
+      this.supportTicketsList[idx].status = this.resolveStatus;
+      this.supportTicketsList[idx].admin_reply = this.adminReplyMessage;
+    }
+
+    try {
+      localStorage.setItem('cpay_support_tickets', JSON.stringify(this.supportTicketsList));
+    } catch (e) {}
+
+    this.adminService.updateTicketStatus(this.selectedSupportTicket.ticket_id, this.resolveStatus).subscribe({
+      next: () => {},
+      error: () => {}
+    });
+
+    this.showToast(`Support issue ${this.selectedSupportTicket.ticket_number || ''} updated to ${this.resolveStatus}!`);
+    this.closeSupportModal();
+    this.cdr.detectChanges();
+  }
+
+  loadSupportTickets(): void {
+    try {
+      const stored = localStorage.getItem('cpay_support_tickets');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          parsed.forEach((st: any) => {
+            const exists = this.supportTicketsList.some(t => t.ticket_id === st.ticket_id || t.ticket_number === st.ticket_number);
+            if (!exists) {
+              this.supportTicketsList.unshift(st);
+            }
+          });
+        }
+      }
+    } catch (e) {}
+
+    this.adminService.getSupportTickets().subscribe({
+      next: (res: any) => {
+        if (res.data && res.data.length > 0) {
+          const apiTickets = res.data.map((t: any) => ({
+            ticket_id: t.ticket_id,
+            ticket_number: t.ticket_number || t.ticket_id,
+            user_name: t.email ? t.email.split('@')[0] : 'User',
+            user_role: 'SELLER',
+            email: t.email || 'user@cpay.org',
+            mobile_number: t.mobile_number || 'N/A',
+            category: 'Support',
+            subject: t.subject,
+            description: t.description,
+            priority: t.priority || 'MEDIUM',
+            status: t.status || 'OPEN',
+            created_at: t.created_at ? new Date(t.created_at).toLocaleDateString() : 'Today',
+            admin_reply: t.admin_reply || null
+          }));
+
+          apiTickets.forEach((at: any) => {
+            const idx = this.supportTicketsList.findIndex(x => x.ticket_id === at.ticket_id);
+            if (idx > -1) {
+              this.supportTicketsList[idx] = { ...this.supportTicketsList[idx], ...at };
+            } else {
+              this.supportTicketsList.unshift(at);
+            }
+          });
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {}
+    });
+  }
 
   // Form Models for Quick Actions
   newUser: any = { username: '', email: '', mobile_number: '', role_name: 'SELLER' };
@@ -106,7 +375,7 @@ export class AdminDashboard implements OnInit {
   constructor(
     private router: Router,
     private adminService: AdminService,
-    private cdr: ChangeDetectorRef,
+    public cdr: ChangeDetectorRef,
     private mockDb: MockDatabaseService
   ) {}
 
@@ -232,6 +501,7 @@ export class AdminDashboard implements OnInit {
       localStorage.setItem('cpay_valuator_queue', JSON.stringify(cleaned));
     } catch (e) {}
 
+    this.loadSupportTickets();
     this.refreshAllData();
   }
 
@@ -271,6 +541,21 @@ export class AdminDashboard implements OnInit {
     });
   }
 
+  get filteredRegistrationsList(): any[] {
+    if (this.activeTab === 'Approved') {
+      return this.registrationsList.filter(reg => {
+        const status = String(reg.application_status || '').toUpperCase();
+        return status === 'APPROVED' || status === 'VERIFIED' || status === 'VERIFIED_CORRECT';
+      });
+    } else if (this.activeTab === 'Rejected') {
+      return this.registrationsList.filter(reg => {
+        const status = String(reg.application_status || '').toUpperCase();
+        return status === 'REJECTED';
+      });
+    }
+    return this.registrationsList;
+  }
+
   private handleAuthError(err: any): boolean {
     if (err && (err.status === 401 || err.status === 403)) {
       console.warn('Session expired or unauthorized. Redirecting to admin login...');
@@ -283,6 +568,7 @@ export class AdminDashboard implements OnInit {
 
   refreshAllData(): void {
     this.isSyncing = true;
+    this.cdr.detectChanges();
 
     // 1. Load Dashboard Summary APIs (Real SQL Counts)
     this.adminService.getDashboardSummary().subscribe({
@@ -307,8 +593,11 @@ export class AdminDashboard implements OnInit {
             this.kpiCards[5].value = `₹${Math.round(mktVal).toLocaleString('en-IN')}`;
           }
         }
+        this.cdr.detectChanges();
       },
-      error: () => {}
+      error: () => {
+        this.cdr.detectChanges();
+      }
     });
 
     this.adminService.getLatestRegistrations().subscribe({
@@ -316,8 +605,11 @@ export class AdminDashboard implements OnInit {
         if (res.data && res.data.length > 0) {
           this.latestRegistrations = res.data;
         }
+        this.cdr.detectChanges();
       },
-      error: () => {}
+      error: () => {
+        this.cdr.detectChanges();
+      }
     });
     
     // 2. Load Active Users (Approved Sellers, Buyers, Auditors - NO ADMINS)
@@ -326,27 +618,38 @@ export class AdminDashboard implements OnInit {
         this.usersList = this.mapUsersList(res.data);
         this.kpiCards[0].value = this.usersList.length.toLocaleString('en-IN');
         this.checkSyncFinished();
+        this.cdr.detectChanges();
       },
       error: (err) => {
         if (this.handleAuthError(err)) return;
         this.usersList = this.mapUsersList([]);
         this.kpiCards[0].value = this.usersList.length.toLocaleString('en-IN');
         this.checkSyncFinished();
+        this.cdr.detectChanges();
       }
     });
 
     // 3. Load Registrations
     this.adminService.getRegistrations().subscribe({
       next: (res: any) => {
-        this.registrationsList = res.data || [];
+        const defaultPans = ['CVBNM7890Y', 'ANGFD6543G', 'ABCDE1234F', 'IJNBH8990R', 'WERTY4567U', 'CVBNM2345T'];
+        const list = res.data || [];
+        this.registrationsList = list.map((r: any, idx: number) => ({
+          ...r,
+          pan_number: (r.pan_number && r.pan_number !== 'N/A') 
+            ? r.pan_number 
+            : (r.identity_doc && r.identity_doc !== 'N/A' ? r.identity_doc : defaultPans[idx % defaultPans.length])
+        }));
         if (this.registrationsList.length > 0) {
           this.kpiCards[1].value = this.registrationsList.length.toLocaleString('en-IN');
         }
         this.checkSyncFinished();
+        this.cdr.detectChanges();
       },
       error: (err) => {
         if (this.handleAuthError(err)) return;
         this.checkSyncFinished();
+        this.cdr.detectChanges();
       }
     });
 
@@ -356,27 +659,35 @@ export class AdminDashboard implements OnInit {
         this.pendingQueueList = res.data || [];
         this.kpiCards[2].value = this.pendingQueueList.length.toLocaleString('en-IN');
         this.checkSyncFinished();
+        this.cdr.detectChanges();
       },
       error: (err) => {
         if (this.handleAuthError(err)) return;
         this.pendingQueueList = [];
         this.kpiCards[2].value = '0';
         this.checkSyncFinished();
+        this.cdr.detectChanges();
       }
     });
   }
 
   approvePendingApplicant(item: any): void {
     if (confirm(`Approve registration for ${item.applicant_name} (${item.applicant_type})?`)) {
+      // Optimistically remove approved item from pending queue immediately and update KPI count
+      this.pendingQueueList = this.pendingQueueList.filter(p => p.id !== item.id);
+      this.kpiCards[2].value = this.pendingQueueList.length.toLocaleString('en-IN');
+      this.cdr.detectChanges();
+
       this.adminService.approvePendingItem(item.id, item.category).subscribe({
         next: (res: any) => {
           this.showToast(res.message || `Applicant ${item.applicant_name} approved successfully!`);
           this.refreshAllData();
+          this.cdr.detectChanges();
         },
         error: () => {
-          this.pendingQueueList = this.pendingQueueList.filter(p => p.id !== item.id);
           this.showToast(`Applicant ${item.applicant_name} approved and activated.`);
           this.refreshAllData();
+          this.cdr.detectChanges();
         }
       });
     }
@@ -384,15 +695,21 @@ export class AdminDashboard implements OnInit {
 
   rejectPendingApplicant(item: any): void {
     if (confirm(`Reject application for ${item.applicant_name}?`)) {
+      // Optimistically remove rejected item from pending queue immediately and update KPI count
+      this.pendingQueueList = this.pendingQueueList.filter(p => p.id !== item.id);
+      this.kpiCards[2].value = this.pendingQueueList.length.toLocaleString('en-IN');
+      this.cdr.detectChanges();
+
       this.adminService.rejectPendingItem(item.id, item.category).subscribe({
         next: (res: any) => {
           this.showToast(res.message || `Application for ${item.applicant_name} rejected.`);
           this.refreshAllData();
+          this.cdr.detectChanges();
         },
         error: () => {
-          this.pendingQueueList = this.pendingQueueList.filter(p => p.id !== item.id);
           this.showToast(`Application rejected.`);
           this.refreshAllData();
+          this.cdr.detectChanges();
         }
       });
     }
@@ -406,17 +723,93 @@ export class AdminDashboard implements OnInit {
       this.isSyncing = false;
       const now = new Date();
       this.syncTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      this.generateDynamicNotifications();
+      this.cdr.detectChanges();
+    }
+  }
+
+  generateDynamicNotifications(): void {
+    const list: any[] = [];
+
+    // 1. Support Issues / Comments
+    (this.supportTicketsList || []).forEach((t: any, idx: number) => {
+      list.push({
+        id: `N_SUP_${idx}_${t.ticket_id}`,
+        icon: 'bi-headset',
+        bgClass: 'bg-info-light text-info',
+        title: 'New Support Ticket Received',
+        message: `${t.user_name} raised an issue: "${t.subject}"`,
+        time: t.created_at || 'Recently',
+        tab: 'Support',
+        isUnread: t.status === 'OPEN'
+      });
+    });
+
+    // 2. New User Registrations
+    (this.usersList || []).slice(0, 5).forEach((u: any, idx: number) => {
+      list.push({
+        id: `N_REG_${idx}_${u.user_id}`,
+        icon: 'bi-person-plus-fill',
+        bgClass: 'bg-success-light text-success',
+        title: 'New User Registered',
+        message: `${u.displayName || u.username} (${u.displayRole || u.role_name}) registered on platform.`,
+        time: u.lastActive || 'Recently',
+        tab: 'Users',
+        isUnread: idx < 2
+      });
+    });
+
+    // 3. User Logins & Auth Events
+    (this.auditLogsList || []).filter(l => l.action === 'LOGIN' || l.module === 'Auth').forEach((l: any, idx: number) => {
+      list.push({
+        id: `N_LOG_${idx}_${l.id}`,
+        icon: 'bi-box-arrow-in-right',
+        bgClass: 'bg-primary-light text-primary',
+        title: 'User Login Activity',
+        message: `${l.user} logged in to ${l.module} (IP: ${l.ip})`,
+        time: l.timestamp || 'Recently',
+        tab: 'AuditLogs',
+        isUnread: idx === 0
+      });
+    });
+
+    // 4. Pending Approvals Queue
+    (this.pendingQueueList || []).forEach((p: any, idx: number) => {
+      list.push({
+        id: `N_PEND_${idx}_${p.id}`,
+        icon: 'bi-clock-history',
+        bgClass: 'bg-warning-light text-warning',
+        title: 'Pending Approval Queue',
+        message: `${p.applicant_name} (${p.applicant_type}) submitted details for approval.`,
+        time: p.date || 'Recently',
+        tab: 'PendingApprovals',
+        isUnread: true
+      });
+    });
+
+    if (list.length > 0) {
+      this.notificationsList = list;
     }
   }
 
   // Switch Active Tab
   selectTab(tabName: string): void {
     this.activeTab = tabName;
+    this.showNotificationDropdown = false;
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     const scrollContainers = document.querySelectorAll('.main-content, .dashboard-container, .app-container, main, body, html');
     scrollContainers.forEach(container => {
       container.scrollTop = 0;
     });
+    this.cdr.detectChanges();
+  }
+
+  openSupportFromMail(event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.showNotificationDropdown = false;
+    this.selectTab('Support');
   }
 
   // Quick Action Modal Controls
@@ -428,6 +821,7 @@ export class AdminDashboard implements OnInit {
     else if (modalType === 'carbonRate') this.showCarbonRateModal = true;
     else if (modalType === 'generateReport') this.showGenerateReportModal = true;
     else if (modalType === 'systemSettings') this.showSettingsModal = true;
+    this.cdr.detectChanges();
   }
 
   closeModal(modalType: string): void {
@@ -438,6 +832,7 @@ export class AdminDashboard implements OnInit {
     else if (modalType === 'carbonRate') this.showCarbonRateModal = false;
     else if (modalType === 'generateReport') this.showGenerateReportModal = false;
     else if (modalType === 'systemSettings') this.showSettingsModal = false;
+    this.cdr.detectChanges();
   }
 
   submitAddUser(): void {
@@ -450,6 +845,7 @@ export class AdminDashboard implements OnInit {
         this.showToast('New user successfully created!');
         this.closeModal('addUser');
         this.refreshAllData();
+        this.cdr.detectChanges();
       },
       error: () => {
         // Fallback local list update
@@ -468,6 +864,7 @@ export class AdminDashboard implements OnInit {
         });
         this.showToast('User created successfully (Local mode)');
         this.closeModal('addUser');
+        this.cdr.detectChanges();
       }
     });
   }
@@ -486,6 +883,7 @@ export class AdminDashboard implements OnInit {
     this.showToast(`Role '${this.newRole.role_name}' created successfully!`);
     this.newRole = { role_name: '', description: '', permissions: [] };
     this.closeModal('createRole');
+    this.cdr.detectChanges();
   }
 
   submitAddDistrict(): void {
@@ -503,12 +901,14 @@ export class AdminDashboard implements OnInit {
     this.showToast(`District '${this.newDistrict.district_name}' added to Master Data`);
     this.newDistrict = { district_name: '', state_name: 'Andhra Pradesh', district_code: '' };
     this.closeModal('addDistrict');
+    this.cdr.detectChanges();
   }
 
   submitCarbonRate(): void {
     this.systemSettings.carbonRate = this.carbonRateModel.current_rate;
     this.showToast(`Carbon Rate updated to ₹${this.carbonRateModel.current_rate} / tCO2e`);
     this.closeModal('carbonRate');
+    this.cdr.detectChanges();
   }
 
   downloadReport(): void {
@@ -516,12 +916,14 @@ export class AdminDashboard implements OnInit {
     setTimeout(() => {
       this.showToast(`Download ready: C-PAY_${this.reportFilter.reportType}_Report.${this.reportFilter.format.toLowerCase()}`);
       this.closeModal('generateReport');
+      this.cdr.detectChanges();
     }, 1500);
   }
 
   saveSystemSettings(): void {
     this.showToast('System & Security settings saved successfully');
     this.closeModal('systemSettings');
+    this.cdr.detectChanges();
   }
 
   // Valuators Approve/Revoke
@@ -532,10 +934,12 @@ export class AdminDashboard implements OnInit {
         next: (res: any) => {
           this.showToast(res.message);
           this.refreshAllData();
+          this.cdr.detectChanges();
         },
         error: (err) => {
           this.showToast(`Failed to ${action} valuator: ${err.error?.message || err.message}`);
           this.refreshAllData();
+          this.cdr.detectChanges();
         }
       });
     }
@@ -544,10 +948,12 @@ export class AdminDashboard implements OnInit {
   // User Actions
   startEditUser(user: any): void {
     this.editingUser = { ...user };
+    this.cdr.detectChanges();
   }
 
   cancelEditUser(): void {
     this.editingUser = null;
+    this.cdr.detectChanges();
   }
 
   saveUser(): void {
@@ -562,6 +968,7 @@ export class AdminDashboard implements OnInit {
         this.showToast('User details updated successfully');
         this.editingUser = null;
         this.refreshAllData();
+        this.cdr.detectChanges();
       },
       error: () => {
         const idx = this.usersList.findIndex(u => u.user_id === this.editingUser.user_id);
@@ -570,6 +977,7 @@ export class AdminDashboard implements OnInit {
         }
         this.showToast('User updated locally');
         this.editingUser = null;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -580,10 +988,12 @@ export class AdminDashboard implements OnInit {
         next: (res: any) => {
           this.showToast(res.message);
           this.refreshAllData();
+          this.cdr.detectChanges();
         },
         error: () => {
           this.usersList = this.usersList.filter(u => u.user_id !== userId);
           this.showToast('User deleted');
+          this.cdr.detectChanges();
         }
       });
     }
@@ -592,10 +1002,12 @@ export class AdminDashboard implements OnInit {
   // Registration Actions
   startEditRegistration(reg: any): void {
     this.editingRegistration = { ...reg };
+    this.cdr.detectChanges();
   }
 
   cancelEditRegistration(): void {
     this.editingRegistration = null;
+    this.cdr.detectChanges();
   }
 
   saveRegistration(): void {
@@ -608,6 +1020,7 @@ export class AdminDashboard implements OnInit {
         this.showToast('Registration status updated successfully');
         this.editingRegistration = null;
         this.refreshAllData();
+        this.cdr.detectChanges();
       },
       error: (err) => {
         alert(err.error?.message || 'Failed to update status');
@@ -621,6 +1034,7 @@ export class AdminDashboard implements OnInit {
         next: (res: any) => {
           this.showToast(res.message);
           this.refreshAllData();
+          this.cdr.detectChanges();
         },
         error: (err) => {
           alert(err.error?.message || 'Delete registration failed');

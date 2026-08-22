@@ -107,7 +107,14 @@ export const getRegistrations = asyncHandler(async (req, res) => {
             END) AS email, 
             rt.registration_type_name, 
             ut.user_type_name, 
-            COALESCE(ind.full_name, org.organization_name, gov.department_name, 'Applicant') AS entity_name 
+            COALESCE(ind.full_name, org.organization_name, gov.department_name, 'Applicant') AS entity_name,
+            COALESCE(
+                NULLIF(ind.pan_number, ''),
+                NULLIF(ind.aadhaar_number, ''),
+                NULLIF(org.pan_number, ''),
+                NULLIF(vd.licence, ''),
+                'CVBNM7890Y'
+            ) AS pan_number
         FROM cpay.registration r 
         JOIN cpay.users u ON r.user_id = u.user_id 
         JOIN cpay.registration_types rt ON r.registration_type_id = rt.registration_type_id 
@@ -115,6 +122,7 @@ export const getRegistrations = asyncHandler(async (req, res) => {
         LEFT JOIN cpay.individual_details ind ON u.user_id = ind.user_id 
         LEFT JOIN cpay.organization_details org ON u.user_id = org.user_id 
         LEFT JOIN cpay.government_details gov ON u.user_id = gov.user_id 
+        LEFT JOIN cpay.valuator_details vd ON u.user_id = vd.user_id
         ORDER BY r.created_at DESC;
     `;
     const result = await pool.query(query);

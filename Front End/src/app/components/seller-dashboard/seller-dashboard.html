@@ -1877,6 +1877,7 @@
     </div>
 
     <!-- Connect View -->
+    <!-- Connect / Support View -->
     <div class="analytics-card p-4 text-dark" *ngIf="activeTab === 'Support'">
       <h3 class="fw-bold mb-3 text-dark d-flex align-items-center" style="margin: 0 0 8px 0; font-size: 18px; font-weight: 700;">
         <i class="bi bi-chat-dots-fill text-teal me-2" style="color: var(--primary-teal); margin-right: 6px;"></i> Connect with District Officer
@@ -1884,25 +1885,62 @@
       <p class="text-muted small mb-4">Send inquiries, report land mapping updates, or request support audits directly to your assigned district cooperative authority.</p>
       
       <div style="max-width: 800px; margin-top: 24px;">
-        <form style="display: flex; flex-direction: column; gap: 16px;">
+        <form style="display: flex; flex-direction: column; gap: 16px;" (ngSubmit)="submitSellerSupportMessage()">
+          <div *ngIf="supportSuccessMsg" class="alert alert-success d-flex align-items-center justify-content-between p-3 rounded-3" style="font-size: 13.5px; background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-check-circle-fill text-success fs-5"></i>
+              <div>{{ supportSuccessMsg }}</div>
+            </div>
+            <button type="button" class="btn-close" (click)="dismissSupportMsg()" aria-label="Close" style="font-size: 11px; cursor: pointer;"></button>
+          </div>
+
           <div>
             <label class="form-label small fw-bold text-muted mb-1.5" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px;">Subject Category</label>
             <app-custom-select [options]="supportCategoryOptions" [(ngModel)]="supportSubjectCategory" name="supportSubjectCategory" placeholder="Select Subject Category"></app-custom-select>
           </div>
           <div>
             <label class="form-label small fw-bold text-muted mb-1.5" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px;">Inquiry Subject</label>
-            <input type="text" class="form-control" placeholder="e.g., Requesting canopy validation audit for PAR-003" style="border-radius: 14px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13.5px; width: 100%; box-sizing: border-box; outline: none;" />
+            <input type="text" class="form-control" [(ngModel)]="supportSubject" name="supportSubject" placeholder="e.g., Requesting canopy validation audit for PAR-003" style="border-radius: 14px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13.5px; width: 100%; box-sizing: border-box; outline: none;" />
           </div>
           <div>
             <label class="form-label small fw-bold text-muted mb-1.5" style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px;">Message Description</label>
-            <textarea class="form-control" rows="5" placeholder="Provide detailed information regarding your inquiry..." style="border-radius: 14px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13.5px; width: 100%; box-sizing: border-box; outline: none; resize: vertical; min-height: 120px;"></textarea>
+            <textarea class="form-control" [(ngModel)]="supportMessage" name="supportMessage" rows="5" placeholder="Provide detailed information regarding your inquiry..." style="border-radius: 14px; border: 1px solid #d8e6e2; padding: 10px 12px; font-size: 13.5px; width: 100%; box-sizing: border-box; outline: none; resize: vertical; min-height: 120px;"></textarea>
           </div>
           <div style="display: flex; justify-content: flex-end;">
-            <button type="button" class="btn text-white fw-bold" style="background-color: var(--primary-teal); color: white; border: none; border-radius: 10px; padding: 12px 28px; font-size: 13.5px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-1px)';" onmouseout="this.style.transform='none';">
-              Send Secure Message
+            <button type="button" (click)="submitSellerSupportMessage()" [disabled]="isSubmittingSupport" class="btn text-white fw-bold" style="background-color: var(--primary-teal); color: white; border: none; border-radius: 10px; padding: 12px 28px; font-size: 13.5px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-1px)';" onmouseout="this.style.transform='none';">
+              <span *ngIf="isSubmittingSupport" class="spinner-border spinner-border-sm me-2"></span>
+              {{ isSubmittingSupport ? 'Sending...' : 'Send Secure Message' }}
             </button>
           </div>
         </form>
+
+        <!-- Submitted Support Tickets List -->
+        <div *ngIf="sellerSupportTickets.length > 0" class="mt-5 border-top pt-4" style="margin-top: 36px; border-top: 1px solid #e2e8f0; padding-top: 24px;">
+          <h4 class="fw-bold mb-3 text-dark fs-6 d-flex align-items-center gap-2" style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">
+            <i class="bi bi-clock-history text-teal" style="color: var(--primary-teal);"></i> My Submitted Inquiries & Responses
+          </h4>
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div *ngFor="let ticket of sellerSupportTickets" style="padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; background-color: #f8fafc;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="font-weight: 700; color: #1e293b; font-family: monospace; font-size: 12px;">#{{ ticket.ticket_number || ticket.ticket_id }} | {{ ticket.category }}</div>
+                <span class="badge px-2 py-1"
+                      [class.bg-danger]="ticket.status === 'OPEN'"
+                      [class.bg-warning]="ticket.status === 'IN_PROGRESS'"
+                      [class.bg-success]="ticket.status === 'RESOLVED'"
+                      style="font-size: 11px; border-radius: 6px; padding: 4px 10px; font-weight: 700; color: white;"
+                      [style.background-color]="ticket.status === 'OPEN' ? '#ef4444' : (ticket.status === 'IN_PROGRESS' ? '#f59e0b' : '#10b981')">
+                  {{ ticket.status }}
+                </span>
+              </div>
+              <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px; font-size: 13.5px;">{{ ticket.subject }}</div>
+              <p style="color: #475569; font-size: 13px; margin-bottom: 8px; line-height: 1.4;">"{{ ticket.description }}"</p>
+              <div *ngIf="ticket.admin_reply" style="background-color: #ffffff; padding: 12px; border-radius: 8px; border: 1px solid #10b981; color: #047857; font-size: 12.5px; font-style: italic;">
+                <i class="bi bi-reply-fill me-1"></i><strong>District Officer / Admin Response:</strong> {{ ticket.admin_reply }}
+              </div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 6px;">Submitted on {{ ticket.created_at }}</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 

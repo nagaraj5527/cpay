@@ -2862,32 +2862,34 @@ export const addAsset = async (user, data) => {
         );
         const registrationId = regRes.rows[0].registration_id;
 
-        // 4. Save/Update Personal Details into cpay.individual_details
-        const pDetails = personalDetails || data.personalDetails;
-        if (pDetails && (pDetails.fullName || pDetails.full_name)) {
-            await client.query(
-                `INSERT INTO cpay.individual_details
-                 (user_id, full_name, gender, aadhaar_number, pan_number, email, mobile_number, created_at, updated_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                 ON CONFLICT (user_id) DO UPDATE SET
-                    full_name = EXCLUDED.full_name,
-                    gender = EXCLUDED.gender,
-                    aadhaar_number = EXCLUDED.aadhaar_number,
-                    pan_number = EXCLUDED.pan_number,
-                    email = EXCLUDED.email,
-                    mobile_number = EXCLUDED.mobile_number,
-                    updated_at = CURRENT_TIMESTAMP`,
-                [
-                    user.userId,
-                    pDetails.fullName || pDetails.full_name,
-                    pDetails.gender || null,
-                    pDetails.aadhaarNumber || pDetails.aadhaar_number || null,
-                    pDetails.panNumber || pDetails.pan_number || null,
-                    pDetails.emailAddress || pDetails.email || user.email,
-                    pDetails.mobileNumber || pDetails.mobile_number || user.mobile_number
-                ]
-            );
-        }
+        // 4. Save/Update Personal Details into cpay.individual_details & cpay.users
+        const pDetails = personalDetails || data.personalDetails || {};
+        const fullNameToUse = pDetails.fullName || pDetails.full_name || data.entity_name || data.fullName || data.name || user.name || 'nagaraj Kalinga';
+
+        await client.query(
+            `INSERT INTO cpay.individual_details
+             (user_id, full_name, gender, aadhaar_number, pan_number, email, mobile_number, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+             ON CONFLICT (user_id) DO UPDATE SET
+                full_name = COALESCE(NULLIF(EXCLUDED.full_name, ''), cpay.individual_details.full_name),
+                email = COALESCE(NULLIF(EXCLUDED.email, ''), cpay.individual_details.email),
+                mobile_number = COALESCE(NULLIF(EXCLUDED.mobile_number, ''), cpay.individual_details.mobile_number),
+                updated_at = CURRENT_TIMESTAMP`,
+            [
+                user.userId,
+                fullNameToUse,
+                pDetails.gender || null,
+                pDetails.aadhaarNumber || pDetails.aadhaar_number || null,
+                pDetails.panNumber || pDetails.pan_number || null,
+                pDetails.emailAddress || pDetails.email || user.email || 'seller@cpay.org',
+                pDetails.mobileNumber || pDetails.mobile_number || user.mobile_number || user.mobile
+            ]
+        );
+
+        await client.query(
+            `UPDATE cpay.users SET username = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2 AND (username IS NULL OR username = '' OR username LIKE 'user_%')`,
+            [fullNameToUse, user.userId]
+        );
 
         // 5. Resolve and save Address details
         const { stateId, districtId, mandalId, villageId } = await resolveGeography(

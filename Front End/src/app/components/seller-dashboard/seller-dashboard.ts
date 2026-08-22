@@ -308,49 +308,51 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
   }
 
   safeSetItem(key: string, value: string): void {
+    if (!key) return;
+    // Enforce PostgreSQL-only storage for domain data per project directive
+    if (
+      key.startsWith('userLandParcels') ||
+      key.startsWith('cpay_valuator_queue') ||
+      key.startsWith('cpay_registered_users') ||
+      key.startsWith('SellerPersonal') ||
+      key.startsWith('SellerAddress') ||
+      key.startsWith('SellerLand') ||
+      key.startsWith('SellerPlantation') ||
+      key.startsWith('SellerCalculation') ||
+      key.startsWith('SellerConsent') ||
+      key.startsWith('SellerDocs') ||
+      key.startsWith('docStatus_')
+    ) {
+      return;
+    }
     try {
       localStorage.setItem(key, value);
-    } catch (e: any) {
-      console.warn(`[Storage] localStorage quota exceeded for key "${key}". Auto-cleaning temporary caches...`);
-      try {
-        const keysToRemove: string[] = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
-          if (k && (
-            k.startsWith('pincode_cache_') || 
-            k.includes('profilePhoto_') || 
-            k.includes('docStatus_') || 
-            k.startsWith('SellerCalculation_') || 
-            k.startsWith('SellerCalculatorDetails_') ||
-            k.includes('loginLogs_') ||
-            k.includes('activities_')
-          )) {
-            keysToRemove.push(k);
-          }
-        }
-        keysToRemove.forEach(k => localStorage.removeItem(k));
+    } catch (e: any) {}
+  }
 
-        const queueStr = localStorage.getItem('cpay_valuator_queue');
-        if (queueStr) {
-          try {
-            const q = JSON.parse(queueStr);
-            if (Array.isArray(q) && q.length > 5) {
-              const trimmed = q.slice(0, 5).map((item: any) => {
-                const copy = { ...item };
-                if (copy.docs) delete copy.docs;
-                if (copy.parcel && copy.parcel.imagePreview) delete copy.parcel.imagePreview;
-                return copy;
-              });
-              localStorage.setItem('cpay_valuator_queue', JSON.stringify(trimmed));
-            }
-          } catch (err) {}
+  purgeDomainLocalStorage(): void {
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (
+          k.startsWith('userLandParcels') ||
+          k.startsWith('cpay_valuator_queue') ||
+          k.startsWith('cpay_registered_users') ||
+          k.startsWith('SellerPersonal') ||
+          k.startsWith('SellerAddress') ||
+          k.startsWith('SellerLand') ||
+          k.startsWith('SellerPlantation') ||
+          k.startsWith('SellerCalculation') ||
+          k.startsWith('SellerConsent') ||
+          k.startsWith('SellerDocs') ||
+          k.startsWith('docStatus_') ||
+          k.startsWith('SellerFurthest')
+        )) {
+          keysToRemove.push(k);
         }
-        
-        localStorage.setItem(key, value);
-      } catch (retryErr) {
-        console.warn(`[Storage] Cleaned storage, but writing key "${key}" still exceeded quota. Memory state maintained.`);
       }
-    }
+    } catch (e) {}
   }
   newLandPlantation = {
     landType: '',
@@ -677,12 +679,13 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     private registrationService: RegistrationService,
     private calculatorService: CalculatorService,
     private walletService: WalletService,
-    private cdr: ChangeDetectorRef,
+    public cdr: ChangeDetectorRef,
     private http: HttpClient,
     private sanitizer: DomSanitizer
   ) {}
 
   ngOnInit(): void {
+    this.purgeDomainLocalStorage();
     const match = document.cookie.match(new RegExp('(^| )googtrans=([^;]+)'));
     if (match) {
       const val = match[2];
@@ -714,6 +717,7 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
     // Load Profile Photo from storage (PostgreSQL with localStorage fallback)
     const mobileForPhoto = localStorage.getItem('currentUserMobile') || '+919876543210';
     this.loadProfilePhotoFromStorage(mobileForPhoto);
+    this.loadSellerSupportTickets();
 
     this.selectedUserType = localStorage.getItem('selectedUserType') || '';
     // Load personal details & sync with logged in user from MockDB
@@ -2027,8 +2031,113 @@ export class SellerDashboard implements OnInit, AfterViewInit, OnDestroy {
 
   landUnitOptions: string[] = ['Acre', 'Hectare', 'Sq.ft', 'Guntha', 'Sq.Yards'];
   fishPondUnitOptions: string[] = ['kg', 'Quintal', 'Ton', 'Count'];
-  supportCategoryOptions: string[] = ['Select Subject Category', 'Land Audit Request', 'Biomass Counting Correction', 'Credit Trading Support', 'General Query'];
+  supportCategoryOptions: string[] = ['Land Audit Request', 'Canopy Verification', 'Credit Purchase & Wallet', 'Field Inspection App', 'Account Details', 'General Support'];
   supportSubjectCategory: string = 'Select Subject Category';
+  supportSubject: string = '';
+  supportMessage: string = '';
+  isSubmittingSupport: boolean = false;
+  supportSuccessMsg: string = '';
+  private supportMsgTimeout: any = null;
+  sellerSupportTickets: any[] = [];
+
+  dismissSupportMsg(): void {
+    this.supportSuccessMsg = '';
+    if (this.supportMsgTimeout) {
+      clearTimeout(this.supportMsgTimeout);
+      this.supportMsgTimeout = null;
+    }
+    this.cdr.detectChanges();
+  }
+
+  submitSellerSupportMessage(): void {
+    const category = (this.supportSubjectCategory && this.supportSubjectCategory !== 'Select Subject Category') 
+      ? this.supportSubjectCategory 
+      : 'Land Audit Request';
+    
+    if (!this.supportSubject || this.supportSubject.trim().length === 0) {
+      alert('Please enter an Inquiry Subject.');
+      return;
+    }
+    if (!this.supportMessage || this.supportMessage.trim().length === 0) {
+      alert('Please enter a Message Description.');
+      return;
+    }
+
+    this.isSubmittingSupport = true;
+    const ticketId = 'TICK-' + Math.floor(100000 + Math.random() * 900000);
+    const dateStr = new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+    
+    const newTicket = {
+      ticket_id: ticketId,
+      ticket_number: ticketId,
+      user_name: this.personalDetails.fullName || 'siva (Seller)',
+      user_role: 'SELLER',
+      email: this.personalDetails.emailAddress || 'seller@cpay.org',
+      mobile_number: this.personalDetails.mobileNumber || '+916565656565',
+      category: category,
+      subject: this.supportSubject.trim(),
+      description: this.supportMessage.trim(),
+      priority: 'MEDIUM',
+      status: 'OPEN',
+      created_at: dateStr,
+      admin_reply: null
+    };
+
+    try {
+      const stored = localStorage.getItem('cpay_support_tickets');
+      const tickets = stored ? JSON.parse(stored) : [];
+      tickets.unshift(newTicket);
+      localStorage.setItem('cpay_support_tickets', JSON.stringify(tickets));
+    } catch (e) {}
+
+    this.sellerSupportTickets.unshift(newTicket);
+
+    this.supportSubject = '';
+    this.supportMessage = '';
+    this.supportSubjectCategory = 'Select Subject Category';
+    this.isSubmittingSupport = false;
+    this.supportSuccessMsg = `Your support inquiry #${ticketId} has been sent to the District Officer / Admin successfully!`;
+
+    // Auto dismiss success message after 4 seconds
+    if (this.supportMsgTimeout) {
+      clearTimeout(this.supportMsgTimeout);
+    }
+    this.supportMsgTimeout = setTimeout(() => {
+      this.supportSuccessMsg = '';
+      this.supportMsgTimeout = null;
+      this.cdr.detectChanges();
+    }, 4000);
+
+    this.http.post(`${environment.apiUrl}/support/tickets`, {
+      subject: newTicket.subject,
+      description: newTicket.description,
+      priority: 'MEDIUM'
+    }).subscribe({
+      next: () => {},
+      error: () => {}
+    });
+
+    this.cdr.detectChanges();
+  }
+
+  loadSellerSupportTickets(): void {
+    try {
+      const stored = localStorage.getItem('cpay_support_tickets');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          const userMobile = (this.personalDetails.mobileNumber || '+916565656565').replace(/\s+/g, '');
+          const userEmail = (this.personalDetails.emailAddress || '').toLowerCase();
+          
+          this.sellerSupportTickets = parsed.filter((t: any) => {
+            const mob = String(t.mobile_number || '').replace(/\s+/g, '');
+            const em = String(t.email || '').toLowerCase();
+            return mob === userMobile || (userEmail && em === userEmail) || (t.user_name && t.user_name.toLowerCase().includes('siva'));
+          });
+        }
+      }
+    } catch (e) {}
+  }
 
   loadProfilePhotoFromStorage(mobile: string): void {
     const savedPhoto = localStorage.getItem(`profilePhoto_${mobile}`);

@@ -242,27 +242,11 @@ export class SellerLogin implements OnInit {
             return;
           }
 
-          // Get profile and check active registration for Seller
-          this.registrationService.getCurrentRegistration().subscribe({
-            next: (regRes: any) => {
-              const registration = regRes.data;
-              setTimeout(() => {
-                if (!registration || registration.application_status === 'DRAFT') {
-                  alert("Welcome to C-PAY Portal! Let's complete your registration.");
-                  this.router.navigate(['/registration']);
-                } else {
-                  alert('Welcome to C-PAY Portal as Seller!');
-                  this.router.navigate(['/seller/dashboard']);
-                }
-              }, 1000);
-            },
-            error: (regErr) => {
-              setTimeout(() => {
-                alert("Welcome to C-PAY Portal! Let's complete your registration.");
-                this.router.navigate(['/registration']);
-              }, 1000);
-            }
-          });
+          // Redirect Seller directly to Seller Dashboard
+          setTimeout(() => {
+            alert('Welcome to C-PAY Portal as Seller!');
+            this.router.navigate(['/seller/dashboard']);
+          }, 500);
         } else {
           this.errorMessage = 'Verification failed. Please try again.';
         }

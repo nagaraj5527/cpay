@@ -270,7 +270,7 @@ export const getPincodeUsers = asyncHandler(async (req, res) => {
 
     try {
         const query = `
-            SELECT 
+            SELECT DISTINCT ON (COALESCE(ld.land_id, r.registration_id, u.user_id))
                 u.user_id,
                 u.mobile_number,
                 (CASE 
@@ -279,7 +279,7 @@ export const getPincodeUsers = asyncHandler(async (req, res) => {
                     WHEN u.email IS NOT NULL AND u.email NOT LIKE '%@cpay.org' AND u.email NOT LIKE '%@cpay.com' AND u.email NOT LIKE 'user_%' AND u.email NOT LIKE 'valuator_%' THEN u.email
                     ELSE 'N/A' 
                 END) AS email,
-                COALESCE(NULLIF(ind.full_name, ''), NULLIF(org.organization_name, ''), NULLIF(gov.department_name, ''), NULLIF(val.valuator_name, ''), u.username, u.mobile_number) AS user_name,
+                COALESCE(NULLIF(ind.full_name, ''), NULLIF(org.organization_name, ''), NULLIF(gov.department_name, ''), NULLIF(val.valuator_name, ''), NULLIF(u.username, ''), 'Seller') AS user_name,
                 COALESCE(ro.role_name, 'SELLER') AS user_role,
                 COALESCE(NULLIF(ind.aadhaar_number, ''), NULLIF(val.aadhaar_number, ''), 'N/A') AS aadhaar_number,
                 COALESCE(NULLIF(ind.pan_number, ''), NULLIF(org.pan_number, ''), NULLIF(gov.pan_number, ''), NULLIF(val.pan_number, ''), 'N/A') AS pan_number,
@@ -320,14 +320,14 @@ export const getPincodeUsers = asyncHandler(async (req, res) => {
                 COALESCE(CAST(cc.market_value AS NUMERIC), CAST(ld.portfolio_value AS NUMERIC), 38230.80) AS market_value,
                 cc.estimated_co2,
                 r.created_at
-            FROM cpay.registration r
-            JOIN cpay.users u ON r.user_id = u.user_id
+            FROM cpay.users u
+            LEFT JOIN cpay.registration r ON r.user_id = u.user_id
             LEFT JOIN cpay.individual_details ind ON ind.user_id = u.user_id
             LEFT JOIN cpay.organization_details org ON org.user_id = u.user_id
             LEFT JOIN cpay.government_details gov ON gov.user_id = u.user_id
             LEFT JOIN cpay.valuator_details val ON val.user_id = u.user_id
             LEFT JOIN cpay.roles ro ON u.role_id = ro.role_id
-            LEFT JOIN cpay.land_details ld ON ld.registration_id = r.registration_id
+            LEFT JOIN cpay.land_details ld ON (ld.registration_id = r.registration_id OR ld.user_id = u.user_id)
             LEFT JOIN cpay.land_types lt ON ld.land_type_id = lt.land_type_id
             LEFT JOIN cpay.units u_unit ON ld.unit_id = u_unit.unit_id
             LEFT JOIN cpay.address_details ad ON (ad.registration_id = r.registration_id OR ad.land_id = ld.land_id)
@@ -343,6 +343,7 @@ export const getPincodeUsers = asyncHandler(async (req, res) => {
             WHERE (ro.role_name IS NULL OR UPPER(ro.role_name) NOT IN ('VALUATOR', 'AUDITOR', 'ADMIN'))
               AND (
                 $1 = '' 
+                OR ad.pincode IS NULL
                 OR CAST(ad.pincode AS VARCHAR) = $1 
                 OR CAST(ad.pincode AS VARCHAR) LIKE CONCAT('%', $1, '%')
                 OR ($2 != '' AND (
@@ -351,7 +352,7 @@ export const getPincodeUsers = asyncHandler(async (req, res) => {
                     OR d.district_name ILIKE CONCAT('%', $2, '%')
                 ))
               )
-            ORDER BY r.created_at DESC;
+            ORDER BY COALESCE(ld.land_id, r.registration_id, u.user_id), COALESCE(r.created_at, u.created_at) DESC;
         `;
 
         const result = await pool.query(query, [cleanPin, rawPin]);
